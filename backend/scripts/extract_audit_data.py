@@ -2,282 +2,368 @@ import os
 import json
 import pandas as pd
 import utils
-import json
-import pandas as pd
+import re
+
 pd.set_option('display.max_colwidth', None)
 
 # paths
-# Define base directories
 AUDIT_DIR = "data/audit"
-COURSE_DIR = "data/course"  # Folder containing individual course JSON files 
+COURSE_DIR = "data/course"
+OUTPUT_EXCEL_FILE = os.path.abspath("data/audit/audit_dataset.xlsx")
 
+# ----------------------------------------
+# file and directory helpers
+# ----------------------------------------
 def get_audit_files(folder_path):
     """
-    Get the two JSON files in the given folder and determine which is core and which is gen-ed.
-    Returns a dictionary with the core and gen-ed file paths.
+    get the two JSON files in the given folder and determine which is core and which is gen-ed.
+    if a file name contains a year (e.g., '2021'), it is classified as the core audit; otherwise it is gen-ed.
+    if the check fails, it falls back to the file size method.
+    returns a dictionary with the core and gen-ed file paths.
     """
     json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
     if len(json_files) != 2:
         print(f"[Warning] Expected 2 JSON files in {folder_path}, found {len(json_files)}")
         return None
 
-    # Get full file paths with sizes
-    file_sizes = {f: os.path.getsize(os.path.join(folder_path, f)) for f in json_files}
+    core_file = None
+    gened_file = None
+    # check each file name for a year (e.g., 1990-2099)
+    for f in json_files:
+        if re.search(r"(19|20)\d{2}", f):
+            core_file = f
+        else:
+            gened_file = f
 
-    # Sort files by size (largest = core, smallest = gen-ed)
-    sorted_files = sorted(file_sizes.items(), key=lambda x: x[1], reverse=True)
+    # fallback: if one of the files wasn't identified, sort by file size.
+    if not core_file or not gened_file:
+        file_sizes = {f: os.path.getsize(os.path.join(folder_path, f)) for f in json_files}
+        sorted_files = sorted(file_sizes.items(), key=lambda x: x[1], reverse=True)
+        core_file = sorted_files[0][0]
+        gened_file = sorted_files[1][0]
     
     return {
-        "core": os.path.join(folder_path, sorted_files[0][0]),
-        "gened": os.path.join(folder_path, sorted_files[1][0])
+        "core": os.path.join(folder_path, core_file),
+        "gened": os.path.join(folder_path, gened_file)
     }
-
-def getCoursesFromRange(begin, end, inc_exc, req_chain):
-    courses = []
-    if begin[:2] != end[:2] or begin[:2] == 'XX':
-        print("[Warning] Not including course range:", begin, end)
-        return []
-    else:
-        code = begin[:2]
-        begin = int(begin[3:])
-        end = int(end[3:])
-        # If all are included, use the code instead of individual courses
-        if begin == 1 and end == 999:
-            courses = [(code, req_chain, inc_exc, 'Code')]
-        else:
-            for n in range(begin, end+1):
-                course_num = code + "-" + str(n).zfill(3)
-                courses.append((course_num, req_chain, inc_exc, 'Course'))
-            
-    return courses
-
-def getCoursesFromConstraint(constraint, req_chain):
-    t = constraint['type']
-    
-    if t == 'xfromcourseset':
-        # get courses
-        courses = constraint['data']['courses']
-        # get code ranges
-        ranges = constraint['data']['code_ranges']
-        courses_from_range = []
-        for range in ranges:
-            begin = range[0]
-            end = range[1]
-            courses_from_range.extend(getCoursesFromRange(begin, end, 'Inclusion', req_chain))
-                    
-        return [(c, req_chain, 'Inclusion', 'Course') for c in courses] + courses_from_range
-    
-    elif t == 'xfromdepts':
-        # get codes
-        depts = constraint['data']['depts']
-        # get courses
-        courses = constraint['data']['additional_courses']
-
-        return [(d['code'], req_chain, 'Inclusion', 'Code') for d in depts] + [(c, req_chain, 'Inclusion', 'Course') for c in courses]
-    
-    elif t == 'notcountcourseset':
-        # get exclusions
-        courses = constraint['data']['courses']
-        # To do: take into account code_ranges and code_patterns
-        return [(c, req_chain, 'Exclusion', 'Course') for c in courses]
-    
-    else:
-        print("[Warning] Not accounting for constraint:", t)
-        return []
-
-def getCourses(data, req_chain):
-    if 'choices' in data:
-        choices = data['choices']
-        req = data['screen_name']
-        req = "GenEd" if "General Education" in req else req # This is a hack for the audit comparison below
-        new_req_chain = req if req_chain == '' else req_chain + '---' + req
-        if len(choices) > 0:
-            courses = []
-            for c in choices:
-                courses.extend(getCourses(c, new_req_chain))
-            return courses
-        # Courses in the form of constraints
-        else:
-            constraints = data['constraints']
-            courses = []
-            for c in constraints:
-                courses.extend(getCoursesFromConstraint(c, new_req_chain))
-            return courses
-    else:
-        course_num = data['screen_name']
-        return [(course_num, req_chain, 'Inclusion', 'Course')]
-        
-def getAudit(json_path):
-    """
-    Extracts the relevant fields from the json file,
-    returning a list of courses and the requirement they satisfy.
-
-    A course may be repeated if it satisfies multiple requirements.
-    """
-    file = open(json_path)
-    data = json.load(file)
-    major = data['requirement']
-    req_major = getCourses(major, '')
-
-    req_programs = []
-    if data['uni_req_tree']:
-        programs = data['uni_req_tree']['programs'] 
-        for p in programs:
-            # Excluding degree check and total units requirements because basically all courses count for it, so it is not helpful
-            if "Degree Check" not in p['screen_name'] and "Total Units" not in p['screen_name']:
-                req_programs.extend(getCourses(p, ''))
-
-    return req_major + req_programs
-
-def makeDataFrame(audit):
-    df = pd.DataFrame(audit)
-
-    # Names columns
-    df.columns = ['Course or code', 'Requirement', 'Inclusion/Exclusion', 'Type'] # Names columns
-    # Adds more information about each couse
-    df["Pre-reqs"] = df.apply(lambda row : utils.getPreReqs(row["Course or code"]), axis=1)
-    df["Title"] = df.apply(lambda row : utils.getCourseTitle(row["Course or code"]), axis=1)
-    df["Units"] = df.apply(lambda row : utils.getCourseUnits(row["Course or code"]), axis=1)
-    # Reordering columns
-    df = df[["Type", "Inclusion/Exclusion", "Course or code", "Title", "Units", "Pre-reqs", "Requirement"]]
-    
-    return df
-
-def mergeAudits(major, gened):
-    audit_major = makeDataFrame(getAudit(major))
-    audit_gened = makeDataFrame(getAudit(gened))
-
-    # To avoid type mismatch when merging
-    audit_major = audit_major.astype(object)
-    audit_gened = audit_gened.astype(object)
-
-    all = pd.merge(audit_major, audit_gened, how='outer')
-    return all
-
-
 
 def get_course_codes():
     """
-    Retrieves all course codes from the COURSE_DIR based on filenames.
-    Assumes course files are named like '02-201.json'.
+    retrieves all course codes from COURSE_DIR based on filenames.
+    assumes course files are named like '02-201.json'.
+    only returns course codes for files where the course JSON indicates success.
     """
-    course_codes = set()
-    for file in os.listdir(COURSE_DIR):
-        if file.endswith(".json"):
-            course_codes.add(file.replace(".json", ""))  # Extract course code from filename
-    return course_codes
+    codes = set()
+    for filename in os.listdir(COURSE_DIR):
+        if filename.endswith(".json"):
+            file_path = os.path.join(COURSE_DIR, filename)
+            try:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
+                # skip the file if its content does not indicate success.
+                if not data.get("success", True):
+                    continue
+                codes.add(filename.replace(".json", ""))
+            except Exception as e:
+                print(f"[Warning] Skipping {filename} due to error: {e}")
+                continue
+    return codes
+
 
 def get_courses_from_code(dept_code, course_codes):
     """
-    Finds all courses that start with the given department code.
-    Example: If dept_code='02', it returns all courses like '02-201', '02-202'.
+    finds all courses that start with the given department code.
+    example: If dept_code='02', returns all courses like '02-201', '02-202'.
     """
     return [c for c in course_codes if c.startswith(dept_code)]
 
-
-def extract_min_units(data, parent_chain=""):
+# ----------------------------------------
+# course extraction functions
+# ----------------------------------------
+def getCoursesFromRange(begin, end, inc_exc, req_chain):
     """
-    Recursively extracts hierarchical requirement names and min_units.
-    Stops at the level before individual courses.
+    Generate course identifiers from a code range.
     """
-    extracted_units = {}
+    courses = []
+    if begin[:2] != end[:2] or begin[:2] == 'XX':
+        print("[Warning] Not including course range:", begin, end)
+        return courses
 
-    # Get current requirement name
-    req_name = data.get("screen_name", "Unknown Requirement")
-    full_chain = f"{parent_chain} - {req_name}" if parent_chain else req_name
+    code = begin[:2]
+    begin_num = int(begin[3:])
+    end_num = int(end[3:])
+    if begin_num == 1 and end_num == 999:
+        courses = [(code, req_chain, inc_exc, 'Code')]
+    else:
+        for n in range(begin_num, end_num + 1):
+            course_num = f"{code}-{str(n).zfill(3)}"
+            courses.append((course_num, req_chain, inc_exc, 'Course'))
+    return courses
 
-    # Extract the min_units if it exists
-    min_units = data.get("min_units", 0)
-    extracted_units[full_chain] = min_units  # Store this requirement's min_units
+def getCoursesFromConstraint(constraint, req_chain):
+    """
+    Extract courses based on a given constraint type.
+    """
+    constraint_type = constraint['type']
+    
+    if constraint_type == 'xfromcourseset':
+        courses = constraint['data']['courses']
+        ranges = constraint['data']['code_ranges']
+        courses_from_range = []
+        for r in ranges:
+            courses_from_range.extend(getCoursesFromRange(r[0], r[1], 'Inclusion', req_chain))
+        return [(c, req_chain, 'Inclusion', 'Course') for c in courses] + courses_from_range
+    
+    elif constraint_type == 'xfromdepts':
+        depts = constraint['data']['depts']
+        courses = constraint['data']['additional_courses']
+        return ([(d['code'], req_chain, 'Inclusion', 'Code') for d in depts] +
+                [(c, req_chain, 'Inclusion', 'Course') for c in courses])
+    
+    elif constraint_type == 'notcountcourseset':
+        courses = constraint['data']['courses']
+        return [(c, req_chain, 'Exclusion', 'Course') for c in courses]
+    
+    else:
+        print("[Warning] Not accounting for constraint:", constraint_type)
+        return []
 
-    # Check if there are further sub-requirements
-    if "choices" in data and isinstance(data["choices"], list):
-        for sub_req in data["choices"]:
-            extracted_units.update(extract_min_units(sub_req, full_chain))  # Recursively extract
+def getCourses(data, req_chain):
+    """
+    Recursively extract courses from audit data.
+    """
+    if 'choices' in data:
+        req = data['screen_name']
+        req = "GenEd" if "General Education" in req else req  # Hack for audit comparison
+        new_req_chain = req if not req_chain else req_chain + '---' + req
+        if data['choices']:
+            courses = []
+            for choice in data['choices']:
+                courses.extend(getCourses(choice, new_req_chain))
+            return courses
+        else:
+            courses = []
+            for constraint in data['constraints']:
+                courses.extend(getCoursesFromConstraint(constraint, new_req_chain))
+            return courses
+    else:
+        return [(data['screen_name'], req_chain, 'Inclusion', 'Course')]
 
-    return extracted_units
+def getAudit(json_path):
+    """
+    Extracts relevant fields from the audit JSON file,
+    returning a list of courses and the requirements they satisfy.
+    """
+    with open(json_path, "r") as file:
+        data = json.load(file)
+    req_major = getCourses(data['requirement'], '')
+    req_programs = []
+    if data.get('uni_req_tree'):
+        for program in data['uni_req_tree'].get('programs', []):
+            if "Degree Check" not in program['screen_name'] and "Total Units" not in program['screen_name']:
+                req_programs.extend(getCourses(program, ''))
+    return req_major + req_programs
 
+# ----------------------------------------
+# requirement post-processing
+# ----------------------------------------
+def post_process_requirement(req):
+    """
+    Post process the requirement string.
+    
+    Handles two cases:
+    
+    1. For requirements starting with "BS in Business Administration" and containing a selection instruction 
+       in the second part:
+       
+       a. For a five-part string like:
+          "BS in Business Administration---Concentration - select 1 concentration from the list below---Operations Management---Operations Management Concentration---Two Area Electives"
+          it becomes:
+          "BS in Business Administration---Concentration---Operations Management---Area Electives"
+          
+       b. For a six-part string like:
+          "BS in Business Administration---Concentration - select 1 concentration from the list below---Operations Management---Operations Management Concentration---Two Area Electives---70-462 Uncertainty and Risk Modeling  OR 70-453 Business Technology for Consulting"
+          it becomes:
+          "BS in Business Administration---Concentration---Operations Management---Operations Management Concentration---Area Electives---70-462 Uncertainty and Risk Modeling  OR 70-453 Business Technology for Consulting"
+          
+       In both cases, the cleaning steps are:
+         - In the second part, remove everything from (and including) a space before "select" onward.
+         - Remove any number words (e.g., "one", "two", etc.) from the cleaned second part.
+         - In the part that lists area electives (fifth part in the six-part case or last part in the five-part case),
+           remove the first word if it is a number word.
+    
+    2. For requirements starting with "BS in Information Systems---Concentration" and formatted as:
+       "BS in Information Systems---Concentration---Data Science---Data Science Concentration---Data Science Technical Core"
+       it becomes:
+       "BS in Information Systems---Concentration---Data Science---Technical Core"
 
+    3. General rule: After the above processing, if any section (substring between '---')
+       contains a course code or the words "choose" and "select" (case-insensitive), that section is removed completely.
+       Course codes can be in one of these forms: 
+         • 5 consecutive digits (e.g., "67101")
+         • 2 digits, a hyphen, and 3 digits (e.g., "67-101")
+         • 2 letters, a hyphen, and 3 digits (e.g., "xx-213")
+       This removal applies even if the section has additional text.
+    """
+
+    course_code_regex = r'^(?:\d{5}|\d{2}-\d{3}|[a-zA-Z]{2}-\d{3})$'
+    
+    parts = req.split('---')
+    number_words = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"}
+    new_req = req 
+
+    # case 1
+    if req.startswith("BS in Business Administration") and "select" in parts[1].lower():
+        if len(parts) == 6:
+            part0 = parts[0].strip()
+            cleaned_part1 = re.sub(r'\s*-\s*select.*', '', parts[1], flags=re.IGNORECASE).strip()
+            tokens = cleaned_part1.split()
+            tokens = [t for t in tokens if t.lower() not in number_words]
+            cleaned_part1 = " ".join(tokens)
+            
+            part2 = parts[2].strip()
+            part3 = parts[3].strip()
+
+            tokens_p4 = parts[4].split()
+            if tokens_p4 and tokens_p4[0].lower() in number_words:
+                processed_part4 = " ".join(tokens_p4[1:]).strip()
+            else:
+                processed_part4 = parts[4].strip()
+            part5 = parts[5].strip()
+            new_req = "---".join([part0, cleaned_part1, part2, part3, processed_part4, part5])
+        elif len(parts) == 5:
+            part0 = parts[0].strip()
+            cleaned_part1 = re.sub(r'\s*-\s*select.*', '', parts[1], flags=re.IGNORECASE).strip()
+            tokens = cleaned_part1.split()
+            tokens = [t for t in tokens if t.lower() not in number_words]
+            cleaned_part1 = " ".join(tokens)
+            
+            part2 = parts[2].strip()
+            tokens_p4 = parts[4].split()
+            if tokens_p4 and tokens_p4[0].lower() in number_words:
+                processed_part4 = " ".join(tokens_p4[1:]).strip()
+            else:
+                processed_part4 = parts[4].strip()
+            new_req = "---".join([part0, cleaned_part1, part2, processed_part4])
+    
+    # case 2
+    elif req.startswith("BS in Information Systems---Concentration") and len(parts) == 5:
+        part0 = parts[0].strip()
+        part1 = parts[1].strip()
+        part2 = parts[2].strip()
+        part4 = parts[4].strip()
+    
+        if part4.startswith(part2):
+            part4 = part4[len(part2):].strip()
+            if part4.startswith('-'):
+                part4 = part4[1:].strip()
+        new_req = "---".join([part0, part1, part2, part4])
+    
+    # case 3 
+    course_code_pattern = r'\b(?:\d{5}|\d{2}-\d{3}|[a-zA-Z]{2}-\d{3})\b'
+    final_parts = []
+    for part in new_req.split('---'):
+        stripped = part.strip()
+        if re.search(course_code_pattern, stripped) or re.search(r'\bchoose\b', stripped, flags=re.IGNORECASE) \
+        or re.search(r'\bselect\b', stripped, flags=re.IGNORECASE):
+            continue
+        final_parts.append(stripped)
+    return "---".join(final_parts)
+
+# ----------------------------------------
+# dataFrame and excel output
+# ----------------------------------------
+def makeDataFrame(audit):
+    """
+    Convert audit list into a structured DataFrame with additional course info.
+    """
+    df = pd.DataFrame(audit, columns=['Course or code', 'Requirement', 'Inclusion/Exclusion', 'Type'])
+    df["Pre-reqs"] = df["Course or code"].apply(utils.getPreReqs)
+    df["Title"] = df["Course or code"].apply(utils.getCourseTitle)
+    df["Units"] = df["Course or code"].apply(utils.getCourseUnits)
+    return df[["Type", "Inclusion/Exclusion", "Course or code", "Title", "Units", "Pre-reqs", "Requirement"]]
 
 def extract_audit_data(json_path, course_codes):
     """
     Extracts course and requirement details from an audit JSON file.
     """
-    with open(json_path, "r") as file:
-        data = json.load(file)
-
-    # Extract requirements and courses
-    audit_data = getAudit(json_path)  # Uses the original getAudit function
-    df = makeDataFrame(audit_data)  # Uses the provided makeDataFrame function
-
-    # Extract minimum units for each requirement
-    # min_units_dict = extract_min_units(data)
-
+    audit_data = getAudit(json_path)
+    df = makeDataFrame(audit_data)
+    
     cleaned_data = []
     for _, row in df.iterrows():
-        course_code = row["Course or code"]
-        requirement = row["Requirement"]
-        inclusion_exclusion = row["Inclusion/Exclusion"]
-        type_ = row["Type"]
-
-        # Get min_units for this requirement (fallback to 0 if missing)
-        # requirement_min_units = min_units_dict.get(requirement, 0)
-
-        # Only include rows where Inclusion/Exclusion is "Inclusion"
-        if inclusion_exclusion == "Inclusion":
-            if type_ == "Code":
-                # If the type is "Code", find all matching courses
-                matching_courses = get_courses_from_code(course_code, course_codes)
-                for match in matching_courses:
+        # Use post_process_requirement to clean the requirement string
+        processed_req = post_process_requirement(row["Requirement"])
+        if row["Inclusion/Exclusion"] == "Inclusion":
+            if row["Type"] == "Code":
+                for match in get_courses_from_code(row["Course or code"], course_codes):
                     cleaned_data.append({
-                        "requirement": requirement,
-                        # "requirement_min_units": requirement_min_units,
+                        "requirement": processed_req,
                         "course": match,
                     })
             else:
-                # Directly store course-based rows
                 cleaned_data.append({
-                    "requirement": requirement,
-                    # "requirement_min_units": requirement_min_units,
-                    "course": course_code,
+                    "requirement": processed_req,
+                    "course": row["Course or code"],
                 })
-
     return cleaned_data
-
 
 def save_to_excel(data, output_path):
     """
-    Saves extracted and cleaned data to an Excel file.
+    saves extracted and cleaned data to an Excel file.
     """
-    df = pd.DataFrame(data)
-    df.to_excel(output_path, index=False)
+    pd.DataFrame(data).to_excel(output_path, index=False)
     print(f"✅ Data saved to {output_path}")
 
 def process_all_audits():
     """
     Processes all audit JSON files in each major folder and saves them as Excel files.
+    Also creates a combined Excel file with the first part of the requirement,
+    the course, and whether they are a core or a gen-ed requirement.
     """
-    course_codes = get_course_codes()  # Get all available course codes from COURSE_DIR
-
+    course_codes = get_course_codes()
+    combined_data = []  
     for major in os.listdir(AUDIT_DIR):
         major_path = os.path.join(AUDIT_DIR, major)
-        
         if not os.path.isdir(major_path):
-            continue  # Skip non-folder entries
+            continue
 
         audit_files = get_audit_files(major_path)
         if not audit_files:
             continue
 
-        # Extract and save core requirements
+        print(audit_files)
+        # process and save core requirements
         core_data = extract_audit_data(audit_files["core"], course_codes)
         core_output_path = os.path.join(major_path, f"{major}_core.xlsx")
         save_to_excel(core_data, core_output_path)
+        
+        # append core data to combined_data with audit_type and major (first requirement part)
+        for d in core_data:
+            d["audit_type"] = "core"
+            d["major"] = major
+            d["audit"] = d["requirement"].split('---')[0].strip()
+            combined_data.append(d)
 
-        # Extract and save general education requirements
+        # process and save general education requirements
         gened_data = extract_audit_data(audit_files["gened"], course_codes)
         gened_output_path = os.path.join(major_path, f"{major}_gened.xlsx")
         save_to_excel(gened_data, gened_output_path)
+        
+        # append gen-ed data to combined_data with audit_type and major
+        for d in gened_data:
+            d["audit_type"] = "gened"
+            d["major"] = major
+            d["audit"] = d["requirement"].split('---')[0].strip()
+            combined_data.append(d)
 
+    # save combined data to a single Excel file with ordered columns
+    if combined_data:
+        combined_output_path = os.path.join(AUDIT_DIR, OUTPUT_EXCEL_FILE)
+        df_combined = pd.DataFrame(combined_data)
+        # reorder columns: first column is the first part of requirement ("major")
+        df_combined = df_combined[["major", "audit_type","audit", "requirement", "course"]]
+        df_combined.to_excel(combined_output_path, index=False)
+        print(f"✅ Combined data saved to {combined_output_path}")
 if __name__ == "__main__":
     process_all_audits()
