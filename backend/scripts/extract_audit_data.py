@@ -326,7 +326,7 @@ def process_all_audits():
     """
     Processes all audit JSON files in each major folder and saves them as Excel files.
     Also creates a combined Excel file with the first part of the requirement,
-    the course, the min_units value, and whether they are core or gen-ed.
+    the course, the min_units value, and whether they are core (0) or gen-ed (1).
     """
     course_codes = get_course_codes()
     combined_data = []  
@@ -347,7 +347,7 @@ def process_all_audits():
         
         # append core data to combined_data with audit_type and major
         for d in core_data:
-            d["audit_type"] = "core"
+            d["audit_type"] = 0
             d["major"] = major
             d["audit"] = d["requirement"].split('---')[0].strip()
             combined_data.append(d)
@@ -359,7 +359,7 @@ def process_all_audits():
         
         # append gen-ed data to combined_data with audit_type and major
         for d in gened_data:
-            d["audit_type"] = "gened"
+            d["audit_type"] = 1
             d["major"] = major
             d["audit"] = d["requirement"].split('---')[0].strip()
             combined_data.append(d)
@@ -371,6 +371,6 @@ def process_all_audits():
         df_combined = df_combined[["major", "audit_type", "audit", "requirement", "course", "min_units"]]
         df_combined.to_excel(combined_output_path, index=False)
         print(f"✅ Combined data saved to {combined_output_path}")
-        
+
 if __name__ == "__main__":
     process_all_audits()
