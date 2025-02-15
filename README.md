@@ -20,7 +20,7 @@ Welcome to the **GenEd-CMUQ** repository! This project is designed to create a w
    - **`tests/`** → Contains unit tests for backend functionality.
 
 ### **2️⃣ `data/`** - Raw + postproccessed data storage for audit, course, and enrollment information.
-   - **`audit/`** → Degree audit JSON files + clean audit dataset.
+   - **`audit/`** → Degree audit JSON files + clean audit dataset + prereqs data.
    - **`course/`** → Course metadata stored as JSON files + clean course dataset.
    - **`enrollment/`** → Clean enrollment dataset.
 

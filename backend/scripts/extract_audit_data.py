@@ -80,9 +80,9 @@ def get_courses_from_code(dept_code, course_codes):
 # ----------------------------------------
 # course extraction functions
 # ----------------------------------------
-def getCoursesFromRange(begin, end, inc_exc, req_chain):
+def getCoursesFromRange(begin, end, inc_exc, req_chain, parent_min_units=None):
     """
-    Generate course identifiers from a code range.
+    Generate course identifiers from a code range, attaching the parent's min_units.
     """
     courses = []
     if begin[:2] != end[:2] or begin[:2] == 'XX':
@@ -93,16 +93,17 @@ def getCoursesFromRange(begin, end, inc_exc, req_chain):
     begin_num = int(begin[3:])
     end_num = int(end[3:])
     if begin_num == 1 and end_num == 999:
-        courses = [(code, req_chain, inc_exc, 'Code')]
+        courses = [(code, req_chain, inc_exc, 'Code', parent_min_units)]
     else:
         for n in range(begin_num, end_num + 1):
             course_num = f"{code}-{str(n).zfill(3)}"
-            courses.append((course_num, req_chain, inc_exc, 'Course'))
+            courses.append((course_num, req_chain, inc_exc, 'Course', parent_min_units))
     return courses
 
-def getCoursesFromConstraint(constraint, req_chain):
+def getCoursesFromConstraint(constraint, req_chain, parent_min_units=None):
     """
-    Extract courses based on a given constraint type.
+    Extract courses based on a given constraint type,
+    propagating parent's min_units if available.
     """
     constraint_type = constraint['type']
     
@@ -111,27 +112,29 @@ def getCoursesFromConstraint(constraint, req_chain):
         ranges = constraint['data']['code_ranges']
         courses_from_range = []
         for r in ranges:
-            courses_from_range.extend(getCoursesFromRange(r[0], r[1], 'Inclusion', req_chain))
-        return [(c, req_chain, 'Inclusion', 'Course') for c in courses] + courses_from_range
+            courses_from_range.extend(getCoursesFromRange(r[0], r[1], 'Inclusion', req_chain, parent_min_units))
+        return [(c, req_chain, 'Inclusion', 'Course', parent_min_units) for c in courses] + courses_from_range
     
     elif constraint_type == 'xfromdepts':
         depts = constraint['data']['depts']
         courses = constraint['data']['additional_courses']
-        return ([(d['code'], req_chain, 'Inclusion', 'Code') for d in depts] +
-                [(c, req_chain, 'Inclusion', 'Course') for c in courses])
+        return ([(d['code'], req_chain, 'Inclusion', 'Code', parent_min_units) for d in depts] +
+                [(c, req_chain, 'Inclusion', 'Course', parent_min_units) for c in courses])
     
     elif constraint_type == 'notcountcourseset':
         courses = constraint['data']['courses']
-        return [(c, req_chain, 'Exclusion', 'Course') for c in courses]
+        return [(c, req_chain, 'Exclusion', 'Course', parent_min_units) for c in courses]
     
     else:
         print("[Warning] Not accounting for constraint:", constraint_type)
         return []
 
-def getCourses(data, req_chain):
+def getCourses(data, req_chain, parent_min_units=None):
     """
     Recursively extract courses from audit data.
+    Propagates a "min_units" property if available.
     """
+    current_min_units = data.get("min_units", parent_min_units)
     if 'choices' in data:
         req = data['screen_name']
         req = "GenEd" if "General Education" in req else req  # Hack for audit comparison
@@ -139,15 +142,16 @@ def getCourses(data, req_chain):
         if data['choices']:
             courses = []
             for choice in data['choices']:
-                courses.extend(getCourses(choice, new_req_chain))
+                courses.extend(getCourses(choice, new_req_chain, current_min_units))
             return courses
         else:
             courses = []
             for constraint in data['constraints']:
-                courses.extend(getCoursesFromConstraint(constraint, new_req_chain))
+                courses.extend(getCoursesFromConstraint(constraint, new_req_chain, current_min_units))
             return courses
     else:
-        return [(data['screen_name'], req_chain, 'Inclusion', 'Course')]
+        return [(data['screen_name'], req_chain, 'Inclusion', 'Course', current_min_units)]
+
 
 def getAudit(json_path):
     """
@@ -275,17 +279,18 @@ def post_process_requirement(req):
 # ----------------------------------------
 def makeDataFrame(audit):
     """
-    Convert audit list into a structured DataFrame with additional course info.
+    Convert audit list into a structured DataFrame with additional course info,
+    including the new "Min Units" field.
     """
-    df = pd.DataFrame(audit, columns=['Course or code', 'Requirement', 'Inclusion/Exclusion', 'Type'])
+    df = pd.DataFrame(audit, columns=['Course or code', 'Requirement', 'Inclusion/Exclusion', 'Type', 'Min Units'])
     df["Pre-reqs"] = df["Course or code"].apply(utils.getPreReqs)
     df["Title"] = df["Course or code"].apply(utils.getCourseTitle)
     df["Units"] = df["Course or code"].apply(utils.getCourseUnits)
-    return df[["Type", "Inclusion/Exclusion", "Course or code", "Title", "Units", "Pre-reqs", "Requirement"]]
+    return df[["Type", "Inclusion/Exclusion", "Course or code", "Title", "Units", "Pre-reqs", "Requirement", "Min Units"]]
 
 def extract_audit_data(json_path, course_codes):
     """
-    Extracts course and requirement details from an audit JSON file.
+    Extracts course and requirement details (including min_units) from an audit JSON file.
     """
     audit_data = getAudit(json_path)
     df = makeDataFrame(audit_data)
@@ -300,11 +305,13 @@ def extract_audit_data(json_path, course_codes):
                     cleaned_data.append({
                         "requirement": processed_req,
                         "course": match,
+                        "min_units": row["Min Units"]
                     })
             else:
                 cleaned_data.append({
                     "requirement": processed_req,
                     "course": row["Course or code"],
+                    "min_units": row["Min Units"]
                 })
     return cleaned_data
 
@@ -319,7 +326,7 @@ def process_all_audits():
     """
     Processes all audit JSON files in each major folder and saves them as Excel files.
     Also creates a combined Excel file with the first part of the requirement,
-    the course, and whether they are a core or a gen-ed requirement.
+    the course, the min_units value, and whether they are core or gen-ed.
     """
     course_codes = get_course_codes()
     combined_data = []  
@@ -338,7 +345,7 @@ def process_all_audits():
         core_output_path = os.path.join(major_path, f"{major}_core.xlsx")
         save_to_excel(core_data, core_output_path)
         
-        # append core data to combined_data with audit_type and major (first requirement part)
+        # append core data to combined_data with audit_type and major
         for d in core_data:
             d["audit_type"] = "core"
             d["major"] = major
@@ -357,13 +364,13 @@ def process_all_audits():
             d["audit"] = d["requirement"].split('---')[0].strip()
             combined_data.append(d)
 
-    # save combined data to a single Excel file with ordered columns
+    # save combined data to a single Excel file with ordered columns (including min_units)
     if combined_data:
-        combined_output_path = os.path.join(AUDIT_DIR, OUTPUT_EXCEL_FILE)
+        combined_output_path = os.path.join(AUDIT_DIR, "audit_dataset.xlsx")
         df_combined = pd.DataFrame(combined_data)
-        # reorder columns: first column is the first part of requirement ("major")
-        df_combined = df_combined[["major", "audit_type","audit", "requirement", "course"]]
+        df_combined = df_combined[["major", "audit_type", "audit", "requirement", "course", "min_units"]]
         df_combined.to_excel(combined_output_path, index=False)
         print(f"✅ Combined data saved to {combined_output_path}")
+        
 if __name__ == "__main__":
     process_all_audits()
