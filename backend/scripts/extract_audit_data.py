@@ -324,9 +324,10 @@ def save_to_excel(data, output_path):
 
 def process_all_audits():
     """
-    Processes all audit JSON files in each major folder and saves them as Excel files.
-    Also creates a combined Excel file with the first part of the requirement,
-    the course, the min_units value, and whether they are core (0) or gen-ed (1).
+    Processes all audit JSON files in each major folder and saves three Excel files:
+      - CountsFor: columns: requirement, course_code
+      - Requirement: columns: requirement, audit_name, min_units
+      - Audit: columns: name, type, major
     """
     course_codes = get_course_codes()
     combined_data = []  
@@ -345,9 +346,9 @@ def process_all_audits():
         core_output_path = os.path.join(major_path, f"{major}_core.xlsx")
         save_to_excel(core_data, core_output_path)
         
-        # append core data to combined_data with audit_type and major
+        # append core data to combined_data with audit_type=0 (for core)
         for d in core_data:
-            d["audit_type"] = 0
+            d["audit_type"] = 0  # core -> 0
             d["major"] = major
             d["audit"] = d["requirement"].split('---')[0].strip()
             combined_data.append(d)
@@ -357,20 +358,36 @@ def process_all_audits():
         gened_output_path = os.path.join(major_path, f"{major}_gened.xlsx")
         save_to_excel(gened_data, gened_output_path)
         
-        # append gen-ed data to combined_data with audit_type and major
+        # append gen-ed data to combined_data with audit_type=1 (for gened)
         for d in gened_data:
-            d["audit_type"] = 1
+            d["audit_type"] = 1  # gened -> 1
             d["major"] = major
             d["audit"] = d["requirement"].split('---')[0].strip()
             combined_data.append(d)
 
-    # save combined data to a single Excel file with ordered columns (including min_units)
     if combined_data:
-        combined_output_path = os.path.join(AUDIT_DIR, "audit_dataset.xlsx")
-        df_combined = pd.DataFrame(combined_data)
-        df_combined = df_combined[["major", "audit_type", "audit", "requirement", "course", "min_units"]]
-        df_combined.to_excel(combined_output_path, index=False)
-        print(f"✅ Combined data saved to {combined_output_path}")
+        # Create CountsFor table: requirement and course_code (rename "course" to "course_code")
+        df_countsfor = pd.DataFrame(combined_data)[["requirement", "course"]].rename(columns={"course": "course_code"})
+        
+        # Create Requirement table: requirement, audit_name (from "audit"), and min_units
+        df_requirement = pd.DataFrame(combined_data)[["requirement", "audit", "min_units"]].rename(columns={"audit": "audit_name"})
+        
+        # Create Audit table: name (from "audit"), type (from "audit_type"), and major.
+        df_audit = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].rename(columns={"audit": "name", "audit_type": "type"})
+        df_audit = df_audit.drop_duplicates()
+        
+        counts_for_output_path = os.path.join(AUDIT_DIR, "CountsFor.xlsx")
+        requirement_output_path = os.path.join(AUDIT_DIR, "Requirement.xlsx")
+        audit_output_path = os.path.join(AUDIT_DIR, "Audit.xlsx")
+        
+        df_countsfor.to_excel(counts_for_output_path, index=False)
+        df_requirement.to_excel(requirement_output_path, index=False)
+        df_audit.to_excel(audit_output_path, index=False)
+        
+        print(f"✅ CountsFor data saved to {counts_for_output_path}")
+        print(f"✅ Requirement data saved to {requirement_output_path}")
+        print(f"✅ Audit data saved to {audit_output_path}")
+
 
 if __name__ == "__main__":
     process_all_audits()
