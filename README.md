@@ -20,9 +20,9 @@ Welcome to the **GenEd-CMUQ** repository! This project is designed to create a w
    - **`tests/`** → Contains unit tests for backend functionality.
 
 ### **2️⃣ `data/`** - Raw + postproccessed data storage for audit, course, and enrollment information.
-   - **`audit/`** → Degree audit JSON files + clean audit dataset + prereqs data.
-   - **`course/`** → Course metadata stored as JSON files + clean course dataset.
-   - **`enrollment/`** → Clean enrollment dataset.
+   - **`audit/`** → Degree audit JSON files + excels corresponding to the tables in the ERD..
+   - **`course/`** → Course metadata stored as JSON files +  + excels corresponding to the tables in the ERD..
+   - **`enrollment/`** → Original Enrollment dataset provided by Jarrin+ excels corresponding to the tables in the ERD.
 
 ### **3️⃣ `database/`** - Contains database-related configurations.
    - **`migrations/`** → Migration files for database schema changes.
