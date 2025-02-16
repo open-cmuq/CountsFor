@@ -3,7 +3,7 @@ import pandas as pd
 
 # paths
 ENROLLMENT_EXCEL_FILE = os.path.abspath("data/enrollment/CourseEnrollmentByMajorClassS20-S25.xlsx")
-OUTPUT_EXCEL_FILE = os.path.abspath("data/enrollment/enrollment_dataset.xlsx")
+OUTPUT_EXCEL_FILE = os.path.abspath("data/enrollment/Enrollment.xlsx")
 
 def format_course_code(code):
     """
@@ -41,11 +41,11 @@ def extract_enrollment_data(file_path):
 
     # rename columns to final output names
     rename_dict = {
-        "Semester Id (Schedule)": "semester_id",
+        "Semester Id (Schedule)": "semester",
         "Course Id": "course_code",
-        "Section Id": "section_id",
-        "Department Id": "department_id",  # added forward fill for Department Id
-        "Class Id": "class_id",
+        "Section Id": "section",
+        "Department Id": "department",  # added forward fill for Department Id
+        "Class Id": "class",
         "Count of Class Id": "enrollment_count"
     }
     df.rename(columns=rename_dict, inplace=True)
@@ -58,9 +58,9 @@ def extract_enrollment_data(file_path):
     else:
         print("[warning] course_code column not found after renaming.")
     
-    df["section_id"] = df["section_id"].astype(str)
-    df["department_id"] = df["department_id"].astype(str)
-    df["class_id"] = df["class_id"].astype(int)
+    df["section"] = df["section"].astype(str)
+    df["department"] = df["department"].astype(str)
+    df["class"] = df["class"].astype(int)
     df["enrollment_count"] = df["enrollment_count"].astype(int)
     return df
 

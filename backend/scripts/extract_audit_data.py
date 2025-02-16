@@ -9,8 +9,6 @@ pd.set_option('display.max_colwidth', None)
 # paths
 AUDIT_DIR = "data/audit"
 COURSE_DIR = "data/course"
-OUTPUT_EXCEL_FILE = os.path.abspath("data/audit/audit_dataset.xlsx")
-
 # ----------------------------------------
 # file and directory helpers
 # ----------------------------------------
