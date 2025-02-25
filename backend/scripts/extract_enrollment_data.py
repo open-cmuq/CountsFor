@@ -57,11 +57,18 @@ def extract_enrollment_data(file_path):
         df = df[~df["course_code"].str.match(r'^[A-Za-z]{2}')]
     else:
         print("[warning] course_code column not found after renaming.")
-    
     df["section"] = df["section"].astype(str)
     df["department"] = df["department"].astype(str)
     df["class"] = df["class"].astype(int)
     df["enrollment_count"] = df["enrollment_count"].astype(int)
+    df["enrollment_id"] = df["course_code"].astype(str) + "_" + df["semester"].astype(str) + "_" + df["class"].astype(str) + "_" + df["section"].astype(str) + "_" + df["department"].astype(str)
+
+    desired_order = ["enrollment_id", "course_code", "semester", "section", "department", "class", "enrollment_count"]
+    for col in df.columns:
+        if col not in desired_order:
+            desired_order.append(col)
+    df = df[desired_order]
+
     return df
 
 def save_to_excel(data, output_file):
@@ -69,8 +76,6 @@ def save_to_excel(data, output_file):
     saves extracted enrollment data to an Excel file.
     """
     if data is not None:
-        # print the data types of the DataFrame
-        print(data.dtypes)
         data.to_excel(output_file, index=False)
         print(f"✅ data successfully saved to {output_file}")
     else:

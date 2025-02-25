@@ -12,7 +12,7 @@ OUTPUT_COURSE_INSTRUCTOR_FILE = os.path.abspath("data/course/Course_Instructor.x
 OUTPUT_INSTRUCTOR_DETAILS_FILE = os.path.abspath("data/course/Instructor.xlsx")
 
 COLUMNS_TO_KEEP = [
-    "code", "name", "units", "min_units", "max_units",
+    "course_code", "name", "units", "min_units", "max_units",
     "offered_qatar", "offered_pitts", "short_name", "description", "dep_code", "prereqs_text"
 ]
 
@@ -181,7 +181,7 @@ def extract_courses_from_json(folder_path):
 
                 # build course record
                 course_info = {
-                    "code": data.get("code"),
+                    "course_code": data.get("code"),
                     "name": data.get("name"),
                     "units": units,
                     "min_units": int(data.get("min_units")) if data.get("min_units") else None,
@@ -230,6 +230,7 @@ def extract_courses_from_json(folder_path):
                                     sem_letter = sem_map.get(semester_num, "X")
                                     sem_str = f"{sem_letter}{str(year)[-2:]}"
                                     offerings_records.append({
+                                        "offering_id": f"{code}_{sem_str}_{campus_id}",
                                         "course_code": code,
                                         "semester": sem_str,
                                         "campus_id": campus_id

@@ -9,6 +9,8 @@ pd.set_option('display.max_colwidth', None)
 # paths
 AUDIT_DIR = "data/audit"
 COURSE_DIR = "data/course"
+COURSE_TABLE_DIR = "data/course/Course.xlsx"  
+
 # ----------------------------------------
 # file and directory helpers
 # ----------------------------------------
@@ -324,8 +326,8 @@ def process_all_audits():
     """
     Processes all audit JSON files in each major folder and saves three Excel files:
       - CountsFor: columns: requirement, course_code
-      - Requirement: columns: requirement, audit_name, min_units
-      - Audit: columns: name, type, major
+      - Requirement: columns: requirement, audit_id, min_units
+      - Audit: columns: audit_id, name, type, major
     """
     course_codes = get_course_codes()
     combined_data = []  
@@ -364,24 +366,30 @@ def process_all_audits():
             combined_data.append(d)
 
     if combined_data:
-        # Create CountsFor table: requirement and course_code (rename "course" to "course_code")
+        df_audit = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
+        df_audit["audit_id"] = df_audit["major"] + "_" + df_audit["audit_type"].astype(str)
+        df_audit = df_audit[["audit_id", "audit", "audit_type", "major"]].rename(columns={"audit": "name", "audit_type": "type"})
+
+        df_course = pd.read_excel(COURSE_TABLE_DIR)
+        existing_courses = set(df_course["course_code"].astype(str))
         df_countsfor = pd.DataFrame(combined_data)[["requirement", "course"]].rename(columns={"course": "course_code"})
-        
-        # Create Requirement table: requirement, audit_name (from "audit"), and min_units
-        df_requirement = pd.DataFrame(combined_data)[["requirement", "audit", "min_units"]].rename(columns={"audit": "audit_name"})
-        
-        # Create Audit table: name (from "audit"), type (from "audit_type"), and major.
-        df_audit = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].rename(columns={"audit": "name", "audit_type": "type"})
-        df_audit = df_audit.drop_duplicates()
-        
+        print("courses that do not exist in the course table:")
+        print(df_countsfor[~df_countsfor["course_code"].isin(existing_courses)])
+        df_countsfor = df_countsfor[df_countsfor["course_code"].isin(existing_courses)]
+
+        df_requirement = pd.DataFrame(combined_data)[["requirement", "major", "audit_type"]].drop_duplicates()
+        df_requirement = df_requirement.rename(columns={"audit_type": "type"})
+        df_requirement = df_requirement.merge(df_audit[["audit_id", "major", "type"]], on=["major", "type"], how="left")
+        df_requirement = df_requirement[["requirement", "audit_id"]]
+
         counts_for_output_path = os.path.join(AUDIT_DIR, "CountsFor.xlsx")
         requirement_output_path = os.path.join(AUDIT_DIR, "Requirement.xlsx")
         audit_output_path = os.path.join(AUDIT_DIR, "Audit.xlsx")
-        
+
         df_countsfor.to_excel(counts_for_output_path, index=False)
         df_requirement.to_excel(requirement_output_path, index=False)
         df_audit.to_excel(audit_output_path, index=False)
-        
+
         print(f"✅ CountsFor data saved to {counts_for_output_path}")
         print(f"✅ Requirement data saved to {requirement_output_path}")
         print(f"✅ Audit data saved to {audit_output_path}")
