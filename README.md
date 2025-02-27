@@ -8,9 +8,6 @@ Welcome to the **GenEd-CMUQ** repository! This project is designed to create a w
 
 ### **1️⃣ `backend/`** - Backend logic and scripts for data extraction, processing, and database interaction.
    - **`app/`** → Contains the core backend logic, including:
-     - `database.py` → Manages database connections and schema.
-     - `models.py` → Defines database models using SQLAlchemy.
-     - `schemas.py` → Defines Pydantic schemas for data validation.
      - `main.py` → Entry point for the backend API.
    - **`scripts/`** → Contains utility scripts for extracting and populating data.
      - `extract_audit_data.py` → Extracts audit requirements from JSON files.
@@ -27,6 +24,9 @@ Welcome to the **GenEd-CMUQ** repository! This project is designed to create a w
 ### **3️⃣ `database/`** - Contains database-related configurations.
    - **`migrations/`** → Migration files for database schema changes.
    - **`gened.db`** → The PostgreSQL database file.
+   - `database.py` → Manages database connections and schema.
+   - `models.py` → Defines database models using SQLAlchemy.
+   - `schemas.py` → Defines Pydantic schemas for data validation.
 
 ### **4️⃣ `frontend/`** - Contains frontend code for user interaction.
    - **`public/`** → Static assets for the frontend (in progress).
