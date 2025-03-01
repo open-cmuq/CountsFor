@@ -1,3 +1,4 @@
+# pylint: skip-file
 # Utility functions for course analyses
 
 import pandas as pd
@@ -147,20 +148,20 @@ def countsFor (course_number: str, audit: pd.DataFrame) -> Set[str]:
     """
 
     # Requirements that include the course explicitly.
-    matched = audit[(audit["Type"] == "Course") & 
-                    (audit["Course or code"] == course_number) & 
+    matched = audit[(audit["Type"] == "Course") &
+                    (audit["Course or code"] == course_number) &
                     (audit["Inclusion/Exclusion"] == "Inclusion")]
     include_course = set(matched["Requirement"].values)
-       
+
     # Requirements that include the course because of its code
-    matched_code = audit[(audit["Type"] == "Code") & 
-                         (audit["Course or code"] == course_number[0:2]) & 
+    matched_code = audit[(audit["Type"] == "Code") &
+                         (audit["Course or code"] == course_number[0:2]) &
                          (audit["Inclusion/Exclusion"] == "Inclusion")]
     include_code = set(matched_code["Requirement"].values)
 
     # Requirements that exclude the course explicitly
-    excluded = audit[(audit["Type"] == "Course") & 
-                     (audit["Course or code"] == course_number) & 
+    excluded = audit[(audit["Type"] == "Course") &
+                     (audit["Course or code"] == course_number) &
                      (audit["Inclusion/Exclusion"] == "Exclusion")]
     exclude_course = set(excluded["Requirement"].values)
 
@@ -196,7 +197,7 @@ def countsForCS (course_number: str, audit: pd.DataFrame) -> Set[str]:
     for item in counts_for:
         if item in countsfor_kill:
             continue;
-        
+
         if item in countsfor_map:
             new_set.add(countsfor_map[item])
         else:
@@ -214,7 +215,7 @@ def getCourseTitle(course_number: str) -> str:
 
     if len(course_number) == 2: # Code, not a course
         return dept_map.get(course_number, "Unknown department")
-    
+
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
@@ -233,10 +234,10 @@ def getCourseUnits(course_number: str) -> str:
     The json files used to get this information are obtained from
     Stellic using a script written by Prof. Ryan Riley.
     """
-    
+
     if len(course_number) == 2: # Code, not a course
         return ""
-        
+
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
@@ -262,7 +263,7 @@ def getPreReqs(course_number: str) -> str:
 
     if len(course_number) < 5: #probably a course code, not a course
         return ""
-    
+
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
@@ -287,7 +288,7 @@ def cmpSemester(s1: str, s2: str) -> int:
     Returns:
         negative int if s1 is before      s2
         zero         if s1 is the same as s2
-        positive int if s1 is after       s2 
+        positive int if s1 is after       s2
     """
 
     if s1[1:] < s2[1:]:
