@@ -1,10 +1,19 @@
+"""
+this script reads data from excel files and inserts them into the database.
+"""
+import logging
 import pandas as pd
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine
-from models import *  # Import all models
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from models import Instructor, Course, Offering, Requirement, Audit, CountsFor
+from models import Prereqs, CourseInstructor, Enrollment
+from database import SessionLocal
 
-# Define the mapping of table names to corresponding SQLAlchemy models
-TABLES = {  
+# configure logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
+# define the mapping of table names to corresponding sqlalchemy models
+tables = {
     "instructor": Instructor,
     "course": Course,
     "offering": Offering,
@@ -16,41 +25,49 @@ TABLES = {
     "enrollment": Enrollment,
 }
 
-def load_excel_data(file_paths):
-    """Loads data from multiple Excel files and inserts them into the database in a controlled order."""
-    db: Session = SessionLocal()
+def load_excel_data(file_paths=None):
+    """loads data from multiple excel files and inserts them into the database."""
+    if file_paths is None:
+        file_paths = [
+            ("instructor", "data/course/Instructor.xlsx"),
+            ("course", "data/course/Course.xlsx"),
+            ("prereqs", "data/course/Prereqs.xlsx"),
+            ("offering", "data/course/Offering.xlsx"),
+            ("course_instructor", "data/course/Course_Instructor.xlsx"),
+            ("audit", "data/audit/Audit.xlsx"),
+            ("requirement", "data/audit/Requirement.xlsx"),
+            ("countsfor", "data/audit/CountsFor.xlsx"),
+            ("enrollment", "data/enrollment/Enrollment.xlsx"),
+        ]
 
+    db: Session = SessionLocal()
     try:
         for table_name, file_path in file_paths:
-            model = TABLES[table_name]
-            df = pd.read_excel(file_path)
-            records = df.to_dict(orient='records')
+            model = tables.get(table_name)
+            if not model:
+                logging.warning("table %s not found in mapping, skipping", table_name)
+                continue
+
+            try:
+                df = pd.read_excel(file_path)
+                records = df.to_dict(orient='records')
+            except (OSError, ValueError) as error:
+                logging.error("failed to read file %s: %s", file_path, error)
+                continue
 
             if records:
-                db.bulk_insert_mappings(model, records)
-                db.commit()  # ✅ Ensure commit before the next table
-
-            print(f"✅ Successfully inserted data into {table_name} table.")
-
-    except Exception as e:
-        db.rollback()
-        print(f"❌ Error inserting data into {table_name}: {e}")
-
+                try:
+                    db.bulk_insert_mappings(model, records)
+                    db.commit()
+                    logging.info("successfully inserted data into %s table", table_name)
+                except IntegrityError as error:
+                    db.rollback()
+                    logging.error("integrity error inserting data into %s: %s", table_name, error)
+                except SQLAlchemyError as error:
+                    db.rollback()
+                    logging.error("sqlalchemy error inserting data into %s: %s", table_name, error)
     finally:
         db.close()
 
-
 if __name__ == "__main__":
-    file_paths = [
-        ("instructor", "data/course/Instructor.xlsx"), 
-        ("course", "data/course/Course.xlsx"),
-        ("prereqs", "data/course/Prereqs.xlsx"),
-        ("offering", "data/course/Offering.xlsx"),
-        ("course_instructor", "data/course/Course_Instructor.xlsx"), 
-        ("audit", "data/audit/Audit.xlsx"),
-        ("requirement", "data/audit/Requirement.xlsx"),
-        ("countsfor", "data/audit/CountsFor.xlsx"),
-        ("enrollment", "data/enrollment/Enrollment.xlsx"),
-    ]
-
-    load_excel_data(file_paths)
+    load_excel_data()
