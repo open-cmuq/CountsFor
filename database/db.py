@@ -1,18 +1,18 @@
+"""
+this script is used to create the database tables based on the SQLAlchemy models.
+"""
+
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base
-import os
+from database.models import Base
 
-# Configure the PostgreSQL database connection
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:565675678@localhost:5432/gened_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///gened_db.sqlite")
 
-# Create the database engine
 engine = create_engine(DATABASE_URL, echo=True)
 
-# Create a configured session class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Function to initialize the database
 def init_db():
     """Creates database tables based on SQLAlchemy models."""
     Base.metadata.create_all(engine)
