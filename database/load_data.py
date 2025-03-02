@@ -5,9 +5,9 @@ import logging
 import pandas as pd
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from models import Instructor, Course, Offering, Requirement, Audit, CountsFor
-from models import Prereqs, CourseInstructor, Enrollment
-from database import SessionLocal
+from database.models import Instructor, Course, Offering, Requirement, Audit, CountsFor
+from database.models import Prereqs, CourseInstructor, Enrollment
+from database.db import SessionLocal
 
 # configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

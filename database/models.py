@@ -111,7 +111,7 @@ class Enrollment(Base):
     Enrollment model: enrollment data for each class
     """
     __tablename__ = 'enrollment'
-    enrollment_id = Column(String(50), primary_key=True)
+    enrollment_id = Column(String(100), primary_key=True)
     class_ = Column("class", Integer)
     enrollment_count = Column(Integer)
     department = Column(String(20))
