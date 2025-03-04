@@ -7,8 +7,9 @@ import os
 import re
 import logging
 import json
-import utils
 import pandas as pd
+from backend.scripts import utils
+
 pd.set_option('display.max_colwidth', None)
 
 # configure logging
