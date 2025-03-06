@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 class CourseResponse(BaseModel):
     course_code: str
@@ -7,3 +7,6 @@ class CourseResponse(BaseModel):
     requirements: Dict[str, List[str]]
     offered: List[str]
     prerequisites: str
+
+class CourseListResponse(BaseModel):
+    courses: List[CourseResponse]

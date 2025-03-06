@@ -86,3 +86,54 @@ def get_course_by_code(db: Session, course_code: str):
         "offered": offered,
         "prerequisites": prerequisites,
     }
+
+def get_courses_by_department(db: Session, department: str):
+    """Fetch courses that belong to a specific department."""
+    courses = db.query(Course).filter(Course.dep_code == department).all()
+
+    result = []
+    for course in courses:
+        # Get course requirements
+        requirements_query = (
+            db.query(CountsFor.requirement, Requirement.audit_id)
+            .join(Requirement, CountsFor.requirement == Requirement.requirement)
+            .filter(CountsFor.course_code == course.course_code)
+            .all()
+        )
+
+        requirements = {"CS": [], "IS": [], "BA": [], "BS": []}
+        for req, audit_id in requirements_query:
+            if audit_id.startswith("cs"):
+                requirements["CS"].append(req)
+            elif audit_id.startswith("is"):
+                requirements["IS"].append(req)
+            elif audit_id.startswith("ba"):
+                requirements["BA"].append(req)
+            elif audit_id.startswith("bs"):
+                requirements["BS"].append(req)
+
+        # Get offered semesters
+        offered_semesters = (
+            db.query(Offering.semester)
+            .filter(Offering.course_code == course.course_code)
+            .all()
+        )
+        offered = [semester[0] for semester in offered_semesters]
+
+        # Get prerequisites
+        prereqs_query = (
+            db.query(Prereqs.prerequisite)
+            .filter(Prereqs.course_code == course.course_code)
+            .all()
+        )
+        prerequisites = ", ".join([p[0] for p in prereqs_query]) if prereqs_query else "None"
+
+        result.append({
+            "course_code": course.course_code,
+            "course_name": course.name,
+            "requirements": requirements,
+            "offered": offered,
+            "prerequisites": prerequisites,
+        })
+
+    return result
