@@ -1,5 +1,5 @@
 // import CourseTableMock from "./components/courseTableMock/courseTableMock.js";
-import CourseTableMock from "./components/CourseTableMock";
+import CourseTableMock from "./components/CourseTablePage";
 
 function App() {
   return (
