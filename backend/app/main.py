@@ -1,10 +1,9 @@
 from fastapi import FastAPI
-from backend.app.routers import courses, requirements
+from backend.app.routers import courses
 
 app = FastAPI()
 
 app.include_router(courses.router)
-app.include_router(requirements.router)
 
 
 @app.get("/")
