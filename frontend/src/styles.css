@@ -1,0 +1,970 @@
+.table-container {
+    padding: 20px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 0.5px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    border-radius: 4px;
+  }
+  
+  th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+  }
+  
+  td:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  
+
+  .header-ba {
+    background-color: #4A68FB; /* Blue */
+    color: white;
+  }
+  
+  .header-bs {
+    background-color: #22AA0A; /* Green */
+    color: white;
+  }
+  
+  .header-cs {
+    background-color: #CF1314; /* Red */
+    color: white;
+  }
+  
+  .header-is {
+    background-color: #FFC033; /* Yellow */
+    color: white;
+  }
+
+  .cell-ba {
+    background-color: #B3BBFD; /* Blue */
+    color: white;
+  }
+  
+  .cell-bs {
+    background-color: #A3D799; /* Green */
+    color: white;
+  }
+  
+  .cell-cs {
+    background-color: #EB989D; /* Red */
+    color: white;
+  }
+  
+  .cell-is {
+    background-color: #FFDB99; /* Yellow */
+    color: white;
+  }
+
+  
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: black;
+  }
+  
+  .remove-btn:hover {
+    color: darkred;
+  }
+
+  .dropdown {
+    position: relative;
+    display: inline-block;
+    padding: auto;
+  }
+  
+  .dropdown-content {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    top: 100%; /* Appears below the button */
+    left: 0;
+    width: 200px; /* Adjust width as needed */
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    color: black;
+  }
+  
+  .drop-clear-btn {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    border-radius: 4px;
+    width: 80%;
+  }
+  
+  .drop-clear-btn:hover {
+    background: #cc0000;
+  }
+
+  .dropdown-btn {
+    width: 70%;  /* Full width of the cell */
+    height: 100%; /* Full height of the cell */
+    text-align: center;
+    font-size: 1rem; 
+    background-color: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    border-radius: 4px;
+    padding-top: 2px;
+  }
+
+  .cell-container {
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .cell {
+    color: black !important; /* Override other styles */
+  }
+  
+
+  .dropdown-content {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: left; 
+    font-weight: normal; /* Remove bold */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    cursor: pointer;
+
+  }
+
+
+  .grayed-out {
+    background-color: #f0f0f0;
+    color: #999;
+  }
+  
+  /* .search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+
+  */
+
+  
+  .grayed-out {
+    background-color: #f0f0f0;
+    color: #999;
+    text-align: center;
+    border-radius: 12px;
+  }
+  
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  /* table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 1px;
+
+  }
+  
+  th, td {
+    padding: 10px;
+    text-align: center;
+    border-radius: 8px;
+  }
+  
+  th {
+    background-color: #f0f0f0;
+  } */
+  
+/* Ensure table uses fixed layout */
+table {
+    table-layout: fixed;
+    width: 100%;
+  }
+  
+  /* Fix column widths */
+  th:first-child, td:first-child { 
+    width: 3%; /* Smallest column for delete (X) */
+  }
+  
+  th:nth-child(2), td:nth-child(2) { 
+    width: 13%; /* Course Code & Name */
+  }
+  
+  /* Ensuring equal width for BA, BS, CS, IS */
+  th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
+  td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
+    width: 17%; /* Adjusted for better spacing */
+  }
+  
+  /* Making Pre-Req and Offer columns smaller */
+  th:nth-child(7), th:nth-child(8),
+  td:nth-child(7), td:nth-child(8) {
+    width: 8%;
+  }
+  
+  /* Ensure text wraps instead of overflowing */
+  td {
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+  }
+
+  th, td {
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+  }
+
+  
+/* Gray out N/A cells */
+.na-cell {
+  background-color: white !important;
+  color: transparent; /* Hide text */
+  pointer-events: none; /* Prevent interactions */
+}
+
+/* Popup Overlay (Background Dim) */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  
+  /* Popup Content Box */
+  .popup-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    resize: both;
+  }
+  
+  /* Popup Header (Draggable) */
+  .popup-header {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    cursor: grab;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Close Button */
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .close-btn:hover {
+    color: #ffdddd;
+  }
+  
+  /* Popup Body */
+  .popup-body {
+    padding: 15px;
+    overflow: auto;
+    flex-grow: 1;
+  }
+  
+  /* Resize Handle */
+  .react-resizable-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #007bff;
+    bottom: 5px;
+    right: 5px;
+    cursor: nwse-resize;
+    border-radius: 50%;
+  }
+  
+  .search-container {
+    background: #d9d9d9;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 40%
+  }
+  
+  .search-label {
+    font-weight: bold;
+    font-size: large;
+  }
+  
+  .search-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+ 
+  .search-btn {
+    background: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    padding: 8px;
+  }
+  
+  /* .clear-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+  } */
+  
+  .selected-filters {
+    display: flex;
+    gap: 1px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+  
+  .filter-tag {
+    background: darkgrey;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 15px;
+  }
+  
+  .filter-tag button {
+    background: transparent;
+    color: white;
+    border: none;
+    /* background: none; */
+    border: none;
+    color: white;
+    /* margin-left: 6px; */
+    cursor: pointer;
+  }
+
+  /*
+  .filter-tag {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px; 
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+  } 
+  .selected-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .filter-tag button {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 6px;
+    cursor: pointer;
+  } */
+  
+  
+  /* .dropdown, .text-input {
+    padding: 4px;
+    border-radius: 2px;
+  }
+   */
+  
+   .search-container {
+    background: #d9d9d9;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: left; /* Aligns items in one row */
+    gap: 10px;
+    width: 50%;
+  }
+  
+  .search-label {
+    font-weight: bold;
+    white-space: nowrap; /* Prevents wrapping */
+  }
+  
+  .search-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-grow: 1; /* Allows the inputs to take available space */
+  }
+  
+  .search-dropdown, .text-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex: 1; /* Makes them equal width */
+  }
+  
+  .search-btn {
+    background: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 100px;
+  }
+  
+  .search-clear-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 4px;
+  }
+
+  
+  .h1 {
+    font-size: 50px;
+    font-weight: bold;
+  }
+  
+  .table-container {
+    padding: 20px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 0.5px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    border-radius: 4px;
+  }
+  
+  th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+  }
+  
+  td:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  
+
+  .header-ba {
+    background-color: #4A68FB; /* Blue */
+    color: white;
+  }
+  
+  .header-bs {
+    background-color: #22AA0A; /* Green */
+    color: white;
+  }
+  
+  .header-cs {
+    background-color: #CF1314; /* Red */
+    color: white;
+  }
+  
+  .header-is {
+    background-color: #FFC033; /* Yellow */
+    color: white;
+  }
+
+  .cell-ba {
+    background-color: #B3BBFD; /* Blue */
+    color: white;
+  }
+  
+  .cell-bs {
+    background-color: #A3D799; /* Green */
+    color: white;
+  }
+  
+  .cell-cs {
+    background-color: #EB989D; /* Red */
+    color: white;
+  }
+  
+  .cell-is {
+    background-color: #FFDB99; /* Yellow */
+    color: white;
+  }
+
+  
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: black;
+  }
+  
+  .remove-btn:hover {
+    color: darkred;
+  }
+
+  .dropdown {
+    position: relative;
+    display: inline-block;
+    padding: auto;
+  }
+  
+  .dropdown-content {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    top: 100%; /* Appears below the button */
+    left: 0;
+    width: 200px; /* Adjust width as needed */
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    color: black;
+  }
+  
+  .drop-clear-btn {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-align: center;
+    border-radius: 4px;
+    width: 80%;
+  }
+  
+  .drop-clear-btn:hover {
+    background: #cc0000;
+  }
+
+  .dropdown-btn {
+    width: 70%;  /* Full width of the cell */
+    height: 100%; /* Full height of the cell */
+    text-align: center;
+    font-size: 1rem; 
+    background-color: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    border-radius: 4px;
+    padding-top: 2px;
+  }
+
+  .cell-container {
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .cell {
+    color: black !important; /* Override other styles */
+  }
+  
+
+  .dropdown-content {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: left; 
+    font-weight: normal; /* Remove bold */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    cursor: pointer;
+
+  }
+
+
+  .grayed-out {
+    background-color: #f0f0f0;
+    color: #999;
+  }
+  
+  /* .search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+
+  */
+
+  
+  .grayed-out {
+    background-color: #f0f0f0;
+    color: #999;
+    text-align: center;
+    border-radius: 12px;
+  }
+  
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  /* table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 1px;
+
+  }
+  
+  th, td {
+    padding: 10px;
+    text-align: center;
+    border-radius: 8px;
+  }
+  
+  th {
+    background-color: #f0f0f0;
+  } */
+  
+/* Ensure table uses fixed layout */
+table {
+    table-layout: fixed;
+    width: 100%;
+  }
+  
+  /* Fix column widths */
+  th:first-child, td:first-child { 
+    width: 3%; /* Smallest column for delete (X) */
+  }
+  
+  th:nth-child(2), td:nth-child(2) { 
+    width: 13%; /* Course Code & Name */
+  }
+  
+  /* Ensuring equal width for BA, BS, CS, IS */
+  th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
+  td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
+    width: 17%; /* Adjusted for better spacing */
+  }
+  
+  /* Making Pre-Req and Offer columns smaller */
+  th:nth-child(7), th:nth-child(8),
+  td:nth-child(7), td:nth-child(8) {
+    width: 8%;
+  }
+  
+  /* Ensure text wraps instead of overflowing */
+  td {
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+  }
+
+  th, td {
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+  }
+
+  
+/* Gray out N/A cells */
+.na-cell {
+  background-color: white !important;
+  color: transparent; /* Hide text */
+  pointer-events: none; /* Prevent interactions */
+}
+
+/* Popup Overlay (Background Dim) */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  
+  /* Popup Content Box */
+  .popup-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    resize: both;
+  }
+  
+  /* Popup Header (Draggable) */
+  .popup-header {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    cursor: grab;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Close Button */
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .close-btn:hover {
+    color: #ffdddd;
+  }
+  
+  /* Popup Body */
+  .popup-body {
+    padding: 15px;
+    overflow: auto;
+    flex-grow: 1;
+  }
+  
+  /* Resize Handle */
+  .react-resizable-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #007bff;
+    bottom: 5px;
+    right: 5px;
+    cursor: nwse-resize;
+    border-radius: 50%;
+  }
+  
+  .search-container {
+    background: #d9d9d9;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 40%
+  }
+  
+  .search-label {
+    font-weight: bold;
+    font-size: large;
+  }
+  
+  .search-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+ 
+  .search-btn {
+    background: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    padding: 8px;
+  }
+  
+  /* .clear-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+  } */
+  
+  .selected-filters {
+    display: flex;
+    gap: 1px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+  
+  .filter-tag {
+    background: darkgrey;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 15px;
+  }
+  
+  .filter-tag button {
+    background: transparent;
+    color: white;
+    border: none;
+    /* background: none; */
+    border: none;
+    color: white;
+    /* margin-left: 6px; */
+    cursor: pointer;
+  }
+
+  /*
+  .filter-tag {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px; 
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+  } 
+  .selected-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .filter-tag button {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 6px;
+    cursor: pointer;
+  } */
+  
+  
+  /* .dropdown, .text-input {
+    padding: 4px;
+    border-radius: 2px;
+  }
+   */
+  
+   .search-container {
+    background: #d9d9d9;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: left; /* Aligns items in one row */
+    gap: 10px;
+    width: 50%;
+  }
+  
+  .search-label {
+    font-weight: bold;
+    white-space: nowrap; /* Prevents wrapping */
+  }
+  
+  .search-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-grow: 1; /* Allows the inputs to take available space */
+  }
+  
+  .search-dropdown, .text-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex: 1; /* Makes them equal width */
+  }
+  
+  .search-btn {
+    background: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 100px;
+  }
+  
+  .search-clear-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 4px;
+  }
+
+  .header-container {
+    display: flex;
+    padding: 10px 20px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  
+  
