@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database.db import get_db
 from backend.services.courses import CourseService
-from backend.app.schemas import CourseResponse, CourseListResponse, CourseFilter
+from backend.app.schemas import (CourseResponse, CourseListResponse,
+                                 CourseFilter, RequirementsResponse)
 
 router = APIRouter()
 
@@ -57,3 +58,8 @@ def get_courses_by_department_route(department: str,
     fetch courses by department.
     """
     return course_service.fetch_courses_by_department(department)
+
+@router.get("/requirements", response_model=RequirementsResponse)
+def get_requirements(course_service: CourseService = Depends(get_course_service)):
+    """API route to fetch all course requirements grouped by major."""
+    return course_service.fetch_all_requirements()

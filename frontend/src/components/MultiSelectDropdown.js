@@ -4,10 +4,10 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // For general visibility of dropdown box
+  // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen(!isOpen);
 
-  // To close dropdown when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -18,20 +18,16 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Get currently selected filters for the major
-  const selectedForMajor = selectedFilters[major] || [];
+  // Ensure allOptions updates when allRequirements change
+  const allOptions = allRequirements?.[major] ?? [];
 
-  // Check if all options or select all button is selected
-  const allOptions = allRequirements[major] || [];
+  // Track selected requirements for this major
+  const selectedForMajor = selectedFilters[major] || [];
   const isAllSelected = allOptions.length > 0 && selectedForMajor.length === allOptions.length;
 
-  // Handle "Select All" functionality
+  // Handle "Select All"
   const handleSelectAll = () => {
-    if (isAllSelected) {
-      handleFilterChange(major, []); // Deselect
-    } else {
-      handleFilterChange(major, allOptions); // Select
-    }
+    handleFilterChange(major, isAllSelected ? [] : allOptions);
   };
 
   return (
@@ -42,47 +38,48 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
       {isOpen && (
         <div className="dropdown-content">
+          {/* Debugging: Log available options */}
+          {console.log(`Dropdown for ${major}:`, allOptions)}
 
-
-          {/* Individual Options */}
-          {allOptions.map((req) => (
-            <label key={req} className="dropdown-item">
-              <input
-                type="checkbox"
-                checked={selectedForMajor.includes(req)}
-                onChange={(e) => {
-                  const newSelection = e.target.checked
-                    ? [...selectedForMajor, req] // Add if checked
-                    : selectedForMajor.filter((item) => item !== req); // Remove if unchecked
-
-                  handleFilterChange(major, newSelection);
-                }}
-              />
-              {req}
-            </label>
-          ))}
-
-            {/* "Select All" Option */}
-            <label className="dropdown-item">
-            <input
-              type="checkbox"
-              checked={isAllSelected}
-              onChange={handleSelectAll}
-            />
+          {/* "Select All" Option */}
+          <label className="dropdown-item">
+            <input type="checkbox" checked={isAllSelected} onChange={handleSelectAll} />
             <strong>SELECT ALL</strong>
           </label>
 
+          {/* Individual Options */}
+          {allOptions.length === 0 ? (
+            <p className="dropdown-item">No requirements available</p>
+          ) : (
+            allOptions.map((req, index) => (
+              <label key={index} className="dropdown-item">
+                <input
+                  type="checkbox"
+                  checked={selectedForMajor.includes(req)}
+                  onChange={(e) => {
+                    const newSelection = e.target.checked
+                      ? [...selectedForMajor, req] // Add selection
+                      : selectedForMajor.filter((item) => item !== req); // Remove selection
+
+                    handleFilterChange(major, newSelection);
+                  }}
+                />
+                {req}
+              </label>
+            ))
+          )}
+
           {/* Clear Selection Button */}
           <label className="clear-btn">
-          <button
-            className="clear-btn"
-            onClick={() => {
-              clearFilters(major);
-              setIsOpen(false); 
-            }}
-          >
-            Clear Selection
-          </button>
+            <button
+              className="clear-btn"
+              onClick={() => {
+                clearFilters(major);
+                setIsOpen(false);
+              }}
+            >
+              Clear Selection
+            </button>
           </label>
         </div>
       )}

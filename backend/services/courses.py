@@ -52,7 +52,11 @@ class CourseService:
                 course_dict[course_code].requirements["IS"].append(requirement)
             elif audit_id.startswith("ba"):
                 course_dict[course_code].requirements["BA"].append(requirement)
-            elif audit_id.startswith("bs"):
+            elif audit_id.startswith("bio"):
                 course_dict[course_code].requirements["BS"].append(requirement)
 
         return CourseListResponse(courses=list(course_dict.values()))
+
+    def fetch_all_requirements(self):
+        """Retrieve and structure requirements for the frontend."""
+        return self.course_repo.get_all_requirements()

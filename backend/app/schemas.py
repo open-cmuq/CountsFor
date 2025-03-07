@@ -28,3 +28,11 @@ class CourseListResponse(BaseModel):
     represents a list of filtered courses.
     """
     courses: List[CourseResponse]
+
+
+class RequirementsResponse(BaseModel):
+    """Pydantic schema for returning requirements grouped by major."""
+    BA: List[str]
+    BS: List[str]
+    CS: List[str]
+    IS: List[str]
