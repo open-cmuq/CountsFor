@@ -1,18 +1,23 @@
-from pydantic import BaseModel, Field
+"""
+this script contains data models used for API input validation and response serialization,
+ensuring type safety and structure for course-related operations.
+"""
+
 from typing import Optional, Dict, List
+from pydantic import BaseModel, Field
 
 class CourseFilter(BaseModel):
     """
-    Represents the query parameters for filtering courses.
+    represents the query parameters for filtering courses.
     """
-    cs_requirement: Optional[str] = Field(None, description="CS requirement (e.g. 'Humanities Elective')")
-    is_requirement: Optional[str] = Field(None, description="IS requirement (e.g. 'English Requirement')")
-    ba_requirement: Optional[str] = Field(None, description="BA requirement (e.g. 'Economics')")
-    bs_requirement: Optional[str] = Field(None, description="BS requirement (e.g. 'Mathematics')")
+    cs_requirement: Optional[str] = Field(None, description="CS requirement")
+    is_requirement: Optional[str] = Field(None, description="IS requirement")
+    ba_requirement: Optional[str] = Field(None, description="BA requirement")
+    bs_requirement: Optional[str] = Field(None, description="BS requirement)")
 
 class CourseResponse(BaseModel):
     """
-    Represents the structured output for a course.
+    represents the structured output for a course.
     """
     course_code: str
     course_name: str
@@ -20,6 +25,6 @@ class CourseResponse(BaseModel):
 
 class CourseListResponse(BaseModel):
     """
-    Represents a list of filtered courses.
+    represents a list of filtered courses.
     """
     courses: List[CourseResponse]
