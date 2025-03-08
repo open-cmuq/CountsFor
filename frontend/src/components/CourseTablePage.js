@@ -6,15 +6,30 @@ import SelectedFilters from "./SelectedFilters";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
-const CourseTableMock = () => {
-  const [requirements, setRequirements] = useState({
-    BA: [],
-    BS: [],
-    CS: [],
-    IS: [],
-  });
+const CourseTablePage = () => {
+  const [departments, setDepartments] = useState([]);  // Ensure it's an array
+  const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
+  const [courses, setCourses] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState({ BA: [], BS: [], CS: [], IS: [] });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
-  const [courses, setCourses] = useState([]);  // Store fetched courses
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/departments`);
+        if (!response.ok) throw new Error("Failed to fetch departments");
+        const data = await response.json();
+        console.log("Fetched Departments from API:", data);
+        setDepartments(data.departments || []);  // Ensure we extract the array properly
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+        setDepartments([]);  // Ensure it's always an array
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
     const fetchRequirements = async () => {
@@ -48,18 +63,6 @@ const CourseTableMock = () => {
     fetchCourses();
   }, []);
 
-  const [selectedFilters, setSelectedFilters] = useState({
-    BA: [],
-    BS: [],
-    CS: [],
-    IS: [],
-  });
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-
-  const departments = ["History", "Computer Science", "Biology", "Business"];
-
   const handleFilterChange = (major, newSelection) => {
     setSelectedFilters((prev) => ({
       ...prev,
@@ -90,7 +93,7 @@ const CourseTableMock = () => {
       <h1 className="title">CMU-Q General Education</h1>
 
       <SearchBar
-        departments={departments}
+        departments={departments}  // Now using real API data
         selectedDepartment={selectedDepartment}
         setSelectedDepartment={setSelectedDepartment}
         searchQuery={searchQuery}
@@ -98,7 +101,7 @@ const CourseTableMock = () => {
       />
       <SelectedFilters selectedFilters={selectedFilters} handleFilterChange={handleFilterChange} />
       <CourseTable
-        courses={filteredCourses}  // Now displaying real courses
+        courses={filteredCourses}
         allRequirements={requirements}
         selectedFilters={selectedFilters}
         handleFilterChange={handleFilterChange}
@@ -109,4 +112,4 @@ const CourseTableMock = () => {
   );
 };
 
-export default CourseTableMock;
+export default CourseTablePage;
