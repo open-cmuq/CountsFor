@@ -193,23 +193,6 @@
     cursor: pointer;
     font-size: 16px;
   }
-
-  /* table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 1px;
-
-  }
-  
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 8px;
-  }
-  
-  th {
-    background-color: #f0f0f0;
-  } */
   
 /* Ensure table uses fixed layout */
 table {
@@ -260,43 +243,7 @@ table {
   pointer-events: none; /* Prevent interactions */
 }
 
-/* Popup Overlay (Background Dim) */
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-  }
-  
-  /* Popup Content Box */
-  .popup-content {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-  }
-  
-  /* Popup Header (Draggable) */
-  .popup-header {
-    background: #007bff;
-    color: white;
-    padding: 10px;
-    cursor: grab;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
+
   /* Close Button */
   .close-btn {
     background: transparent;
@@ -310,12 +257,7 @@ table {
     color: #ffdddd;
   }
   
-  /* Popup Body */
-  .popup-body {
-    padding: 15px;
-    overflow: auto;
-    flex-grow: 1;
-  }
+  
   
   /* Resize Handle */
   .react-resizable-handle {
@@ -358,15 +300,6 @@ table {
     padding: 8px;
   }
   
-  /* .clear-btn {
-    background: black;
-    color: white;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-  } */
-  
   .selected-filters {
     display: flex;
     gap: 1px;
@@ -396,37 +329,6 @@ table {
     cursor: pointer;
   }
 
-  /*
-  .filter-tag {
-    display: flex;
-    align-items: center;
-    padding: 4px 8px; 
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: bold;
-    color: white;
-  } 
-  .selected-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .filter-tag button {
-    background: none;
-    border: none;
-    color: white;
-    margin-left: 6px;
-    cursor: pointer;
-  } */
-  
-  
-  /* .dropdown, .text-input {
-    padding: 4px;
-    border-radius: 2px;
-  }
-   */
-  
    .search-container {
     background: #d9d9d9;
     padding: 10px;
@@ -644,24 +546,7 @@ table {
     cursor: pointer;
 
   }
-
-
-  .grayed-out {
-    background-color: #f0f0f0;
-    color: #999;
-  }
-  
-  /* .search-bar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
-
-  */
-
-  
+ 
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
@@ -676,23 +561,7 @@ table {
     font-size: 16px;
   }
 
-  /* table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 1px;
 
-  }
-  
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 8px;
-  }
-  
-  th {
-    background-color: #f0f0f0;
-  } */
-  
 /* Ensure table uses fixed layout */
 table {
     table-layout: fixed;
@@ -742,42 +611,6 @@ table {
   pointer-events: none; /* Prevent interactions */
 }
 
-/* Popup Overlay (Background Dim) */
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-  }
-  
-  /* Popup Content Box */
-  .popup-content {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-  }
-  
-  /* Popup Header (Draggable) */
-  .popup-header {
-    background: #007bff;
-    color: white;
-    padding: 10px;
-    cursor: grab;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
   
   /* Close Button */
   .close-btn {
@@ -792,12 +625,6 @@ table {
     color: #ffdddd;
   }
   
-  /* Popup Body */
-  .popup-body {
-    padding: 15px;
-    overflow: auto;
-    flex-grow: 1;
-  }
   
   /* Resize Handle */
   .react-resizable-handle {
@@ -839,15 +666,7 @@ table {
     cursor: pointer;
     padding: 8px;
   }
-  
-  /* .clear-btn {
-    background: black;
-    color: white;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-  } */
+
   
   .selected-filters {
     display: flex;
@@ -877,37 +696,6 @@ table {
     /* margin-left: 6px; */
     cursor: pointer;
   }
-
-  /*
-  .filter-tag {
-    display: flex;
-    align-items: center;
-    padding: 4px 8px; 
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: bold;
-    color: white;
-  } 
-  .selected-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .filter-tag button {
-    background: none;
-    border: none;
-    color: white;
-    margin-left: 6px;
-    cursor: pointer;
-  } */
-  
-  
-  /* .dropdown, .text-input {
-    padding: 4px;
-    border-radius: 2px;
-  }
-   */
   
    .search-container {
     background: #d9d9d9;
@@ -965,6 +753,71 @@ table {
     font-size: 20px;
     font-weight: bold;
   }
+
+  /* Styles the overlay to allow clicking the background */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 350px;
+    height: 100vh;
+    background: white;
+    box-shadow: -4px 0px 10px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+    padding: 20px;
+  }
   
+  /* The main panel inside the popup */
+  .popup-panel {
+    display: flex;
+    flex-direction: column;
+  }
   
+  /* The close button */
+  .popup-close-btn {
+    align-self: flex-end;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: black;
+  }
+  
+  /* Popup title styling */
+  .popup-title {
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 2px solid black;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+  }
+  
+  /* Style each requirement group */
+  .requirement-group {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+  }
+  
+  /* Courses fulfilling the requirement title */
+  .courses-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  /* Course links to trigger another popup */
+  .course-link {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  
+  .course-link:hover {
+    color: darkblue;
+  }
   
