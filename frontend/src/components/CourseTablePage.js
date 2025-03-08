@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import mockCourses from "../mockData/courses";
 import "../styles.css";
 import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
@@ -15,14 +14,15 @@ const CourseTableMock = () => {
     IS: [],
   });
 
-  // Fetch requirements from FastAPI instead of using mock data
+  const [courses, setCourses] = useState([]);  // Store fetched courses
+
   useEffect(() => {
     const fetchRequirements = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/requirements`);
         if (!response.ok) throw new Error("Failed to fetch requirements");
         const data = await response.json();
-        console.log("Fetched Requirements from API:", data); // Debugging Step
+        console.log("Fetched Requirements from API:", data);
         setRequirements(data);
       } catch (error) {
         console.error("Error fetching requirements:", error);
@@ -32,6 +32,21 @@ const CourseTableMock = () => {
     fetchRequirements();
   }, []);
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/courses`);
+        if (!response.ok) throw new Error("Failed to fetch courses");
+        const data = await response.json();
+        console.log("Fetched Courses from API:", data);
+        setCourses(data.courses);  // Extract courses list
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   const [selectedFilters, setSelectedFilters] = useState({
     BA: [],
@@ -40,7 +55,6 @@ const CourseTableMock = () => {
     IS: [],
   });
 
-  const [visibleCourses, setVisibleCourses] = useState(mockCourses);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
@@ -57,7 +71,7 @@ const CourseTableMock = () => {
     setSelectedFilters((prev) => ({ ...prev, [major]: [] }));
   };
 
-  const filteredCourses = visibleCourses.filter((course) =>
+  const filteredCourses = courses.filter((course) =>
     (selectedDepartment === "" || course.department === selectedDepartment) &&
     (searchQuery === "" || course.course_code.includes(searchQuery)) &&
     Object.keys(selectedFilters).every((major) => {
@@ -84,12 +98,12 @@ const CourseTableMock = () => {
       />
       <SelectedFilters selectedFilters={selectedFilters} handleFilterChange={handleFilterChange} />
       <CourseTable
-        courses={filteredCourses}
-        allRequirements={requirements} // Now using real API data
+        courses={filteredCourses}  // Now displaying real courses
+        allRequirements={requirements}
         selectedFilters={selectedFilters}
         handleFilterChange={handleFilterChange}
         clearFilters={clearFilters}
-        setVisibleCourses={setVisibleCourses}
+        setVisibleCourses={setCourses}
       />
     </div>
   );

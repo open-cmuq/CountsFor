@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
-import Popup from "./PopUp"; 
+import Popup from "./PopUp";
 
 const CourseTable = ({ courses, allRequirements, selectedFilters, handleFilterChange, clearFilters, setVisibleCourses }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -40,7 +40,7 @@ const CourseTable = ({ courses, allRequirements, selectedFilters, handleFilterCh
               </th>
             ))}
             <th>PRE-REQ</th>
-            <th>OFFER</th>
+            <th>OFFERED</th>
           </tr>
         </thead>
         <tbody>
@@ -119,7 +119,7 @@ const CourseTable = ({ courses, allRequirements, selectedFilters, handleFilterCh
 })}
 
 
-                
+
 
                 <td>{course.prerequisites || "NONE"}</td>
                 <td>{course.offered.join(", ")}</td>
