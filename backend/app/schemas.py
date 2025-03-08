@@ -37,3 +37,7 @@ class RequirementsResponse(BaseModel):
     BS: List[str]
     CS: List[str]
     IS: List[str]
+
+class DepartmentListResponse(BaseModel):
+    """Pydantic schema for returning a list of departments."""
+    departments: List[str]

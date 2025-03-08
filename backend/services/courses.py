@@ -1,7 +1,7 @@
 """
 this script contains the business logic for handling courses
 """
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from sqlalchemy.orm import Session
 from backend.repository.courses import CourseRepository
 from backend.app.schemas import CourseResponse, CourseListResponse
@@ -108,3 +108,8 @@ class CourseService:
     def fetch_all_requirements(self):
         """Retrieve and structure requirements for the frontend."""
         return self.course_repo.get_all_requirements()
+
+    def fetch_all_departments(self) -> List[str]:
+        """Fetch a distinct list of all departments."""
+        return self.course_repo.get_all_departments()
+
