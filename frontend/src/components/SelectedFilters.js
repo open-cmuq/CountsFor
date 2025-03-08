@@ -18,8 +18,8 @@ const SelectedFilters = ({ selectedFilters, handleFilterChange }) => {
               className="filter-tag"
               style={{ backgroundColor: majorColors[major] || "gray" }} // Fallback to gray if major not found
             >
+                              <button onClick={() => handleFilterChange(major, filter)}><b>×</b></button>
               {filter}
-              <button onClick={() => handleFilterChange(major, filter)}>✖</button>
             </div>
           ))
         )}
