@@ -271,16 +271,6 @@ table {
     border-radius: 50%;
   }
   
-  .search-container {
-    background: #d9d9d9;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 40%
-  }
-  
   .search-label {
     font-weight: bold;
     font-size: large;
@@ -310,12 +300,23 @@ table {
   .filter-tag {
     background: darkgrey;
     color: white;
-    padding: 5px 10px;
+    padding: 5px;
     border-radius: 5px;
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 15px;
+    height: 19px;
+    max-width: 550px; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 3px;
+    display: inline-block;
+  }
+  
+  .filter-tag:hover {
+    background: #333;
   }
   
   .filter-tag button {
@@ -325,57 +326,11 @@ table {
     /* background: none; */
     border: none;
     color: white;
-    /* margin-left: 6px; */
+    margin-left: 0px;
     cursor: pointer;
+    padding-left: 3px;
+    padding-right: 3px;
   }
-
-   .search-container {
-    background: #d9d9d9;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: left; /* Aligns items in one row */
-    gap: 10px;
-    width: 50%;
-  }
-  
-  .search-label {
-    font-weight: bold;
-    white-space: nowrap; /* Prevents wrapping */
-  }
-  
-  .search-inputs {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-grow: 1; /* Allows the inputs to take available space */
-  }
-  
-  .search-dropdown, .text-input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    flex: 1; /* Makes them equal width */
-  }
-  
-  .search-btn {
-    background: white;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 100px;
-  }
-  
-  .search-clear-btn {
-    background: black;
-    color: white;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    border-radius: 4px;
-  }
-
   
   .h1 {
     font-size: 50px;
@@ -602,7 +557,6 @@ table {
     text-align: center;
     border-radius: 6px;
   }
-
   
 /* Gray out N/A cells */
 .na-cell {
@@ -611,7 +565,6 @@ table {
   pointer-events: none; /* Prevent interactions */
 }
 
-  
   /* Close Button */
   .close-btn {
     background: transparent;
@@ -623,19 +576,6 @@ table {
   
   .close-btn:hover {
     color: #ffdddd;
-  }
-  
-  
-  /* Resize Handle */
-  .react-resizable-handle {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: #007bff;
-    bottom: 5px;
-    right: 5px;
-    cursor: nwse-resize;
-    border-radius: 50%;
   }
   
   .search-container {
@@ -674,56 +614,24 @@ table {
     margin-top: 5px;
     margin-bottom: 5px;
   }
-  
-  .filter-tag {
-    background: darkgrey;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 15px;
-  }
-  
-  .filter-tag button {
-    background: transparent;
-    color: white;
-    border: none;
-    /* background: none; */
-    border: none;
-    color: white;
-    /* margin-left: 6px; */
-    cursor: pointer;
-  }
-  
-   .search-container {
-    background: #d9d9d9;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: left; /* Aligns items in one row */
-    gap: 10px;
-    width: 50%;
-  }
-  
+
   .search-label {
     font-weight: bold;
-    white-space: nowrap; /* Prevents wrapping */
+    white-space: nowrap; 
   }
   
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex-grow: 1; /* Allows the inputs to take available space */
+    flex-grow: 1; 
   }
   
   .search-dropdown, .text-input {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    flex: 1; /* Makes them equal width */
+    flex: 1; 
   }
   
   .search-btn {
@@ -754,38 +662,42 @@ table {
     font-weight: bold;
   }
 
-  /* Styles the overlay to allow clicking the background */
-.popup-overlay {
+  .popup-overlay {
     position: fixed;
     top: 0;
     right: 0;
-    width: 350px;
-    height: 100vh;
+    width: 450px; 
+    height: 100vh; 
     background: white;
-    box-shadow: -4px 0px 10px rgba(0, 0, 0, 0.2);
-    overflow-y: auto;
-    z-index: 1000;
-    transition: transform 0.3s ease-in-out;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; 
     padding: 20px;
+    z-index: 1000;
+    border-left: 2px solid #ddd;
   }
   
-  /* The main panel inside the popup */
   .popup-panel {
-    display: flex;
-    flex-direction: column;
+    max-height: 90vh; 
+    overflow-y: auto; 
+    padding-bottom: 10px; 
   }
   
-  /* The close button */
-  .popup-close-btn {
+    .popup-close-btn {
     align-self: flex-end;
     background: none;
     border: none;
     font-size: 18px;
     cursor: pointer;
     color: black;
+    transition: transform 0.3s ease-in-out;
   }
-  
-  /* Popup title styling */
+
+  .popup-close-btn:hover {
+    transition: transform 0.3s ease-in-out;
+    color: gray;
+
+  }
+
   .popup-title {
     font-size: 22px;
     font-weight: bold;
@@ -795,22 +707,21 @@ table {
     margin-bottom: 15px;
   }
   
-  /* Style each requirement group */
   .requirement-group {
     border: 1px solid #ccc;
     border-radius: 8px;
-    padding: 10px;
+    padding: 5px;
     margin-bottom: 15px;
     background-color: #f9f9f9;
+    padding-bottom: 10px;
   }
   
-  /* Courses fulfilling the requirement title */
   .courses-title {
     font-weight: bold;
     margin-bottom: 5px;
+    margin-left: 5px;
   }
   
-  /* Course links to trigger another popup */
   .course-link {
     color: blue;
     text-decoration: underline;
@@ -820,4 +731,38 @@ table {
   .course-link:hover {
     color: darkblue;
   }
+
+  .requirements-container {
+    text-align: left;
+    padding-top: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+  }
+  
+  .requirement-group {
+    margin-bottom: 10px; 
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .requirement-group h3 {
+    padding-top: 5px;
+    margin: 0;
+    padding-left: 5px;
+    font-size: 1.1rem;
+  }
+  
+  .requirement-list {
+    padding-left: 20px; 
+    margin-top: 5px;
+  }
+  
+  .requirement-list li {
+    list-style-type: disc; 
+    margin-bottom: 3px;
+  }
+  
   
