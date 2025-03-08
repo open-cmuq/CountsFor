@@ -16,6 +16,10 @@ class CourseRepository:
         """Fetch course details by course code (raw data only)."""
         return self.db.query(Course).filter(Course.course_code == course_code).first()
 
+    def get_all_courses(self):
+        """Fetch all courses with their prerequisites and department (raw data only)."""
+        return self.db.query(Course).all()
+
     def get_courses_by_department(self, department: str):
         """Fetch all courses within a department (raw data only)."""
         return self.db.query(Course).filter(Course.dep_code == department).all()

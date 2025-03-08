@@ -34,8 +34,28 @@ class CourseService:
             requirements=requirements,
         )
 
+    def fetch_all_courses(self) -> CourseListResponse:
+        """Fetch and structure all courses for the frontend."""
+        courses = self.course_repo.get_all_courses()
+
+        structured_courses = []
+        for course in courses:
+            offered_semesters = self.course_repo.get_offered_semesters(course.course_code)
+            requirements = self.course_repo.get_course_requirements(course.course_code)
+
+            structured_courses.append(CourseResponse(
+                course_code=course.course_code,
+                course_name=course.name,
+                department=course.dep_code,
+                prerequisites=course.prereqs_text or "None",
+                offered=offered_semesters,
+                requirements=requirements,
+            ))
+
+        return CourseListResponse(courses=structured_courses)
+
     def fetch_courses_by_department(self, department: str) -> CourseListResponse:
-        """Fetch all courses in a department."""
+        """Fetch all courses filtered by department."""
         courses = self.course_repo.get_courses_by_department(department)
 
         structured_courses = []
@@ -53,6 +73,7 @@ class CourseService:
             ))
 
         return CourseListResponse(courses=structured_courses)
+
 
     def fetch_courses_by_requirement(self, cs_requirement=None, is_requirement=None, ba_requirement=None, bs_requirement=None) -> CourseListResponse:
         """Fetch and process courses matching requirements."""
