@@ -14,34 +14,56 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
           <>
             <p><strong>Course Code:</strong> {content.course_code}</p>
             <p><strong>Name:</strong> {content.course_name}</p>
+            <p><strong>Units:</strong> {content.units}</p>
+            <p><strong>Description:</strong> {content.description}</p>
             <p><strong>Prerequisites:</strong> {content.prerequisites || "None"}</p>
-            <p><strong>Offered:</strong> {content.offered.join(", ")}</p>
+            <p><strong>Semesters Offered:</strong> {content.offered.join(", ")}</p>
+            <div className="requirements-container">
+            <p><strong>Requirements Fulfilled by Course</strong> </p> 
+            {Object.entries(content.requirements)
+                .filter(([_, reqs]) => reqs.length > 0)
+                .map(([major, reqs]) => (
+                <div key={major} className="requirement-group">
+                    <h3>{major}</h3>
+                    <ul className="requirement-list">
+                    {reqs.map((req, index) => (
+                        <li key={index}>{req}</li>
+                    ))}
+                    </ul>
+                </div>
+                ))}
+            </div>
           </>
         ) : (
           <>
             {content.requirement.map((req, index) => {
-              const fulfillingCourses = content.courses.filter((c) =>
+              const fulfillingCourses = content.courses
+              .filter((c) =>
                 Object.values(c.requirements).some((reqList) => reqList.includes(req))
-              );
+              )
+              .sort((a, b) => {
+
+                const numA = parseInt(a.course_code.split("-")[1]);
+                const numB = parseInt(b.course_code.split("-")[1]);
+                return numA - numB;
+              });
 
               return (
                 <div key={index} className="requirement-group">
                   <h3>{req}</h3>
                   <p className="courses-title">
-                    Courses Fulfilling This Requirement <span className="course-count">({fulfillingCourses.length})</span>:
+                    Courses Fulfilling This Requirement{" "}
+                    <span className="course-count">[{fulfillingCourses.length}]</span>
                   </p>
                   <ul>
                     {fulfillingCourses.map((c, idx) => (
-                      <li key={idx}>
-                        <span
-                          className="course-link"
-                          onClick={() => openPopup("course", c)}
-                        >
-                          {c.course_code} - {c.course_name}
+                        <li key={idx}>
+                        <span className="course-link" onClick={() => openPopup("course", c)}>
+                            {c.course_code} - {c.course_name}
                         </span>
-                      </li>
+                        </li>
                     ))}
-                  </ul>
+                    </ul>
                 </div>
               );
             })}
@@ -53,4 +75,3 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
 };
 
 export default Popup;
-
