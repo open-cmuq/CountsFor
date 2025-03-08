@@ -8,11 +8,12 @@ const API_BASE_URL = "http://127.0.0.1:8000";
 
 const CourseTablePage = () => {
   const [departments, setDepartments] = useState([]);  // Ensure it's an array
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
-  const [courses, setCourses] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);  
+  const [filteredCourses, setFilteredCourses] = useState([]);  
   const [selectedFilters, setSelectedFilters] = useState({ BA: [], BS: [], CS: [], IS: [] });
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -53,8 +54,8 @@ const CourseTablePage = () => {
         const response = await fetch(`${API_BASE_URL}/courses`);
         if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
-        console.log("Fetched Courses from API:", data);
-        setCourses(data.courses);  // Extract courses list
+        setAllCourses(data.courses);  
+        setFilteredCourses(data.courses);  
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
@@ -62,6 +63,31 @@ const CourseTablePage = () => {
 
     fetchCourses();
   }, []);
+
+  useEffect(() => {
+    setFilteredCourses(
+      allCourses
+        .filter((course) =>
+          (selectedDepartment === "" || course.department === selectedDepartment) &&
+          (searchQuery === "" || course.course_code.includes(searchQuery)) &&
+          Object.keys(selectedFilters).every((major) => {
+            if (selectedFilters[major].length === 0) return true;
+            const courseReqs = course.requirements?.[major] || [];
+            return selectedFilters[major].some((req) =>
+              courseReqs.map((r) => r.toLowerCase()).includes(String(req).toLowerCase())
+            );
+          })
+        )
+        // .sort((a, b) => {
+        //   // Count the total number of requirements each course fulfills
+        //   const countA = Object.values(a.requirements || {}).reduce((sum, reqs) => sum + reqs.length, 0);
+        //   const countB = Object.values(b.requirements || {}).reduce((sum, reqs) => sum + reqs.length, 0);
+  
+        //   return countB - countA; // Higher count first
+        // })
+    );
+  }, [searchQuery, selectedDepartment, selectedFilters, allCourses]);
+  
 
   const handleFilterChange = (major, newSelection) => {
     setSelectedFilters((prev) => ({
@@ -74,26 +100,12 @@ const CourseTablePage = () => {
     setSelectedFilters((prev) => ({ ...prev, [major]: [] }));
   };
 
-  const filteredCourses = courses.filter((course) =>
-    (selectedDepartment === "" || course.department === selectedDepartment) &&
-    (searchQuery === "" || course.course_code.includes(searchQuery)) &&
-    Object.keys(selectedFilters).every((major) => {
-      if (selectedFilters[major].length === 0) return true;
-
-      const courseReqs = course.requirements?.[major] || [];
-
-      return selectedFilters[major].some((req) =>
-        courseReqs.map((r) => r.toLowerCase()).includes(String(req).toLowerCase())
-      );
-    })
-  );
-
   return (
     <div className="table-container">
       <h1 className="title">CMU-Q General Education</h1>
 
       <SearchBar
-        departments={departments}  // Now using real API data
+        departments={departments}
         selectedDepartment={selectedDepartment}
         setSelectedDepartment={setSelectedDepartment}
         searchQuery={searchQuery}
@@ -101,12 +113,13 @@ const CourseTablePage = () => {
       />
       <SelectedFilters selectedFilters={selectedFilters} handleFilterChange={handleFilterChange} />
       <CourseTable
-        courses={filteredCourses}
+        courses={filteredCourses}  
+        allCourses={allCourses}  
         allRequirements={requirements}
         selectedFilters={selectedFilters}
         handleFilterChange={handleFilterChange}
         clearFilters={clearFilters}
-        setVisibleCourses={setCourses}
+        setVisibleCourses={setFilteredCourses}
       />
     </div>
   );
