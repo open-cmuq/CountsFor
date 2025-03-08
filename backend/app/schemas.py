@@ -16,11 +16,12 @@ class CourseFilter(BaseModel):
     bs_requirement: Optional[str] = Field(None, description="BS requirement)")
 
 class CourseResponse(BaseModel):
-    """
-    represents the structured output for a course.
-    """
+    """Pydantic schema for a single course response."""
     course_code: str
     course_name: str
+    department: str
+    prerequisites: Optional[str] = "None"
+    offered: List[str]
     requirements: Dict[str, List[str]]
 
 class CourseListResponse(BaseModel):
