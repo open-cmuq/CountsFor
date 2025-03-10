@@ -2,15 +2,38 @@ import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import Popup from "./PopUp";
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, handleFilterChange, clearFilters, setVisibleCourses }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
   const [popupContent, setPopupContent] = useState(null);
 
-  const openPopup = (type, content) => {
-    setPopupType(type);
-    setPopupContent(content);
-    setIsPopupOpen(true);
+  const fetchCourseDetails = async (course_code) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses/${course_code}`);
+      if (!response.ok) throw new Error("Failed to fetch course details");
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching course details:", error);
+      return null;
+    }
+  };
+
+  const openPopup = async (type, content) => {
+    if (type === "course") {
+      const fullCourseDetails = await fetchCourseDetails(content.course_code);
+      if (fullCourseDetails) {
+        setPopupType(type);
+        setPopupContent(fullCourseDetails);
+        setIsPopupOpen(true);
+      }
+    } else {
+      setPopupType(type);
+      setPopupContent(content);
+      setIsPopupOpen(true);
+    }
   };
 
   const closePopup = () => {
@@ -61,7 +84,7 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
               <td>
                 <b
                   className="clickable"
-                  onClick={() => openPopup("course", course)}
+                  onClick={() => openPopup("course", course)} // Now fetches full details
                   style={{ cursor: "pointer", textDecoration: "underline", color: "black" }}
                 >
                   {course.course_code}
@@ -89,7 +112,7 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
                     style={{ cursor: "pointer", color: "blue", textAlign: "center" }}
                   >
                     {requirements.length === 1 ? (
-                      requirements[0] 
+                      requirements[0]
                     ) : (
                       <ul style={{ margin: "5px 0", paddingLeft: "20px", textAlign: "left" }}>
                         {requirements.map((req, index) => (
