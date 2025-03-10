@@ -17,8 +17,25 @@ class CourseRepository:
         return self.db.query(Course).filter(Course.course_code == course_code).first()
 
     def get_all_courses(self):
-        """fetch all courses with their prerequisites and department (raw data only)."""
-        return self.db.query(Course).all()
+        """fetch all courses with their raw details (ordering will be handled in the service layer)."""
+        courses = self.db.query(Course).all()
+
+        result = []
+        for course in courses:
+            offered_semesters = self.get_offered_semesters(course.course_code)
+            requirements = self.get_course_requirements(course.course_code)
+
+            result.append({
+                "course_code": course.course_code,
+                "course_name": course.name,
+                "department": course.dep_code,
+                "prerequisites": course.prereqs_text or "None",
+                "offered": offered_semesters,
+                "requirements": requirements,
+            })
+
+        return result
+
 
     def get_courses_by_department(self, department: str):
         """fetch all courses within a department (raw data only)."""
