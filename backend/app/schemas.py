@@ -15,14 +15,18 @@ class CourseFilter(BaseModel):
     ba_requirement: Optional[str] = Field(None, description="BA requirement")
     bs_requirement: Optional[str] = Field(None, description="BS requirement)")
 
+
 class CourseResponse(BaseModel):
     """Pydantic schema for a single course response."""
     course_code: str
     course_name: str
     department: str
+    units: Optional[int] = None
+    description: Optional[str] = None
     prerequisites: Optional[str] = "None"
     offered: List[str]
     requirements: Dict[str, List[str]]
+
 
 class CourseListResponse(BaseModel):
     """

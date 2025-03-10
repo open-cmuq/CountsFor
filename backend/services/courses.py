@@ -14,25 +14,26 @@ class CourseService:
         self.course_repo = CourseRepository(db)
 
     def fetch_course_by_code(self, course_code: str) -> Optional[CourseResponse]:
-        """Fetch a course and format its response."""
+        """Fetch a course and format its response with all necessary fields."""
         course = self.course_repo.get_course_by_code(course_code)
         if not course:
             return None
 
-        # Fetch offered semesters
         offered_semesters = self.course_repo.get_offered_semesters(course_code)
 
-        # Fetch course requirements
         requirements = self.course_repo.get_course_requirements(course_code)
 
         return CourseResponse(
             course_code=course.course_code,
             course_name=course.name,
             department=course.dep_code,
+            units=course.units,
+            description=course.description,
             prerequisites=course.prereqs_text or "None",
             offered=offered_semesters,
             requirements=requirements,
         )
+
 
     def fetch_all_courses(self) -> CourseListResponse:
         """Fetch and structure all courses for the frontend."""
@@ -75,13 +76,18 @@ class CourseService:
         return CourseListResponse(courses=structured_courses)
 
 
-    def fetch_courses_by_requirement(self, cs_requirement=None, is_requirement=None, ba_requirement=None, bs_requirement=None) -> CourseListResponse:
+    def fetch_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
+                                     ba_requirement=None,bs_requirement=None) -> CourseListResponse:
         """Fetch and process courses matching requirements."""
-        raw_results = self.course_repo.get_courses_by_requirement(cs_requirement, is_requirement, ba_requirement, bs_requirement)
+        raw_results = self.course_repo.get_courses_by_requirement(cs_requirement,
+                                                                  is_requirement,
+                                                                  ba_requirement,
+                                                                  bs_requirement)
 
         # Process results into structured output
         course_dict: Dict[str, dict] = {}
-        for course_code, course_name, department, prerequisites, requirement, audit_id in raw_results:
+        for (course_code, course_name, department,
+             prerequisites, requirement, audit_id) in raw_results:
             if course_code not in course_dict:
                 offered_semesters = self.course_repo.get_offered_semesters(course_code)
 
@@ -103,7 +109,8 @@ class CourseService:
             elif audit_id.startswith("bio"):
                 course_dict[course_code]["requirements"]["BS"].append(requirement)
 
-        return CourseListResponse(courses=[CourseResponse(**course) for course in course_dict.values()])
+        return CourseListResponse(courses=[CourseResponse(**course)
+                                           for course in course_dict.values()])
 
     def fetch_all_requirements(self):
         """Retrieve and structure requirements for the frontend."""
@@ -112,4 +119,3 @@ class CourseService:
     def fetch_all_departments(self) -> List[str]:
         """Fetch a distinct list of all departments."""
         return self.course_repo.get_all_departments()
-
