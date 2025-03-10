@@ -1,51 +1,75 @@
 import React from "react";
-import Draggable from "react-draggable";
-import { ResizableBox } from "react-resizable";
 
-const Popup = ({ isOpen, onClose, type, content }) => {
+const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
   if (!isOpen) return null;
 
   return (
     <div className="popup-overlay">
-      <Draggable handle=".popup-header">
-        <ResizableBox width={400} height={300} minConstraints={[300, 200]} maxConstraints={[800, 600]}>
-          <div className="popup-content">
-            {/* Header (Drag Handle) */}
-            <div className="popup-header">
-              <span>{type === "course" ? "Course Details" : "Courses for Requirement"}</span>
-              <button className="close-btn" onClick={onClose}>✖</button>
-            </div>
+      <div className="popup-panel">
+        <button className="popup-close-btn" onClick={onClose}>✖</button>
 
-            {/* Popup Content */}
-            <div className="popup-body">
-              {type === "course" ? (
-                <>
-                  <p><b>Course Code:</b> {content.course_code}</p>
-                  <p><b>Course Name:</b> {content.course_name}</p>
-                  <p><b>Prerequisites:</b> {content.prerequisites || "None"}</p>
-                  <p><b>Offered:</b> {content.offered?.join(", ") || "N/A"}</p>
-                  <p><b>Description:</b> {content.description || "No description available."}</p>
-                </>
-              ) : type === "requirement" ? (
-                <>
-                  <p><b>Requirement:</b> {content.requirement}</p>
-                  <ul>
-                    {content.courses.length > 0 ? (
-                      content.courses.map((course) => (
-                        <li key={course.course_code}>
-                          {course.course_code} - {course.course_name}
-                        </li>
-                      ))
-                    ) : (
-                      <p>No courses fulfill this requirement.</p>
-                    )}
-                  </ul>
-                </>
-              ) : null}
+        <h2 className="popup-title">{type === "course" ? "Course Details" : "Requirement Details"}</h2>
+
+        {type === "course" ? (
+          <>
+            <p><strong>Course Code:</strong> {content.course_code}</p>
+            <p><strong>Name:</strong> {content.course_name}</p>
+            <p><strong>Units:</strong> {content.units}</p>
+            <p><strong>Description:</strong> {content.description}</p>
+            <p><strong>Prerequisites:</strong> {content.prerequisites || "None"}</p>
+            <p><strong>Semesters Offered:</strong> {content.offered.join(", ")}</p>
+            <div className="requirements-container">
+            <p><strong>Requirements Fulfilled by Course</strong> </p> 
+            {Object.entries(content.requirements)
+                .filter(([_, reqs]) => reqs.length > 0)
+                .map(([major, reqs]) => (
+                <div key={major} className="requirement-group">
+                    <h3>{major}</h3>
+                    <ul className="requirement-list">
+                    {reqs.map((req, index) => (
+                        <li key={index}>{req}</li>
+                    ))}
+                    </ul>
+                </div>
+                ))}
             </div>
-          </div>
-        </ResizableBox>
-      </Draggable>
+          </>
+        ) : (
+          <>
+            {content.requirement.map((req, index) => {
+              const fulfillingCourses = content.courses
+              .filter((c) =>
+                Object.values(c.requirements).some((reqList) => reqList.includes(req))
+              )
+              .sort((a, b) => {
+
+                const numA = parseInt(a.course_code.split("-")[1]);
+                const numB = parseInt(b.course_code.split("-")[1]);
+                return numA - numB;
+              });
+
+              return (
+                <div key={index} className="requirement-group">
+                  <h3>{req}</h3>
+                  <p className="courses-title">
+                    Courses Fulfilling This Requirement{" "}
+                    <span className="course-count">[{fulfillingCourses.length}]</span>
+                  </p>
+                  <ul>
+                    {fulfillingCourses.map((c, idx) => (
+                        <li key={idx}>
+                        <span className="course-link" onClick={() => openPopup("course", c)}>
+                            {c.course_code} - {c.course_name}
+                        </span>
+                        </li>
+                    ))}
+                    </ul>
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
     </div>
   );
 };

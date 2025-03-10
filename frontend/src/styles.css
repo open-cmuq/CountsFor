@@ -193,23 +193,6 @@
     cursor: pointer;
     font-size: 16px;
   }
-
-  /* table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 1px;
-
-  }
-  
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 8px;
-  }
-  
-  th {
-    background-color: #f0f0f0;
-  } */
   
 /* Ensure table uses fixed layout */
 table {
@@ -260,43 +243,7 @@ table {
   pointer-events: none; /* Prevent interactions */
 }
 
-/* Popup Overlay (Background Dim) */
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-  }
-  
-  /* Popup Content Box */
-  .popup-content {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-  }
-  
-  /* Popup Header (Draggable) */
-  .popup-header {
-    background: #007bff;
-    color: white;
-    padding: 10px;
-    cursor: grab;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
+
   /* Close Button */
   .close-btn {
     background: transparent;
@@ -310,12 +257,7 @@ table {
     color: #ffdddd;
   }
   
-  /* Popup Body */
-  .popup-body {
-    padding: 15px;
-    overflow: auto;
-    flex-grow: 1;
-  }
+  
   
   /* Resize Handle */
   .react-resizable-handle {
@@ -327,16 +269,6 @@ table {
     right: 5px;
     cursor: nwse-resize;
     border-radius: 50%;
-  }
-  
-  .search-container {
-    background: #d9d9d9;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 40%
   }
   
   .search-label {
@@ -358,15 +290,6 @@ table {
     padding: 8px;
   }
   
-  /* .clear-btn {
-    background: black;
-    color: white;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-  } */
-  
   .selected-filters {
     display: flex;
     gap: 1px;
@@ -377,12 +300,23 @@ table {
   .filter-tag {
     background: darkgrey;
     color: white;
-    padding: 5px 10px;
+    padding: 5px;
     border-radius: 5px;
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 15px;
+    height: 19px;
+    max-width: 550px; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 3px;
+    display: inline-block;
+  }
+  
+  .filter-tag:hover {
+    background: #333;
   }
   
   .filter-tag button {
@@ -392,88 +326,11 @@ table {
     /* background: none; */
     border: none;
     color: white;
-    /* margin-left: 6px; */
+    margin-left: 0px;
     cursor: pointer;
+    padding-left: 3px;
+    padding-right: 3px;
   }
-
-  /*
-  .filter-tag {
-    display: flex;
-    align-items: center;
-    padding: 4px 8px; 
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: bold;
-    color: white;
-  } 
-  .selected-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .filter-tag button {
-    background: none;
-    border: none;
-    color: white;
-    margin-left: 6px;
-    cursor: pointer;
-  } */
-  
-  
-  /* .dropdown, .text-input {
-    padding: 4px;
-    border-radius: 2px;
-  }
-   */
-  
-   .search-container {
-    background: #d9d9d9;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: left; /* Aligns items in one row */
-    gap: 10px;
-    width: 50%;
-  }
-  
-  .search-label {
-    font-weight: bold;
-    white-space: nowrap; /* Prevents wrapping */
-  }
-  
-  .search-inputs {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-grow: 1; /* Allows the inputs to take available space */
-  }
-  
-  .search-dropdown, .text-input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    flex: 1; /* Makes them equal width */
-  }
-  
-  .search-btn {
-    background: white;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 100px;
-  }
-  
-  .search-clear-btn {
-    background: black;
-    color: white;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    border-radius: 4px;
-  }
-
   
   .h1 {
     font-size: 50px;
@@ -644,24 +501,7 @@ table {
     cursor: pointer;
 
   }
-
-
-  .grayed-out {
-    background-color: #f0f0f0;
-    color: #999;
-  }
-  
-  /* .search-bar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
-
-  */
-
-  
+ 
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
@@ -676,23 +516,7 @@ table {
     font-size: 16px;
   }
 
-  /* table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 1px;
 
-  }
-  
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 8px;
-  }
-  
-  th {
-    background-color: #f0f0f0;
-  } */
-  
 /* Ensure table uses fixed layout */
 table {
     table-layout: fixed;
@@ -733,7 +557,6 @@ table {
     text-align: center;
     border-radius: 6px;
   }
-
   
 /* Gray out N/A cells */
 .na-cell {
@@ -742,43 +565,6 @@ table {
   pointer-events: none; /* Prevent interactions */
 }
 
-/* Popup Overlay (Background Dim) */
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-  }
-  
-  /* Popup Content Box */
-  .popup-content {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    resize: both;
-  }
-  
-  /* Popup Header (Draggable) */
-  .popup-header {
-    background: #007bff;
-    color: white;
-    padding: 10px;
-    cursor: grab;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
   /* Close Button */
   .close-btn {
     background: transparent;
@@ -790,25 +576,6 @@ table {
   
   .close-btn:hover {
     color: #ffdddd;
-  }
-  
-  /* Popup Body */
-  .popup-body {
-    padding: 15px;
-    overflow: auto;
-    flex-grow: 1;
-  }
-  
-  /* Resize Handle */
-  .react-resizable-handle {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: #007bff;
-    bottom: 5px;
-    right: 5px;
-    cursor: nwse-resize;
-    border-radius: 50%;
   }
   
   .search-container {
@@ -839,15 +606,7 @@ table {
     cursor: pointer;
     padding: 8px;
   }
-  
-  /* .clear-btn {
-    background: black;
-    color: white;
-    border: none;
-    padding: 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-  } */
+
   
   .selected-filters {
     display: flex;
@@ -855,87 +614,24 @@ table {
     margin-top: 5px;
     margin-bottom: 5px;
   }
-  
-  .filter-tag {
-    background: darkgrey;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 15px;
-  }
-  
-  .filter-tag button {
-    background: transparent;
-    color: white;
-    border: none;
-    /* background: none; */
-    border: none;
-    color: white;
-    /* margin-left: 6px; */
-    cursor: pointer;
-  }
 
-  /*
-  .filter-tag {
-    display: flex;
-    align-items: center;
-    padding: 4px 8px; 
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: bold;
-    color: white;
-  } 
-  .selected-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .filter-tag button {
-    background: none;
-    border: none;
-    color: white;
-    margin-left: 6px;
-    cursor: pointer;
-  } */
-  
-  
-  /* .dropdown, .text-input {
-    padding: 4px;
-    border-radius: 2px;
-  }
-   */
-  
-   .search-container {
-    background: #d9d9d9;
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: left; /* Aligns items in one row */
-    gap: 10px;
-    width: 50%;
-  }
-  
   .search-label {
     font-weight: bold;
-    white-space: nowrap; /* Prevents wrapping */
+    white-space: nowrap; 
   }
   
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex-grow: 1; /* Allows the inputs to take available space */
+    flex-grow: 1; 
   }
   
   .search-dropdown, .text-input {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    flex: 1; /* Makes them equal width */
+    flex: 1; 
   }
   
   .search-btn {
@@ -965,6 +661,108 @@ table {
     font-size: 20px;
     font-weight: bold;
   }
+
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 450px; 
+    height: 100vh; 
+    background: white;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; 
+    padding: 20px;
+    z-index: 1000;
+    border-left: 2px solid #ddd;
+  }
   
+  .popup-panel {
+    max-height: 90vh; 
+    overflow-y: auto; 
+    padding-bottom: 10px; 
+  }
+  
+    .popup-close-btn {
+    align-self: flex-end;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: black;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .popup-close-btn:hover {
+    transition: transform 0.3s ease-in-out;
+    color: gray;
+
+  }
+
+  .popup-title {
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 2px solid black;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+  }
+  
+  .requirement-group {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 5px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    padding-bottom: 10px;
+  }
+  
+  .courses-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    margin-left: 5px;
+  }
+  
+  .course-link {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  
+  .course-link:hover {
+    color: darkblue;
+  }
+
+  .requirements-container {
+    text-align: left;
+    padding-top: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+  }
+  
+  .requirement-group {
+    margin-bottom: 10px; 
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .requirement-group h3 {
+    padding-top: 5px;
+    margin: 0;
+    padding-left: 5px;
+    font-size: 1.1rem;
+  }
+  
+  .requirement-list {
+    padding-left: 20px; 
+    margin-top: 5px;
+  }
+  
+  .requirement-list li {
+    list-style-type: disc; 
+    margin-bottom: 3px;
+  }
   
   

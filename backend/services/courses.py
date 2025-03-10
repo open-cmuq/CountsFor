@@ -29,10 +29,13 @@ class CourseService:
             course_code=course.course_code,
             course_name=course.name,
             department=course.dep_code,
+            units=course.units,
+            description=course.description,
             prerequisites=course.prereqs_text or "None",
             offered=offered_semesters,
             requirements=requirements,
         )
+
 
     def fetch_all_courses(self) -> CourseListResponse:
         """Fetch and structure all courses for the frontend."""
