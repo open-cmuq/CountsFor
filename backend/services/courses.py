@@ -38,44 +38,35 @@ class CourseService:
 
 
     def fetch_all_courses(self) -> CourseListResponse:
-        """Fetch and structure all courses for the frontend."""
+        """fetch and structure all courses, prioritizing courses that fulfill
+        at least one requirement."""
         courses = self.course_repo.get_all_courses()
 
-        structured_courses = []
         for course in courses:
-            offered_semesters = self.course_repo.get_offered_semesters(course.course_code)
-            requirements = self.course_repo.get_course_requirements(course.course_code)
+            course["num_requirements"] = sum(len(reqs) for reqs in course["requirements"].values())
+            course["num_offered_semesters"] = len(course["offered"])
 
-            structured_courses.append(CourseResponse(
-                course_code=course.course_code,
-                course_name=course.name,
-                department=course.dep_code,
-                prerequisites=course.prereqs_text or "None",
-                offered=offered_semesters,
-                requirements=requirements,
-            ))
+        sorted_courses = sorted(
+            courses,
+            key=lambda c: (c["num_requirements"] == 0, -c["num_offered_semesters"]),
+            reverse=False
+        )
+
+        structured_courses = [
+            CourseResponse(
+                course_code=course["course_code"],
+                course_name=course["course_name"],
+                department=course["department"],
+                prerequisites=course["prerequisites"],
+                offered=course["offered"],
+                requirements=course["requirements"],
+            )
+            for course in sorted_courses
+        ]
 
         return CourseListResponse(courses=structured_courses)
 
-    def fetch_courses_by_department(self, department: str) -> CourseListResponse:
-        """fetch all courses filtered by department."""
-        courses = self.course_repo.get_courses_by_department(department)
 
-        structured_courses = []
-        for course in courses:
-            offered_semesters = self.course_repo.get_offered_semesters(course.course_code)
-            requirements = self.course_repo.get_course_requirements(course.course_code)
-
-            structured_courses.append(CourseResponse(
-                course_code=course.course_code,
-                course_name=course.name,
-                department=course.dep_code,
-                prerequisites=course.prereqs_text or "None",
-                offered=offered_semesters,
-                requirements=requirements,
-            ))
-
-        return CourseListResponse(courses=structured_courses)
 
 
     def fetch_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
