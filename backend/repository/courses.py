@@ -17,7 +17,8 @@ class CourseRepository:
         return self.db.query(Course).filter(Course.course_code == course_code).first()
 
     def get_all_courses(self):
-        """fetch all courses with their raw details (ordering will be handled in the service layer)."""
+        """fetch all courses with their raw details (ordering will be handled
+        in the service layer)."""
         courses = self.db.query(Course).all()
 
         result = []

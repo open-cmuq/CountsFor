@@ -38,7 +38,8 @@ class CourseService:
 
 
     def fetch_all_courses(self) -> CourseListResponse:
-        """fetch and structure all courses, prioritizing courses that fulfill at least one requirement."""
+        """fetch and structure all courses, prioritizing courses that fulfill
+        at least one requirement."""
         courses = self.course_repo.get_all_courses()
 
         for course in courses:
