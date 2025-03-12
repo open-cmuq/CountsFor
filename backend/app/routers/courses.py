@@ -10,8 +10,7 @@ from sqlalchemy.orm import Session
 from backend.database.db import get_db
 from backend.services.courses import CourseService
 from backend.app.schemas import (CourseResponse, CourseListResponse,
-                                 CourseFilter, RequirementsResponse,
-                                 DepartmentListResponse)
+                                 CourseFilter, DepartmentListResponse)
 
 router = APIRouter()
 
@@ -66,11 +65,6 @@ def get_course(course_code: str, course_service: CourseService = Depends(get_cou
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     return course
-
-@router.get("/requirements", response_model=RequirementsResponse)
-def get_requirements(course_service: CourseService = Depends(get_course_service)):
-    """API route to fetch all course requirements grouped by major."""
-    return course_service.fetch_all_requirements()
 
 @router.get("/departments", response_model=DepartmentListResponse)
 def get_departments(course_service: CourseService = Depends(get_course_service)):

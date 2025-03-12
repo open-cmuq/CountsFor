@@ -103,22 +103,6 @@ class CourseRepository:
 
         return query.all()
 
-    def get_all_requirements(self):
-        """fetch all requirements grouped by major."""
-        requirements = self.db.query(Requirement.requirement, Requirement.audit_id).all()
-        categorized = {"BA": [], "BS": [], "CS": [], "IS": []}
-
-        for requirement, audit_id in requirements:
-            if audit_id.startswith("ba"):
-                categorized["BA"].append(requirement)
-            elif audit_id.startswith("bio"):
-                categorized["BS"].append(requirement)
-            elif audit_id.startswith("cs"):
-                categorized["CS"].append(requirement)
-            elif audit_id.startswith("is"):
-                categorized["IS"].append(requirement)
-
-        return categorized
 
     def get_all_departments(self):
         """fetch all unique departments from the database."""

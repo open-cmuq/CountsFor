@@ -104,9 +104,6 @@ class CourseService:
         return CourseListResponse(courses=[CourseResponse(**course)
                                            for course in course_dict.values()])
 
-    def fetch_all_requirements(self):
-        """retrieve and structure requirements for the frontend."""
-        return self.course_repo.get_all_requirements()
 
     def fetch_all_departments(self) -> List[str]:
         """fetch a distinct list of all departments."""
