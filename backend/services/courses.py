@@ -57,6 +57,8 @@ class CourseService:
                 course_code=course["course_code"],
                 course_name=course["course_name"],
                 department=course["department"],
+                units=course["units"],
+                description=course["description"],
                 prerequisites=course["prerequisites"],
                 offered=course["offered"],
                 requirements=course["requirements"],
@@ -113,6 +115,8 @@ class CourseService:
                 course_code=course["course_code"],
                 course_name=course["course_name"],
                 department=course["department"],
+                units=course["units"],
+                description=course["description"],
                 prerequisites=course["prerequisites"],
                 offered=course["offered"],
                 requirements=course["requirements"],
@@ -122,6 +126,25 @@ class CourseService:
 
         return CourseListResponse(courses=structured_courses)
 
+    def fetch_courses_by_department(self, department: str) -> CourseListResponse:
+        """fetch and structure courses filtered by department."""
+        courses = self.course_repo.get_courses_by_department(department)
+
+        structured_courses = [
+            CourseResponse(
+                course_code=course["course_code"],
+                course_name=course["course_name"],
+                department=course["department"],
+                units=course["units"],
+                description=course["description"],
+                prerequisites=course["prerequisites"],
+                offered=course["offered"],
+                requirements=course["requirements"],
+            )
+            for course in courses
+        ]
+
+        return CourseListResponse(courses=structured_courses)
 
     def fetch_all_departments(self) -> List[str]:
         """fetch a distinct list of all departments."""
