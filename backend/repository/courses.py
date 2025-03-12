@@ -17,9 +17,15 @@ class CourseRepository:
         return self.db.query(Course).filter(Course.course_code == course_code).first()
 
     def get_all_courses(self):
-        """fetch all courses with their raw details (ordering will be handled
-        in the service layer)."""
-        courses = self.db.query(Course).all()
+        """fetch all courses with full details including units and description."""
+        courses = self.db.query(
+            Course.course_code,
+            Course.name,
+            Course.dep_code,
+            Course.units,
+            Course.description,
+            Course.prereqs_text
+        ).all()
 
         result = []
         for course in courses:
@@ -30,6 +36,8 @@ class CourseRepository:
                 "course_code": course.course_code,
                 "course_name": course.name,
                 "department": course.dep_code,
+                "units": course.units,
+                "description": course.description,
                 "prerequisites": course.prereqs_text or "None",
                 "offered": offered_semesters,
                 "requirements": requirements,
@@ -37,10 +45,34 @@ class CourseRepository:
 
         return result
 
-
     def get_courses_by_department(self, department: str):
-        """fetch all courses within a department (raw data only)."""
-        return self.db.query(Course).filter(Course.dep_code == department).all()
+        """fetch all courses within a department with full details."""
+        courses = self.db.query(
+            Course.course_code,
+            Course.name,
+            Course.dep_code,
+            Course.units,
+            Course.description,
+            Course.prereqs_text
+        ).filter(Course.dep_code == department).all()
+
+        result = []
+        for course in courses:
+            offered_semesters = self.get_offered_semesters(course.course_code)
+            requirements = self.get_course_requirements(course.course_code)
+
+            result.append({
+                "course_code": course.course_code,
+                "course_name": course.name,
+                "department": course.dep_code,
+                "units": course.units,
+                "description": course.description,
+                "prerequisites": course.prereqs_text or "None",
+                "offered": offered_semesters,
+                "requirements": requirements,
+            })
+
+        return result
 
     def get_offered_semesters(self, course_code: str):
         """fetch semesters in which a course is offered."""
@@ -102,6 +134,49 @@ class CourseRepository:
         )
 
         return query.all()
+
+    def get_courses_by_prerequisite(self, has_prereqs: bool):
+        """fetch courses that either have or do not have prerequisites with full details."""
+
+        if has_prereqs:
+            query = self.db.query(
+                Course.course_code,
+                Course.name,
+                Course.dep_code,
+                Course.units,
+                Course.description,
+                Course.prereqs_text
+            ).filter(Course.prereqs_text.isnot(None), Course.prereqs_text != "")
+        else:
+            query = self.db.query(
+                Course.course_code,
+                Course.name,
+                Course.dep_code,
+                Course.units,
+                Course.description,
+                Course.prereqs_text
+            ).filter((Course.prereqs_text.is_(None)) | (Course.prereqs_text == ""))
+
+        courses = query.all()
+
+        result = []
+        for course in courses:
+            offered_semesters = self.get_offered_semesters(course.course_code)
+            requirements = self.get_course_requirements(course.course_code)
+
+            result.append({
+                "course_code": course.course_code,
+                "course_name": course.name,
+                "department": course.dep_code,
+                "units": course.units,  # ✅ Fix: Include units
+                "description": course.description,  # ✅ Fix: Include description
+                "prerequisites": course.prereqs_text if has_prereqs else "None",
+                "offered": offered_semesters,
+                "requirements": requirements,
+            })
+
+        return result
+
 
 
     def get_all_departments(self):
