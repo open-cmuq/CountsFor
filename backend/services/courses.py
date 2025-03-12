@@ -4,8 +4,7 @@ this script contains the business logic for handling courses
 from typing import Dict, Optional, List
 from sqlalchemy.orm import Session
 from backend.repository.courses import CourseRepository
-from backend.app.schemas import (CourseResponse, CourseListResponse,
-                                 RequirementsResponse, RequirementResponse)
+from backend.app.schemas import CourseResponse, CourseListResponse
 
 
 class CourseService:
@@ -104,34 +103,6 @@ class CourseService:
 
         return CourseListResponse(courses=[CourseResponse(**course)
                                            for course in course_dict.values()])
-
-    def fetch_requirement(self, requirement_name: str) -> Optional[RequirementResponse]:
-        """fetch and return a single requirement with type and major."""
-        requirement = self.course_repo.get_requirement(requirement_name)
-        if not requirement:
-            return None
-
-        return RequirementResponse(
-            requirement=requirement["requirement"],
-            type=requirement["type"],
-            major=requirement["major"]
-        )
-
-    def fetch_all_requirements(self) -> RequirementsResponse:
-        """fetch and structure all requirements."""
-        requirements = self.course_repo.get_all_requirements()
-
-        structured_requirements = [
-            RequirementResponse(
-                requirement=req["requirement"],
-                type=req["type"],
-                major=req["major"]
-            )
-            for req in requirements
-        ]
-
-        return RequirementsResponse(requirements=structured_requirements)
-
 
 
     def fetch_all_departments(self) -> List[str]:

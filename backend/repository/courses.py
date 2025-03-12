@@ -4,7 +4,7 @@ this script implements the data access layer for courses.
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
+from backend.database.models import Course, CountsFor, Requirement, Offering
 
 class CourseRepository:
     """encapsulates all database operations for the 'Course' entity."""
@@ -102,41 +102,6 @@ class CourseRepository:
         )
 
         return query.all()
-
-    def get_requirement(self, requirement_name: str):
-        """fetch a specific requirement along with its type and major from the Audit table."""
-        result = (
-            self.db.query(Requirement.requirement, Audit.type, Audit.major)
-            .join(Audit, Requirement.audit_id == Audit.audit_id)
-            .filter(Requirement.requirement == requirement_name)
-            .first()
-        )
-
-        if result:
-            return {
-                "requirement": result[0],
-                "type": result[1],
-                "major": result[2]
-            }
-        return None
-
-
-    def get_all_requirements(self):
-        """fetch all requirements with their corresponding type and major from the Audit table."""
-        requirements = (
-            self.db.query(Requirement.requirement, Audit.type, Audit.major)
-            .join(Audit, Requirement.audit_id == Audit.audit_id)
-            .all()
-        )
-
-        return [
-            {
-                "requirement": requirement,
-                "type": audit_type,
-                "major": major
-            }
-            for requirement, audit_type, major in requirements
-        ]
 
 
     def get_all_departments(self):
