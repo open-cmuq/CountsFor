@@ -103,6 +103,33 @@ class CourseRepository:
 
         return query.all()
 
+    def get_courses_by_prerequisite(self, has_prereqs: bool):
+        """fetch courses that either have or do not have prerequisites."""
+        if has_prereqs:
+            query = self.db.query(Course).filter(Course.prereqs_text.isnot(None),
+                                                 Course.prereqs_text != "")
+        else:
+            query = self.db.query(Course).filter((Course.prereqs_text.is_(None)) |
+                                                 (Course.prereqs_text == ""))
+
+        courses = query.all()
+
+        result = []
+        for course in courses:
+            offered_semesters = self.get_offered_semesters(course.course_code)
+            requirements = self.get_course_requirements(course.course_code)
+
+            result.append({
+                "course_code": course.course_code,
+                "course_name": course.name,
+                "department": course.dep_code,
+                "prerequisites": course.prereqs_text if has_prereqs else "None",
+                "offered": offered_semesters,
+                "requirements": requirements,
+            })
+
+        return result
+
 
     def get_all_departments(self):
         """fetch all unique departments from the database."""
