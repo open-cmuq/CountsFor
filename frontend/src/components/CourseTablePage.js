@@ -10,8 +10,8 @@ const CourseTablePage = () => {
   const [departments, setDepartments] = useState([]);  // Ensure it's an array
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
-  const [allCourses, setAllCourses] = useState([]);  
-  const [filteredCourses, setFilteredCourses] = useState([]);  
+  const [allCourses, setAllCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState({ BA: [], BS: [], CS: [], IS: [] });
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -38,8 +38,26 @@ const CourseTablePage = () => {
         const response = await fetch(`${API_BASE_URL}/requirements`);
         if (!response.ok) throw new Error("Failed to fetch requirements");
         const data = await response.json();
-        console.log("Fetched Requirements from API:", data);
-        setRequirements(data);
+
+        console.log("✅ Requirements Fetched from API:", data);
+
+        const transformedRequirements = { BA: [], BS: [], CS: [], IS: [] };
+
+        data.requirements.forEach(({ requirement, major }) => {
+          const majorKey = {
+            cs: "CS",
+            is: "IS",
+            ba: "BA",
+            bio: "BS",
+          }[major];
+
+          if (majorKey && transformedRequirements[majorKey]) {
+            transformedRequirements[majorKey].push(requirement);
+          }
+        });
+
+        console.log("✅ Transformed Requirements for UI:", transformedRequirements);
+        setRequirements(transformedRequirements);
       } catch (error) {
         console.error("Error fetching requirements:", error);
       }
@@ -48,14 +66,15 @@ const CourseTablePage = () => {
     fetchRequirements();
   }, []);
 
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/courses`);
         if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
-        setAllCourses(data.courses);  
-        setFilteredCourses(data.courses);  
+        setAllCourses(data.courses);
+        setFilteredCourses(data.courses);
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
@@ -78,16 +97,9 @@ const CourseTablePage = () => {
             );
           })
         )
-        // .sort((a, b) => {
-        //   // Count the total number of requirements each course fulfills
-        //   const countA = Object.values(a.requirements || {}).reduce((sum, reqs) => sum + reqs.length, 0);
-        //   const countB = Object.values(b.requirements || {}).reduce((sum, reqs) => sum + reqs.length, 0);
-  
-        //   return countB - countA; // Higher count first
-        // })
     );
   }, [searchQuery, selectedDepartment, selectedFilters, allCourses]);
-  
+
 
   const handleFilterChange = (major, newSelection) => {
     setSelectedFilters((prev) => ({
@@ -113,8 +125,8 @@ const CourseTablePage = () => {
       />
       <SelectedFilters selectedFilters={selectedFilters} handleFilterChange={handleFilterChange} />
       <CourseTable
-        courses={filteredCourses}  
-        allCourses={allCourses}  
+        courses={filteredCourses}
+        allCourses={allCourses}
         allRequirements={requirements}
         selectedFilters={selectedFilters}
         handleFilterChange={handleFilterChange}

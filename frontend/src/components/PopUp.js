@@ -19,7 +19,7 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
             <p><strong>Prerequisites:</strong> {content.prerequisites || "None"}</p>
             <p><strong>Semesters Offered:</strong> {content.offered.join(", ")}</p>
             <div className="requirements-container">
-            <p><strong>Requirements Fulfilled by Course</strong> </p> 
+            <p><strong>Requirements Fulfilled by Course</strong> </p>
             {Object.entries(content.requirements)
                 .filter(([_, reqs]) => reqs.length > 0)
                 .map(([major, reqs]) => (
@@ -31,8 +31,8 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
                     ))}
                     </ul>
                 </div>
-                ))}
-            </div>
+            ))}
+          </div>
           </>
         ) : (
           <>

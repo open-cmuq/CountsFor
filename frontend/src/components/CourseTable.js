@@ -84,7 +84,7 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
               <td>
                 <b
                   className="clickable"
-                  onClick={() => openPopup("course", course)} // Now fetches full details
+                  onClick={() => openPopup("course", course)}
                   style={{ cursor: "pointer", textDecoration: "underline", color: "black" }}
                 >
                   {course.course_code}
@@ -94,35 +94,40 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
               </td>
 
               {Object.keys(allRequirements).map((major) => {
-                const requirements = course.requirements?.[major] || [];
-                if (requirements.length === 0) return <td key={major}></td>;
+              const requirements = course.requirements?.[major]?.map(req =>
+                typeof req === "string" ? req : req.requirement
+              ) || [];
 
-                return (
-                  <td
-                    key={major}
-                    className={`cell cell-${major.toLowerCase()}`}
-                    onClick={() =>
-                      openPopup("requirement", {
-                        requirement: requirements,
-                        courses: allCourses.filter((c) => // Always use allCourses
-                          c.requirements?.[major]?.some((r) => requirements.includes(r))
-                        ),
-                      })
-                    }
-                    style={{ cursor: "pointer", color: "blue", textAlign: "center" }}
-                  >
-                    {requirements.length === 1 ? (
-                      requirements[0]
-                    ) : (
-                      <ul style={{ margin: "5px 0", paddingLeft: "20px", textAlign: "left" }}>
-                        {requirements.map((req, index) => (
-                          <li key={index} style={{ listStyleType: "disc" }}>{req}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
-                );
-              })}
+
+              if (requirements.length === 0) return <td key={major}></td>;
+
+              return (
+                <td
+                  key={major}
+                  className={`cell cell-${major.toLowerCase()}`}
+                  onClick={() =>
+                    openPopup("requirement", {
+                      requirement: requirements,
+                      courses: allCourses.filter((c) =>
+                        c.requirements?.[major]?.some((r) => requirements.includes(r))
+                      ),
+                    })
+                  }
+                  style={{ cursor: "pointer", color: "blue", textAlign: "center" }}
+                >
+                  {requirements.length === 1 ? (
+                    requirements[0] // Display single requirement as text
+                  ) : (
+                    <ul style={{ margin: "5px 0", paddingLeft: "20px", textAlign: "left" }}>
+                      {requirements.map((req, index) => (
+                        <li key={index} style={{ listStyleType: "disc" }}>{req}</li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+              );
+            })}
+
               <td>{course.prerequisites || "NONE"}</td>
               <td>{course.offered.join(", ")}</td>
             </tr>
