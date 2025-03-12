@@ -1,3 +1,100 @@
 gened-env
-*.pyc
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Cython and compiled extensions
+*.so
+*.pyd
+*.dll
+*.dylib
+
+# Virtual environment
+venv/
+env/
+*.env
+*.venv
+Pipfile.lock
+poetry.lock
+
+# Dependency directories
+node_modules/
+bower_components/
+
+# Logs and database files
+*.log
+*.sqlite3
+db.sqlite3
+*.db
+*.sqlite
+dump.rdb
+
+# FastAPI-specific ignores
+instance/
+*.pem
+*.key
+*.crt
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Static and media files (if dynamically generated)
+staticfiles/
+media/
+uploads/
+
+# Coverage and test reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+*.pycoverage
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.spec
+
+# React build output
+frontend/build/
+frontend/node_modules/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+frontend/.env.test.local
+
+# Docker-related files
+*.dockerfile
+*.envrc
+docker-compose.override.yml
+
+# Pytest and testing cache
+.pytest_cache/
+junitxml/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Linting and formatting
+.mypy_cache/
+ruff_cache/
+flake8.lock
+pylint.lock
+prettier.log
+eslint.log
+
+# Lock and temporary files
+*.lock
+*.bak
+*.tmp
+*.pid
