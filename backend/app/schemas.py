@@ -35,12 +35,15 @@ class CourseListResponse(BaseModel):
     courses: List[CourseResponse]
 
 
+class RequirementResponse(BaseModel):
+    """Pydantic schema for a single requirement."""
+    requirement: str
+    type: bool
+    major: str
+
 class RequirementsResponse(BaseModel):
-    """Pydantic schema for returning requirements grouped by major."""
-    BA: List[str]
-    BS: List[str]
-    CS: List[str]
-    IS: List[str]
+    """Pydantic schema for returning a list of requirements."""
+    requirements: List[RequirementResponse]
 
 class DepartmentListResponse(BaseModel):
     """Pydantic schema for returning a list of departments."""
