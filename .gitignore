@@ -98,3 +98,11 @@ eslint.log
 *.bak
 *.tmp
 *.pid
+
+# Ignore deployment files
+/etc/nginx/sites-available/
+etc/nginx/sites-enabled/
+fastapi.service
+
+# Ignore frontend build (if CI/CD is used)
+frontend/build/
