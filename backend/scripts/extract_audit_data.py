@@ -21,14 +21,14 @@ COURSE_DIR = "../data/course/courses"
 COURSE_TABLE_DIR = "../data/course/Course.xlsx"
 
 # -------------------------------------------------------------------------------------------------
-# file and directory helpers
+# File and Directory Helpers
 # -------------------------------------------------------------------------------------------------
 def get_audit_files(folder_path):
     """
-    get the two json files in the given folder and determine which is core and which is gen-ed.
-    if a file name contains a year (e.g., '2021'), it is classified as the core audit; otherwise
-    it is gen-ed. if the check fails, it falls back to the file size method.
-    returns a dictionary with the core and gen-ed file paths.
+    Get the two JSON files in the given folder and determine which is core and which is gen-ed.
+    If a file name contains a year (e.g., '2021'), it is classified as the core audit; otherwise
+    it is gen-ed. If the check fails, it falls back to the file size method.
+    Returns a dictionary with the core and gen-ed file paths.
     """
     try:
         json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
@@ -41,14 +41,14 @@ def get_audit_files(folder_path):
 
     core_file, gened_file = None, None
     try:
-        # check each file name for a year (e.g., 1990-2099)
+        # Check each file name for a year (e.g., 1990-2099)
         for f in json_files:
             if re.search(r"(19|20)\d{2}", f):
                 core_file = f
             else:
                 gened_file = f
 
-        # fallback: if one of the files wasn't identified, sort by file size.
+        # Fallback: if one of the files wasn't identified, sort by file size.
         if not core_file or not gened_file:
             file_sizes = {f: os.path.getsize(os.path.join(folder_path, f)) for f in json_files}
             sorted_files = sorted(file_sizes.items(), key=lambda x: x[1], reverse=True)
@@ -65,8 +65,8 @@ def get_audit_files(folder_path):
 
 def get_course_codes():
     """
-    retrieves all course codes from course_dir based on filenames.
-    assumes course files are named like '02-201.json'.
+    Retrieves all course codes from COURSE_DIR based on filenames.
+    Assumes course files are named like '02-201.json'.
     """
     codes = set()
     try:
@@ -88,18 +88,18 @@ def get_course_codes():
 
 def get_courses_from_code(dept_code, course_codes):
     """
-    finds all courses that start with the given department code.
-    example: if dept_code='02', returns all courses like '02-201', '02-202'.
+    Finds all courses that start with the given department code.
+    Example: if dept_code='02', returns all courses like '02-201', '02-202'.
     """
     return [c for c in course_codes if c.startswith(dept_code)]
 
 
 # -------------------------------------------------------------------------------------------------
-# course extraction functions
+# Course Extraction Functions
 # -------------------------------------------------------------------------------------------------
 def get_courses_from_range(begin, end, req_chain, parent_min_units=None):
     """
-    generate course identifiers from a code range, attaching the parent's min_units.
+    Generate course identifiers from a code range, attaching the parent's min_units.
     Returns tuples: (Course or code, Requirement, Inclusion/Exclusion, Type, Min Units)
     """
     courses = []
@@ -113,7 +113,6 @@ def get_courses_from_range(begin, end, req_chain, parent_min_units=None):
         end_num = int(end[3:])
 
         if begin_num == 1 and end_num == 999:
-            # Use the course range notation as the "code"
             courses = [(code, req_chain, 'Inclusion', 'Code', parent_min_units)]
         else:
             for n in range(begin_num, end_num + 1):
@@ -137,90 +136,61 @@ def get_courses_from_constraint(constraint, req_chain, parent_min_units=None):
         constraint_type = constraint.get("type", "")
         constraint_data = constraint.get("data", {})
 
-        print(f"Processing constraint: {constraint_type}")  # Debug: Show constraint type
-
         if constraint_type == "course":
-            # Direct course constraint
             course_info = constraint_data.get("course", {})
             if course_info:
                 course_code = course_info.get("code", "Unknown Course")
                 units = course_info.get("units", min_units)
-                # Return tuple in the expected order
                 extracted_course = (course_code, req_chain, "Inclusion", "Course", units)
                 courses.append(extracted_course)
-                print(f"Extracted direct course: {extracted_course}")
             else:
-                print("ERROR: Missing expected course information in constraint")
+                logging.error("Missing expected course information in constraint")
 
         elif constraint_type == "xfromcourseset":
-            # Extract courses from course sets
             course_sets = constraint_data.get("conditional_course_sets", [])
-            print(f"Found {len(course_sets)} course sets in xfromcourseset")  # Debug: Show count
             for cs in course_sets:
                 if "courses" in cs:
                     for course in cs["courses"]:
                         extracted_course = (course, req_chain, "Inclusion", "Course", min_units)
                         courses.append(extracted_course)
-                        # Debug line if needed:
-                        # print(f"Extracted from courseset: {extracted_course}")
                 else:
-                    print("ERROR: Missing expected key in constraint: 'courses'")
+                    logging.error("Missing expected key in constraint: 'courses'")
 
         elif constraint_type == "xfromdepts":
-            # Extract department-based courses
             depts = constraint_data.get("depts", [])
-            print(f"Found {len(depts)} departments in xfromdepts")  # Debug: Show count
-
             for dept in depts:
                 dept_code = dept.get("code", "")
                 if dept_code:
-                    # Generate all possible course codes in the department
                     possible_courses = [f"{dept_code}-{str(i).zfill(3)}" for i in range(1, 1000)]
-
-                    # Filter only the ones that exist in course_dir
                     valid_courses = [c for c in possible_courses if c in course_codes]
-                    print(f"Generated {len(possible_courses)} possible courses for dept {dept_code}")  # Debug
-                    print(f"Filtered to {len(valid_courses)} valid courses")  # Debug
-
                     for course in valid_courses:
                         extracted_course = (course, req_chain, "Inclusion", "Course", min_units)
                         courses.append(extracted_course)
-                        # Debug line if needed:
-                        # print(f"Extracted from department: {extracted_course}")
                 else:
-                    print("WARNING: Skipping department with missing code")
+                    logging.warning("Skipping department with missing code")
 
-            # Handle specific course ranges if provided
             code_ranges = constraint_data.get("code_ranges", [])
-            print(f"Processing {len(code_ranges)} course ranges")  # Debug
-
             for range_pair in code_ranges:
                 if len(range_pair) == 2:
                     begin, end = range_pair
-                    print(f"Generating courses from range: {begin} to {end}")  # Debug
                     range_courses = get_courses_from_range(begin, end, req_chain, min_units)
-
                     for course_tuple in range_courses:
                         course_code = course_tuple[0]
-                        if course_code in course_codes:  # Ensure it exists in course_dir
-                            # Use the tuple from range_courses directly
+                        if course_code in course_codes:
                             courses.append(course_tuple)
-                            print(f"Extracted from range: {course_tuple}")  # Debug
                 else:
-                    print(f"ERROR: Invalid code range format in constraint: {range_pair}")
+                    logging.error("Invalid code range format in constraint: %s", range_pair)
 
         elif constraint_type in ["anyxof", "minxunits", "notcountcourseset"]:
-            print(f"Skipping non-course constraint: {constraint_type}")  # Debug
+            logging.info("Skipping non-course constraint: %s", constraint_type)
 
         else:
-            print(f"WARNING: Unknown constraint type: {constraint_type}")  # Debug
+            logging.warning("Unknown constraint type: %s", constraint_type)
 
-    except Exception as e:
-        print(f"ERROR: Exception while processing constraint: {str(e)}")  # Debug
+    except (KeyError, ValueError, IndexError) as e:
+        logging.error("Exception while processing constraint: %s", str(e))
 
-    print(f"Total extracted courses from constraint: {len(courses)}")  # Debug summary
     return courses
-
 
 
 def get_courses(data, req_chain, parent_min_units=None):
@@ -236,18 +206,17 @@ def get_courses(data, req_chain, parent_min_units=None):
         new_req_chain = req if not req_chain else f"{req_chain}---{req}"
 
         courses = []
-        # Process choices if they exist.
         if 'choices' in data and data['choices']:
             for choice in data['choices']:
                 courses.extend(get_courses(choice, new_req_chain, current_min_units))
 
-        # Process constraints regardless of choices.
         for constraint in data.get('constraints', []):
-            courses.extend(get_courses_from_constraint(constraint, new_req_chain, current_min_units))
+            courses.extend(get_courses_from_constraint(constraint, new_req_chain,
+                                                       current_min_units))
 
-        # If no choices or constraints exist, return a default tuple.
         if not courses:
-            courses = [(data.get('screen_name', 'Unknown'), req_chain, 'Inclusion', 'Course', current_min_units)]
+            courses = [(data.get('screen_name', 'Unknown'), req_chain, 'Inclusion',
+                        'Course', current_min_units)]
         return courses
 
     except KeyError as error:
@@ -270,13 +239,11 @@ def get_audit(json_path):
     try:
         req_major = get_courses(data['requirement'], '')
         req_programs = []
-
         if data.get('uni_req_tree'):
             for program in data['uni_req_tree'].get('programs', []):
                 if ("Degree Check" not in program['screen_name'] and
                     "Total Units" not in program['screen_name']):
                     req_programs.extend(get_courses(program, ''))
-
         return req_major + req_programs
     except KeyError as error:
         logging.error("missing expected key in audit data: %s", error)
@@ -296,7 +263,6 @@ def extract_audit_data(json_path, course_codes):
 
         for _, row in df.iterrows():
             processed_req = post_process_requirement(row["Requirement"])
-
             if row["Inclusion/Exclusion"] == "Inclusion":
                 if row["Type"] == "Code":
                     for match in get_courses_from_code(row["Course or code"], course_codes):
@@ -311,7 +277,6 @@ def extract_audit_data(json_path, course_codes):
                         "course": row["Course or code"],
                         "min_units": row["Min Units"]
                     })
-        print(f"Final extracted courses count: {len(cleaned_data)}")  # Debugging output
         return cleaned_data
 
     except KeyError as error:
@@ -320,7 +285,7 @@ def extract_audit_data(json_path, course_codes):
 
 
 # -------------------------------------------------------------------------------------------------
-# requirement post-processing
+# Requirement Post-Processing
 # -------------------------------------------------------------------------------------------------
 def post_process_requirement(req):
     """
@@ -328,7 +293,8 @@ def post_process_requirement(req):
     """
     try:
         parts = req.split('---')
-        number_words = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"}
+        number_words = {"one", "two", "three", "four", "five", "six",
+                        "seven", "eight", "nine", "ten"}
         new_req = req
 
         # case 1
@@ -339,7 +305,6 @@ def post_process_requirement(req):
                                        flags=re.IGNORECASE).strip()
                 tokens = [t for t in cleaned_part1.split() if t.lower() not in number_words]
                 cleaned_part1 = " ".join(tokens)
-
                 part2, part3 = parts[2].strip(), parts[3].strip()
                 tokens_p4 = parts[4].split()
                 if tokens_p4 and tokens_p4[0].lower() in number_words:
@@ -354,7 +319,6 @@ def post_process_requirement(req):
                                        flags=re.IGNORECASE).strip()
                 tokens = [t for t in cleaned_part1.split() if t.lower() not in number_words]
                 cleaned_part1 = " ".join(tokens)
-
                 part2 = parts[2].strip()
                 tokens_p4 = parts[4].split()
                 if tokens_p4 and tokens_p4[0].lower() in number_words:
@@ -381,7 +345,6 @@ def post_process_requirement(req):
                     re.search(r'\bchoose\b', stripped, flags=re.IGNORECASE) or
                     re.search(r'\bselect\b', stripped, flags=re.IGNORECASE)):
                 final_parts.append(stripped)
-
         return "---".join(final_parts)
 
     except (IndexError, AttributeError, TypeError) as error:
@@ -390,7 +353,7 @@ def post_process_requirement(req):
 
 
 # -------------------------------------------------------------------------------------------------
-# DataFrame and Excel output
+# DataFrame and Excel Output
 # -------------------------------------------------------------------------------------------------
 def make_data_frame(audit):
     """
@@ -409,7 +372,6 @@ def make_data_frame(audit):
         df["Pre-reqs"] = df["Course or code"].apply(utils.getPreReqs)
         df["Title"] = df["Course or code"].apply(utils.getCourseTitle)
         df["Units"] = df["Course or code"].apply(utils.getCourseUnits)
-
         return df[[
             "Type", "Inclusion/Exclusion", "Course or code", "Title",
             "Units", "Pre-reqs", "Requirement", "Min Units"
@@ -429,7 +391,6 @@ def save_to_excel(data, output_path):
             return
         pd.DataFrame(data).to_excel(output_path, index=False)
         logging.info("data successfully saved to %s", output_path)
-
     except ValueError as error:
         logging.error("invalid data format for saving to %s: %s", output_path, error)
     except PermissionError as error:
@@ -439,7 +400,7 @@ def save_to_excel(data, output_path):
 
 
 # -------------------------------------------------------------------------------------------------
-# Main function
+# Main Function
 # -------------------------------------------------------------------------------------------------
 def process_all_audits():
     """
@@ -463,7 +424,7 @@ def process_all_audits():
 
             logging.info("processing audit files for major: %s", major)
 
-            # process and save core requirements
+            # Process and save core requirements
             core_data = extract_audit_data(audit_files["core"], course_codes)
             core_output_path = os.path.join(major_path, f"{major}_core.xlsx")
             save_to_excel(core_data, core_output_path)
@@ -473,7 +434,7 @@ def process_all_audits():
                           "audit": d["requirement"].split('---')[0].strip()})
                 combined_data.append(d)
 
-            # process and save general education requirements
+            # Process and save general education requirements
             gened_data = extract_audit_data(audit_files["gened"], course_codes)
             gened_output_path = os.path.join(major_path, f"{major}_gened.xlsx")
             save_to_excel(gened_data, gened_output_path)
@@ -485,7 +446,7 @@ def process_all_audits():
 
         if combined_data:
             df_audit = pd.DataFrame(combined_data)[["audit",
-                                                    "audit_type", "major"]].drop_duplicates()
+                                                     "audit_type", "major"]].drop_duplicates()
             df_audit["audit_id"] = df_audit["major"] + "_" + df_audit["audit_type"].astype(str)
             df_audit = df_audit.rename(columns={"audit": "name", "audit_type": "type"})
 
@@ -495,11 +456,8 @@ def process_all_audits():
                 ["requirement", "course"]].rename(columns={"course": "course_code"})
             df_countsfor = df_countsfor[df_countsfor["course_code"].isin(existing_courses)]
 
-            print(f"Total courses before filtering: {len(df_countsfor)}")
-            print(f"Total matching courses in df_course: {df_countsfor['course_code'].isin(existing_courses).sum()}")
-
-            df_requirement = pd.DataFrame(combined_data)[["requirement", "major",
-                                                          "audit_type"]].drop_duplicates()
+            df_requirement = pd.DataFrame(combined_data)[["requirement",
+                                                           "major", "audit_type"]].drop_duplicates()
             df_requirement = df_requirement.rename(columns={"audit_type": "type"})
             df_requirement = df_requirement.merge(df_audit[["audit_id", "major", "type"]],
                                                   on=["major", "type"], how="left")
