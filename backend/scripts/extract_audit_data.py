@@ -455,6 +455,7 @@ def process_all_audits():
             df_countsfor = pd.DataFrame(combined_data)[
                 ["requirement", "course"]].rename(columns={"course": "course_code"})
             df_countsfor = df_countsfor[df_countsfor["course_code"].isin(existing_courses)]
+            df_countsfor = df_countsfor.drop_duplicates()
 
             df_requirement = pd.DataFrame(combined_data)[["requirement",
                                                            "major", "audit_type"]].drop_duplicates()
