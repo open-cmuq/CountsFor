@@ -2,12 +2,7 @@ import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import Popup from "./PopUp";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL ||
-  (window.location.hostname === "localhost"
-    ? "http://127.0.0.1:8000/api"
-    : "http://countsfor.qatar.cmu.edu/api");
-
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, handleFilterChange, clearFilters, setVisibleCourses }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);

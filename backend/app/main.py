@@ -9,19 +9,18 @@ app = FastAPI(
     title="GenEd API",
     description="Backend for the GenEd project",
     version="1.0.0",
-    openapi_url="/api/openapi.json",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",  # Explicit OpenAPI JSON path
+    docs_url="/api/docs",  # Swagger UI path
+    redoc_url="/api/redoc",  # Alternative ReDoc UI
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(courses.router, prefix="/api")
-app.include_router(requirements.router, prefix="/api")
-
+app.include_router(courses.router)
+app.include_router(requirements.router)
