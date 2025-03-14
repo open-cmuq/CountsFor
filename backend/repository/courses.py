@@ -93,6 +93,8 @@ class CourseRepository:
             .all()
         )
 
+        print(f"DEBUG: Course {course_code} requirements: {requirements_query}")  # 🔍 Debugging
+
         for req, audit_id in requirements_query:
             if audit_id.startswith("cs"):
                 requirements["CS"].append(req)
@@ -103,7 +105,10 @@ class CourseRepository:
             elif audit_id.startswith("bio"):
                 requirements["BS"].append(req)
 
+        print(f"DEBUG: Transformed requirements: {requirements}")  # 🔍 Debugging
+
         return requirements
+
 
     def get_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
                                    ba_requirement=None, bs_requirement=None):

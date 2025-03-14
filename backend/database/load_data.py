@@ -5,9 +5,10 @@ import logging
 import pandas as pd
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from database.models import Instructor, Course, Offering, Requirement, Audit, CountsFor
-from database.models import Prereqs, CourseInstructor, Enrollment
-from database.db import SessionLocal
+from .models import Instructor, Course, Offering, Requirement, Audit, CountsFor
+from .models import Prereqs, CourseInstructor, Enrollment
+from .db import SessionLocal
+from .db import init_db
 
 # configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -70,4 +71,5 @@ def load_excel_data(file_paths=None):
         db.close()
 
 if __name__ == "__main__":
+    init_db()
     load_excel_data()
