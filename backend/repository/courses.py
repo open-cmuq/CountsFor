@@ -182,9 +182,3 @@ class CourseRepository:
 
         return result
 
-
-
-    def get_all_departments(self):
-        """fetch all unique departments from the database."""
-        departments = self.db.query(Course.dep_code).distinct().all()
-        return [dept[0] for dept in departments]

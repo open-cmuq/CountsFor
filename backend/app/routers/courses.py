@@ -80,9 +80,3 @@ def get_course(course_code: str, course_service: CourseService = Depends(get_cou
     return course
 
 
-@router.get("/departments", response_model=DepartmentListResponse)
-def get_departments(course_service: CourseService = Depends(get_course_service)):
-    """
-    API route to fetch all available departments.
-    """
-    return DepartmentListResponse(departments=course_service.fetch_all_departments())
