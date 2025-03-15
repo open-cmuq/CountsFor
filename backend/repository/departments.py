@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import case, cast, Integer
 from backend.database.models import Department, Course  # Ensure Course model is imported
 
 class DepartmentRepository:
@@ -15,6 +16,13 @@ class DepartmentRepository:
             self.db.query(Department.dep_code, Department.name)
             .join(Course, Course.dep_code == Department.dep_code)
             .distinct()
+            .order_by(
+                case(
+                    (Department.dep_code.op("regexp")("^[0-9]+$"), cast(Department.dep_code, Integer)),
+                    else_=999999  # non-numeric codes go to the bottom
+                ).asc(),
+                Department.dep_code.asc()  # secondary ordering for non-numeric codes
+            )
             .all()
         )
 
