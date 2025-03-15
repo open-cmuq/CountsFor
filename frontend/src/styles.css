@@ -1,45 +1,45 @@
 .table-container {
     padding: 20px;
   }
-  
+
   table {
     width: 100%;
     border-collapse: collapse;
   }
-  
+
   th, td {
     border: 0.5px solid #ddd;
     padding: 10px;
     text-align: center;
     border-radius: 4px;
   }
-  
+
   th {
     background-color: #f4f4f4;
     font-weight: bold;
   }
-  
+
   td:hover {
     background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
-  
+
 
   .header-ba {
     background-color: #4A68FB; /* Blue */
     color: white;
   }
-  
+
   .header-bs {
     background-color: #22AA0A; /* Green */
     color: white;
   }
-  
+
   .header-cs {
     background-color: #CF1314; /* Red */
     color: white;
   }
-  
+
   .header-is {
     background-color: #FFC033; /* Yellow */
     color: white;
@@ -49,23 +49,23 @@
     background-color: #B3BBFD; /* Blue */
     color: white;
   }
-  
+
   .cell-bs {
     background-color: #A3D799; /* Green */
     color: white;
   }
-  
+
   .cell-cs {
     background-color: #EB989D; /* Red */
     color: white;
   }
-  
+
   .cell-is {
     background-color: #FFDB99; /* Yellow */
     color: white;
   }
 
-  
+
   .remove-btn {
     background: none;
     border: none;
@@ -73,7 +73,7 @@
     font-size: 16px;
     color: black;
   }
-  
+
   .remove-btn:hover {
     color: darkred;
   }
@@ -83,7 +83,7 @@
     display: inline-block;
     padding: auto;
   }
-  
+
   .dropdown-content {
     position: absolute;
     background-color: white;
@@ -97,7 +97,7 @@
     display: flex;
     flex-direction: column;
   }
-  
+
   .dropdown-item {
     display: flex;
     align-items: center;
@@ -105,7 +105,7 @@
     padding: 5px 0;
     color: black;
   }
-  
+
   .drop-clear-btn {
     background: #ff4d4d;
     color: white;
@@ -117,7 +117,7 @@
     border-radius: 4px;
     width: 80%;
   }
-  
+
   .drop-clear-btn:hover {
     background: #cc0000;
   }
@@ -126,7 +126,7 @@
     width: 70%;  /* Full width of the cell */
     height: 100%; /* Full height of the cell */
     text-align: center;
-    font-size: 1rem; 
+    font-size: 1rem;
     background-color: white;
     border: 1px solid #ccc;
     cursor: pointer;
@@ -142,18 +142,18 @@
   .cell {
     color: black !important; /* Override other styles */
   }
-  
+
 
   .dropdown-content {
     background: white;
     border: 1px solid #ccc;
     border-radius: 5px;
     padding: 10px;
-    text-align: left; 
+    text-align: left;
     font-weight: normal; /* Remove bold */
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   }
-  
+
   .dropdown-item {
     display: flex;
     align-items: center;
@@ -168,59 +168,59 @@
     background-color: #f0f0f0;
     color: #999;
   }
-  
+
   /* .search-bar {
     display: flex;
     gap: 10px;
     align-items: center;
     margin-bottom: 10px;
   }
-  
+
 
   */
 
-  
+
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
     text-align: center;
     border-radius: 12px;
   }
-  
+
   .remove-btn {
     background: none;
     border: none;
     cursor: pointer;
     font-size: 16px;
   }
-  
+
 /* Ensure table uses fixed layout */
 table {
     table-layout: fixed;
     width: 100%;
   }
-  
+
   /* Fix column widths */
-  th:first-child, td:first-child { 
+  th:first-child, td:first-child {
     width: 3%; /* Smallest column for delete (X) */
   }
-  
-  th:nth-child(2), td:nth-child(2) { 
+
+  th:nth-child(2), td:nth-child(2) {
     width: 13%; /* Course Code & Name */
   }
-  
+
   /* Ensuring equal width for BA, BS, CS, IS */
   th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
   td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
     width: 17%; /* Adjusted for better spacing */
   }
-  
+
   /* Making Pre-Req and Offer columns smaller */
   th:nth-child(7), th:nth-child(8),
   td:nth-child(7), td:nth-child(8) {
     width: 8%;
   }
-  
+
   /* Ensure text wraps instead of overflowing */
   td {
     word-wrap: break-word;
@@ -235,7 +235,7 @@ table {
     border-radius: 6px;
   }
 
-  
+
 /* Gray out N/A cells */
 .na-cell {
   background-color: white !important;
@@ -252,13 +252,13 @@ table {
     font-size: 16px;
     cursor: pointer;
   }
-  
+
   .close-btn:hover {
     color: #ffdddd;
   }
-  
-  
-  
+
+
+
   /* Resize Handle */
   .react-resizable-handle {
     position: absolute;
@@ -270,33 +270,33 @@ table {
     cursor: nwse-resize;
     border-radius: 50%;
   }
-  
+
   .search-label {
     font-weight: bold;
     font-size: large;
   }
-  
+
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
   }
-  
- 
+
+
   .search-btn {
     background: white;
     border: 1px solid #ccc;
     cursor: pointer;
     padding: 8px;
   }
-  
+
   .selected-filters {
     display: flex;
     gap: 1px;
     margin-top: 4px;
     margin-bottom: 4px;
   }
-  
+
   .filter-tag {
     background: darkgrey;
     color: white;
@@ -307,18 +307,18 @@ table {
     gap: 5px;
     font-size: 15px;
     height: 19px;
-    max-width: 550px; 
+    max-width: 550px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 3px;
     display: inline-block;
   }
-  
+
   .filter-tag:hover {
     background: #333;
   }
-  
+
   .filter-tag button {
     background: transparent;
     color: white;
@@ -331,54 +331,54 @@ table {
     padding-left: 3px;
     padding-right: 3px;
   }
-  
+
   .h1 {
     font-size: 50px;
     font-weight: bold;
   }
-  
+
   .table-container {
     padding: 20px;
   }
-  
+
   table {
     width: 100%;
     border-collapse: collapse;
   }
-  
+
   th, td {
     border: 0.5px solid #ddd;
     padding: 10px;
     text-align: center;
     border-radius: 4px;
   }
-  
+
   th {
     background-color: #f4f4f4;
     font-weight: bold;
   }
-  
+
   td:hover {
     background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
-  
+
 
   .header-ba {
     background-color: #4A68FB; /* Blue */
     color: white;
   }
-  
+
   .header-bs {
     background-color: #22AA0A; /* Green */
     color: white;
   }
-  
+
   .header-cs {
     background-color: #CF1314; /* Red */
     color: white;
   }
-  
+
   .header-is {
     background-color: #FFC033; /* Yellow */
     color: white;
@@ -388,23 +388,23 @@ table {
     background-color: #B3BBFD; /* Blue */
     color: white;
   }
-  
+
   .cell-bs {
     background-color: #A3D799; /* Green */
     color: white;
   }
-  
+
   .cell-cs {
     background-color: #EB989D; /* Red */
     color: white;
   }
-  
+
   .cell-is {
     background-color: #FFDB99; /* Yellow */
     color: white;
   }
 
-  
+
   .remove-btn {
     background: none;
     border: none;
@@ -412,7 +412,7 @@ table {
     font-size: 16px;
     color: black;
   }
-  
+
   .remove-btn:hover {
     color: darkred;
   }
@@ -422,7 +422,7 @@ table {
     display: inline-block;
     padding: auto;
   }
-  
+
   .dropdown-content {
     position: absolute;
     background-color: white;
@@ -436,7 +436,7 @@ table {
     display: flex;
     flex-direction: column;
   }
-  
+
   .dropdown-item {
     display: flex;
     align-items: center;
@@ -444,7 +444,7 @@ table {
     padding: 5px 0;
     color: black;
   }
-  
+
   .drop-clear-btn {
     background: #ff4d4d;
     color: white;
@@ -456,7 +456,7 @@ table {
     border-radius: 4px;
     width: 80%;
   }
-  
+
   .drop-clear-btn:hover {
     background: #cc0000;
   }
@@ -465,7 +465,7 @@ table {
     width: 70%;  /* Full width of the cell */
     height: 100%; /* Full height of the cell */
     text-align: center;
-    font-size: 1rem; 
+    font-size: 1rem;
     background-color: white;
     border: 1px solid #ccc;
     cursor: pointer;
@@ -481,18 +481,18 @@ table {
   .cell {
     color: black !important; /* Override other styles */
   }
-  
+
 
   .dropdown-content {
     background: white;
     border: 1px solid #ccc;
     border-radius: 5px;
     padding: 10px;
-    text-align: left; 
+    text-align: left;
     font-weight: normal; /* Remove bold */
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   }
-  
+
   .dropdown-item {
     display: flex;
     align-items: center;
@@ -501,14 +501,14 @@ table {
     cursor: pointer;
 
   }
- 
+
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
     text-align: center;
     border-radius: 12px;
   }
-  
+
   .remove-btn {
     background: none;
     border: none;
@@ -522,28 +522,28 @@ table {
     table-layout: fixed;
     width: 100%;
   }
-  
+
   /* Fix column widths */
-  th:first-child, td:first-child { 
+  th:first-child, td:first-child {
     width: 3%; /* Smallest column for delete (X) */
   }
-  
-  th:nth-child(2), td:nth-child(2) { 
+
+  th:nth-child(2), td:nth-child(2) {
     width: 13%; /* Course Code & Name */
   }
-  
+
   /* Ensuring equal width for BA, BS, CS, IS */
   th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
   td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
     width: 17%; /* Adjusted for better spacing */
   }
-  
+
   /* Making Pre-Req and Offer columns smaller */
   th:nth-child(7), th:nth-child(8),
   td:nth-child(7), td:nth-child(8) {
     width: 8%;
   }
-  
+
   /* Ensure text wraps instead of overflowing */
   td {
     word-wrap: break-word;
@@ -557,7 +557,7 @@ table {
     text-align: center;
     border-radius: 6px;
   }
-  
+
 /* Gray out N/A cells */
 .na-cell {
   background-color: white !important;
@@ -573,11 +573,11 @@ table {
     font-size: 16px;
     cursor: pointer;
   }
-  
+
   .close-btn:hover {
     color: #ffdddd;
   }
-  
+
   .search-container {
     background: #d9d9d9;
     padding: 10px;
@@ -585,21 +585,21 @@ table {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    width: 40%
+    width: 50%
   }
-  
+
   .search-label {
     font-weight: bold;
     font-size: large;
   }
-  
+
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
   }
-  
- 
+
+
   .search-btn {
     background: white;
     border: 1px solid #ccc;
@@ -607,7 +607,7 @@ table {
     padding: 8px;
   }
 
-  
+
   .selected-filters {
     display: flex;
     gap: 1px;
@@ -617,23 +617,23 @@ table {
 
   .search-label {
     font-weight: bold;
-    white-space: nowrap; 
+    white-space: nowrap;
   }
-  
+
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex-grow: 1; 
+    flex-grow: 1;
   }
-  
+
   .search-dropdown, .text-input {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    flex: 1; 
+    flex: 1;
   }
-  
+
   .search-btn {
     background: white;
     border: 1px solid #ccc;
@@ -641,7 +641,7 @@ table {
     padding: 8px;
     border-radius: 100px;
   }
-  
+
   .search-clear-btn {
     background: black;
     color: white;
@@ -656,7 +656,7 @@ table {
     display: flex;
     padding: 10px 20px;
   }
-  
+
   .page-title {
     font-size: 20px;
     font-weight: bold;
@@ -666,22 +666,22 @@ table {
     position: fixed;
     top: 0;
     right: 0;
-    width: 450px; 
-    height: 100vh; 
+    width: 450px;
+    height: 100vh;
     background: white;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-    overflow-y: auto; 
+    overflow-y: auto;
     padding: 20px;
     z-index: 1000;
     border-left: 2px solid #ddd;
   }
-  
+
   .popup-panel {
-    max-height: 90vh; 
-    overflow-y: auto; 
-    padding-bottom: 10px; 
+    max-height: 90vh;
+    overflow-y: auto;
+    padding-bottom: 10px;
   }
-  
+
     .popup-close-btn {
     align-self: flex-end;
     background: none;
@@ -706,7 +706,7 @@ table {
     padding-bottom: 5px;
     margin-bottom: 15px;
   }
-  
+
   .requirement-group {
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -715,19 +715,19 @@ table {
     background-color: #f9f9f9;
     padding-bottom: 10px;
   }
-  
+
   .courses-title {
     font-weight: bold;
     margin-bottom: 5px;
     margin-left: 5px;
   }
-  
+
   .course-link {
     color: blue;
     text-decoration: underline;
     cursor: pointer;
   }
-  
+
   .course-link:hover {
     color: darkblue;
   }
@@ -741,28 +741,27 @@ table {
     border-radius: 8px;
     background-color: #fafafa;
   }
-  
+
   .requirement-group {
-    margin-bottom: 10px; 
+    margin-bottom: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid #ddd;
   }
-  
+
   .requirement-group h3 {
     padding-top: 5px;
     margin: 0;
     padding-left: 5px;
     font-size: 1.1rem;
   }
-  
+
   .requirement-list {
-    padding-left: 20px; 
+    padding-left: 20px;
     margin-top: 5px;
   }
-  
+
   .requirement-list li {
-    list-style-type: disc; 
+    list-style-type: disc;
     margin-bottom: 3px;
   }
-  
-  
+

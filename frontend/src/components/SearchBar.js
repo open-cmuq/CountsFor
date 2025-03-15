@@ -33,6 +33,12 @@ const SearchBar = ({
     setSelectedDepartment("");
   };
 
+  // Function to get department name based on selected dep_code
+  const getDepartmentName = (depCode) => {
+    const dept = departments.find((dept) => dept.dep_code === depCode);
+    return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
+  };
+
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
@@ -75,7 +81,7 @@ const SearchBar = ({
         <div className="selected-filters">
           {selectedDepartment && (
             <span className="filter-tag">
-              {selectedDepartment}
+              {getDepartmentName(selectedDepartment)} {/* Shows dep_code - name */}
               <button onClick={() => setSelectedDepartment("")}>×</button>
             </span>
           )}
