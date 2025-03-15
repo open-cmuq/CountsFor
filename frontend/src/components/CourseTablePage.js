@@ -20,17 +20,19 @@ const CourseTablePage = () => {
       try {
         const response = await fetch(`${API_BASE_URL}/departments`);
         if (!response.ok) throw new Error("Failed to fetch departments");
+
         const data = await response.json();
-        console.log("Fetched Departments from API:", data);
-        setDepartments(data.departments || []);  // Ensure we extract the array properly
+        console.log("Fetched departments:", data); // Debugging
+        setDepartments(data.departments || []);  // Ensure valid array
       } catch (error) {
         console.error("Error fetching departments:", error);
-        setDepartments([]);  // Ensure it's always an array
       }
     };
 
     fetchDepartments();
   }, []);
+
+
 
   useEffect(() => {
     const fetchRequirements = async () => {
