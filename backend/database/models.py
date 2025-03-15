@@ -8,6 +8,16 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+class Department(Base):
+    """
+    Department model
+    """
+    __tablename__ = 'department'
+    dep_code = Column(String(20), primary_key=True)
+    name = Column(Text)
+
+    courses = relationship("Course", back_populates="department")
+
 class Course(Base):
     """
     Course model
@@ -22,13 +32,14 @@ class Course(Base):
     offered_pitts = Column(Boolean)
     short_name = Column(Text)
     description = Column(Text)
-    dep_code = Column(String(20))
+    dep_code = Column(String(20), ForeignKey('department.dep_code'))
     prereqs_text = Column(Text)
 
     prerequisites = relationship("Prereqs", back_populates="course")
     counts_for = relationship("CountsFor", back_populates="course")
     offerings = relationship("Offering", back_populates="course")
     instructor = relationship("CourseInstructor", back_populates="course")
+    department = relationship("Department", back_populates="courses")
 
 class Prereqs(Base):
     """
