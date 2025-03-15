@@ -146,6 +146,3 @@ class CourseService:
 
         return CourseListResponse(courses=structured_courses)
 
-    def fetch_all_departments(self) -> List[str]:
-        """fetch a distinct list of all departments."""
-        return self.course_repo.get_all_departments()

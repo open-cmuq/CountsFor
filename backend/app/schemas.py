@@ -45,6 +45,11 @@ class RequirementsResponse(BaseModel):
     """Pydantic schema for returning a list of requirements."""
     requirements: List[RequirementResponse]
 
+class DepartmentResponse(BaseModel):
+    """Pydantic schema for a single department."""
+    dep_code: str
+    name: str
+
 class DepartmentListResponse(BaseModel):
-    """Pydantic schema for returning a list of departments."""
-    departments: List[str]
+    """Represents a list of departments."""
+    departments: List[DepartmentResponse]
