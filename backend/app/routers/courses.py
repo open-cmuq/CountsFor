@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.database.db import get_db
 from backend.services.courses import CourseService
 from backend.app.schemas import (CourseResponse, CourseListResponse,
-                                 CourseFilter, DepartmentListResponse)
+                                 CourseFilter)
 
 router = APIRouter()
 
@@ -69,6 +69,23 @@ def get_courses_by_prerequisite(
     """
     return course_service.fetch_courses_by_prerequisite(has_prereqs)
 
+@router.get("/courses/by-offered_location", response_model=CourseListResponse)
+def get_courses_by_offering(
+    offered_qatar: bool = None,
+    offered_pitts: bool = None,
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Fetch courses based on whether they are offered in Qatar, Pittsburgh, or both.
+    Example usage:
+      - `/courses/by-offering?offered_qatar=true` → Courses offered in Qatar
+      - `/courses/by-offering?offered_pitts=true` → Courses offered in Pittsburgh
+      - `/courses/by-offering?offered_qatar=true&offered_pitts=true` → Courses
+         offered in both locations
+    """
+    return course_service.fetch_courses_by_offered_location(offered_qatar, offered_pitts)
+
+
 @router.get("/courses/{course_code}", response_model=CourseResponse)
 def get_course(course_code: str, course_service: CourseService = Depends(get_course_service)):
     """
@@ -78,5 +95,3 @@ def get_course(course_code: str, course_service: CourseService = Depends(get_cou
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     return course
-
-
