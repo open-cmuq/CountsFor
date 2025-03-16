@@ -24,8 +24,11 @@ class CourseResponse(BaseModel):
     units: Optional[int] = None
     description: Optional[str] = None
     prerequisites: Optional[str] = "None"
-    offered: List[str]
+    offered: List[str]  # List of semesters the course is offered
+    offered_qatar: bool  # True if offered in Qatar
+    offered_pitts: bool  # True if offered in Pittsburgh
     requirements: Dict[str, List[str]]
+
 
 
 class CourseListResponse(BaseModel):
