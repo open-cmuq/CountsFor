@@ -85,6 +85,19 @@ def get_courses_by_offering(
     """
     return course_service.fetch_courses_by_offered_location(offered_qatar, offered_pitts)
 
+@router.get("/courses/by-semester", response_model=CourseListResponse)
+def get_courses_by_semester_route(semester: str,
+                                  course_service: CourseService = Depends(get_course_service)):
+    """
+    Fetch courses offered in a given semester.
+
+    Example:
+      /courses/by-semester?semester=F24
+    """
+    courses = course_service.fetch_courses_by_semester(semester)
+    if not courses.courses:
+         raise HTTPException(status_code=404, detail=f"No courses found for semester {semester}")
+    return courses
 
 @router.get("/courses/{course_code}", response_model=CourseResponse)
 def get_course(course_code: str, course_service: CourseService = Depends(get_course_service)):
