@@ -76,7 +76,7 @@ def get_courses_by_offering(
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Fetch courses based on whether they are offered in Qatar, Pittsburgh, or both.
+    fetch courses based on whether they are offered in Qatar, Pittsburgh, or both.
     Example usage:
       - `/courses/by-offering?offered_qatar=true` → Courses offered in Qatar
       - `/courses/by-offering?offered_pitts=true` → Courses offered in Pittsburgh
@@ -91,9 +91,7 @@ def search_courses(
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Search courses using multiple filters.
-    Example:
-      /courses/search?department=CS&semester=Fall2025&has_prereqs=true&offered_qatar=true
+    fetch courses based on a combination of filters.
     """
     courses = course_service.fetch_courses_by_filters(
         department=filters.department,
@@ -104,12 +102,14 @@ def search_courses(
         ba_requirement=filters.ba_requirement,
         bs_requirement=filters.bs_requirement,
         offered_qatar=filters.offered_qatar,
-        offered_pitts=filters.offered_pitts
+        offered_pitts=filters.offered_pitts,
+        search_query=filters.searchQuery  # new parameter passed along
     )
     if not courses.courses:
-        raise HTTPException(status_code=404,
-                            detail="No courses found matching the provided filters")
+        raise HTTPException(status_code=404, detail="No courses found matching "
+        "the provided filters")
     return courses
+
 
 @router.get("/courses/{course_code}", response_model=CourseResponse)
 def get_course(course_code: str, course_service: CourseService = Depends(get_course_service)):

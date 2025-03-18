@@ -194,6 +194,7 @@ class CourseRepository:
 
     def get_courses_by_filters(self,
                             department: Optional[str] = None,
+                            search_query: Optional[str] = None,
                             semester: Optional[str] = None,
                             has_prereqs: Optional[bool] = None,
                             cs_requirement: Optional[str] = None,
@@ -208,6 +209,10 @@ class CourseRepository:
         # Filter by department
         if department:
             query = query.filter(Course.dep_code == department)
+
+        # NEW: Filter by search query on course code
+        if search_query:
+            query = query.filter(Course.course_code.ilike(f"%{search_query}%"))
 
         # Filter by prerequisites
         if has_prereqs is not None:
@@ -227,8 +232,7 @@ class CourseRepository:
             query = query.join(Offering, Course.course_code == Offering.course_code)\
                         .filter(Offering.semester == semester)
 
-        # Filter by requirements: join with CountsFor and Requirement
-        # if any requirement filter is set
+        # Filter by requirements
         requirement_filters = []
         if cs_requirement:
             requirement_filters.append(and_(Requirement.audit_id.like("cs%"),
@@ -247,7 +251,6 @@ class CourseRepository:
                         .join(Requirement, CountsFor.requirement == Requirement.requirement)\
                         .filter(or_(*requirement_filters))
 
-        # Ensure uniqueness in case joins produce duplicates
         courses = query.distinct().all()
 
         result = []

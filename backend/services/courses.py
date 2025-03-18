@@ -168,20 +168,24 @@ class CourseService:
         )
 
     def fetch_courses_by_filters(
-        self,
-        department: Optional[str] = None,
-        semester: Optional[str] = None,
-        has_prereqs: Optional[bool] = None,
-        cs_requirement: Optional[str] = None,
-        is_requirement: Optional[str] = None,
-        ba_requirement: Optional[str] = None,
-        bs_requirement: Optional[str] = None,
-        offered_qatar: Optional[bool] = None,
-        offered_pitts: Optional[bool] = None
-    ) -> CourseListResponse:
-        """fetch and structure courses based on multiple filters."""
+    self,
+    department: Optional[str] = None,
+    semester: Optional[str] = None,
+    has_prereqs: Optional[bool] = None,
+    cs_requirement: Optional[str] = None,
+    is_requirement: Optional[str] = None,
+    ba_requirement: Optional[str] = None,
+    bs_requirement: Optional[str] = None,
+    offered_qatar: Optional[bool] = None,
+    offered_pitts: Optional[bool] = None,
+    search_query: Optional[str] = None
+) -> CourseListResponse:
+        """
+        fetch courses based on a combination of filters.
+        """
         courses = self.course_repo.get_courses_by_filters(
             department=department,
+            search_query=search_query,
             semester=semester,
             has_prereqs=has_prereqs,
             cs_requirement=cs_requirement,
