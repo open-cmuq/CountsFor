@@ -214,7 +214,7 @@ class CourseRepository:
             if has_prereqs:
                 query = query.filter(Course.prereqs_text.isnot(None), Course.prereqs_text != "")
             else:
-                query = query.filter((Course.prereqs_text is None) | (Course.prereqs_text == ""))
+                query = query.filter((Course.prereqs_text.is_(None)) | (Course.prereqs_text == ""))
 
         # Filter by offered location
         if offered_qatar is not None:
