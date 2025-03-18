@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.database.db import get_db
 from backend.services.courses import CourseService
 from backend.app.schemas import (CourseResponse, CourseListResponse,
-                                 CourseFilter)
+                                 CourseFilter, CombinedCourseFilter)
 
 router = APIRouter()
 
@@ -85,6 +85,30 @@ def get_courses_by_offering(
     """
     return course_service.fetch_courses_by_offered_location(offered_qatar, offered_pitts)
 
+@router.get("/courses/search", response_model=CourseListResponse)
+def search_courses(
+    filters: CombinedCourseFilter = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Search courses using multiple filters.
+    Example:
+      /courses/search?department=CS&semester=Fall2025&has_prereqs=true&offered_qatar=true
+    """
+    courses = course_service.fetch_courses_by_filters(
+        department=filters.department,
+        semester=filters.semester,
+        has_prereqs=filters.has_prereqs,
+        cs_requirement=filters.cs_requirement,
+        is_requirement=filters.is_requirement,
+        ba_requirement=filters.ba_requirement,
+        bs_requirement=filters.bs_requirement,
+        offered_qatar=filters.offered_qatar,
+        offered_pitts=filters.offered_pitts
+    )
+    if not courses.courses:
+        raise HTTPException(status_code=404, detail="No courses found matching the provided filters")
+    return courses
 
 @router.get("/courses/{course_code}", response_model=CourseResponse)
 def get_course(course_code: str, course_service: CourseService = Depends(get_course_service)):

@@ -166,3 +166,45 @@ class CourseService:
                 for c in raw_courses
             ]
         )
+
+    def fetch_courses_by_filters(
+        self,
+        department: Optional[str] = None,
+        semester: Optional[str] = None,
+        has_prereqs: Optional[bool] = None,
+        cs_requirement: Optional[str] = None,
+        is_requirement: Optional[str] = None,
+        ba_requirement: Optional[str] = None,
+        bs_requirement: Optional[str] = None,
+        offered_qatar: Optional[bool] = None,
+        offered_pitts: Optional[bool] = None
+    ) -> CourseListResponse:
+        courses = self.course_repo.get_courses_by_filters(
+            department=department,
+            semester=semester,
+            has_prereqs=has_prereqs,
+            cs_requirement=cs_requirement,
+            is_requirement=is_requirement,
+            ba_requirement=ba_requirement,
+            bs_requirement=bs_requirement,
+            offered_qatar=offered_qatar,
+            offered_pitts=offered_pitts
+        )
+        return CourseListResponse(
+            courses=[
+                CourseResponse(
+                    course_code=course["course_code"],
+                    course_name=course["course_name"],
+                    department=course["department"],
+                    units=course["units"],
+                    description=course["description"],
+                    prerequisites=course["prerequisites"],
+                    offered=course["offered"],
+                    offered_qatar=course["offered_qatar"],
+                    offered_pitts=course["offered_pitts"],
+                    requirements=course["requirements"],
+                )
+                for course in courses
+            ]
+        )
+
