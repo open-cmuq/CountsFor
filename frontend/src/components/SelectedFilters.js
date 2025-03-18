@@ -31,17 +31,27 @@ const SelectedFilters = ({
       ))}
       {/* Then render the other selected filters */}
       {Object.entries(selectedFilters).map(([major, filters]) =>
-        filters.map((filter) => (
-          <div
-            key={`${major}-${filter}`}
-            className="filter-tag"
-            style={{ backgroundColor: majorColors[major] || "gray" }}
-          >
-            <button onClick={() => handleFilterChange(major, filter)}><b>×</b></button>
-            {filter}
-          </div>
-        ))
-      )}
+        filters.map((filter) => {
+            // 🛠 Ensure the filter is formatted before splitting
+            const formattedFilter = filter.replace(/^[^-]+---/, "").replace(/---/g, " → ");
+
+            // Split by `→` and get the last two parts
+            const filterParts = formattedFilter.split(" → ");
+            const displayedFilter = filterParts.slice(-2).join(" → "); // Keep only last 2 parts
+
+            return (
+            <div
+                key={`${major}-${filter}`}
+                className="filter-tag"
+                style={{ backgroundColor: majorColors[major] || "gray" }}
+            >
+                <button onClick={() => handleFilterChange(major, filter)}><b>×</b></button>
+                {displayedFilter} {/* ✅ Display only last two segments */}
+            </div>
+            );
+        })
+        )}
+
     </div>
   );
 };

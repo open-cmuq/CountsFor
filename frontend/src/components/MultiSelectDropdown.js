@@ -47,21 +47,26 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
           {options.length === 0 ? (
             <p className="dropdown-item">No options available</p>
           ) : (
-            options.map((option, index) => (
-              <label key={index} className="dropdown-item">
-                <input
-                  type="checkbox"
-                  checked={selectedForMajor.includes(option)}
-                  onChange={(e) => {
-                    const newSelection = e.target.checked
-                      ? [...selectedForMajor, option]
-                      : selectedForMajor.filter((item) => item !== option);
-                    handleFilterChange(major, newSelection);
-                  }}
-                />
-                {option}
-              </label>
-            ))
+            options.map((option, index) => {
+                // 🛠 Apply transformation ONLY when displaying
+                const formattedOption = option.replace(/^[^-]+---/, "").replace(/---/g, " → ");
+              
+                return (
+                  <label key={index} className="dropdown-item">
+                    <input
+                      type="checkbox"
+                      checked={selectedForMajor.includes(option)}
+                      onChange={(e) => {
+                        const newSelection = e.target.checked
+                          ? [...selectedForMajor, option] // Keep the actual value the same
+                          : selectedForMajor.filter((item) => item !== option);
+                        handleFilterChange(major, newSelection);
+                      }}
+                    />
+                    {formattedOption} {/* Display transformed text */}
+                  </label>
+                );
+              }) 
           )}
 
           {/* Clear Selection Button */}

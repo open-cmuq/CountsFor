@@ -71,7 +71,6 @@ const CourseTable = ({
                 />
               </th>
             ))}
-            <th>PRE-REQ</th>
             <th>
               OFFERED
               <br />
@@ -86,6 +85,7 @@ const CourseTable = ({
                 clearFilters={() => setSelectedOfferedSemesters([])}
               />
             </th>
+            <th>PRE-REQ</th>
           </tr>
         </thead>
         <tbody>
@@ -120,49 +120,56 @@ const CourseTable = ({
 
               {Object.keys(allRequirements).map((major) => {
                 const requirements = course.requirements?.[major] || [];
+
                 if (requirements.length === 0) return <td key={major}></td>;
+
+                // 🛠 Transform the requirement display without changing the actual data
+                const formattedRequirements = requirements.map(req =>
+                    req.replace(/^[^-]+---/, "").replace(/---/g, " → ")
+                );
+
                 return (
-                  <td
+                    <td
                     key={major}
                     className={`cell cell-${major.toLowerCase()}`}
                     onClick={() =>
-                      openPopup("requirement", {
-                        requirement: requirements,
+                        openPopup("requirement", {
+                        requirement: formattedRequirements, // Pass formatted data to popup
                         courses: courses.filter((c) =>
-                          c.requirements?.[major]?.some((r) =>
+                            c.requirements?.[major]?.some((r) =>
                             requirements.includes(r)
-                          )
+                            )
                         ),
-                      })
+                        })
                     }
                     style={{
-                      cursor: "pointer",
-                      color: "blue",
-                      textAlign: "center",
+                        cursor: "pointer",
+                        color: "blue",
+                        textAlign: "center",
                     }}
-                  >
-                    {requirements.length === 1 ? (
-                      requirements[0]
+                    >
+                    {formattedRequirements.length === 1 ? (
+                        formattedRequirements[0]
                     ) : (
-                      <ul
+                        <ul
                         style={{
-                          margin: "5px 0",
-                          paddingLeft: "20px",
-                          textAlign: "left",
+                            margin: "5px 0",
+                            paddingLeft: "20px",
+                            textAlign: "left",
                         }}
-                      >
-                        {requirements.map((req, index) => (
-                          <li key={index} style={{ listStyleType: "disc" }}>
+                        >
+                        {formattedRequirements.map((req, index) => (
+                            <li key={index} style={{ listStyleType: "disc" }}>
                             {req}
-                          </li>
+                            </li>
                         ))}
-                      </ul>
+                        </ul>
                     )}
-                  </td>
+                    </td>
                 );
-              })}
-              <td>{course.prerequisites || "NONE"}</td>
-              <td>{course.offered.join(", ")}</td>
+                })}
+                <td>{course.offered.join(", ")}</td>
+                <td>{course.prerequisites || "NONE"}</td>
             </tr>
           ))}
         </tbody>
