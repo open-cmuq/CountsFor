@@ -107,13 +107,14 @@ def search_courses(
         offered_pitts=filters.offered_pitts
     )
     if not courses.courses:
-        raise HTTPException(status_code=404, detail="No courses found matching the provided filters")
+        raise HTTPException(status_code=404,
+                            detail="No courses found matching the provided filters")
     return courses
 
 @router.get("/courses/{course_code}", response_model=CourseResponse)
 def get_course(course_code: str, course_service: CourseService = Depends(get_course_service)):
     """
-    Fetch course details by course code.
+    fetch course details by course code.
     """
     course = course_service.fetch_course_by_code(course_code)
     if not course:

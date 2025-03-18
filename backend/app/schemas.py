@@ -58,12 +58,15 @@ class DepartmentListResponse(BaseModel):
     departments: List[DepartmentResponse]
 
 class CombinedCourseFilter(BaseModel):
+    """Represents a combined course filter."""
     department: Optional[str] = Field(None, description="Filter by department code")
-    semester: Optional[str] = Field(None, description="Filter by semester offered, e.g. 'Fall2025'")
-    has_prereqs: Optional[bool] = Field(None, description="Filter by whether courses have prerequisites")
+    semester: Optional[str] = Field(None, description="Filter by semester offered, e.g. 'F24'")
+    has_prereqs: Optional[bool] = Field(None,
+                                        description="Filter by whether courses have prerequisites")
     cs_requirement: Optional[str] = Field(None, description="Filter by CS requirement")
     is_requirement: Optional[str] = Field(None, description="Filter by IS requirement")
     ba_requirement: Optional[str] = Field(None, description="Filter by BA requirement")
     bs_requirement: Optional[str] = Field(None, description="Filter by BS requirement")
     offered_qatar: Optional[bool] = Field(None, description="Filter by courses offered in Qatar")
-    offered_pitts: Optional[bool] = Field(None, description="Filter by courses offered in Pittsburgh")
+    offered_pitts: Optional[bool] = Field(None,
+                                          description="Filter by courses offered in Pittsburgh")

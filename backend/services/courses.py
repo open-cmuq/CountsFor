@@ -179,6 +179,7 @@ class CourseService:
         offered_qatar: Optional[bool] = None,
         offered_pitts: Optional[bool] = None
     ) -> CourseListResponse:
+        """fetch and structure courses based on multiple filters."""
         courses = self.course_repo.get_courses_by_filters(
             department=department,
             semester=semester,
@@ -207,4 +208,3 @@ class CourseService:
                 for course in courses
             ]
         )
-

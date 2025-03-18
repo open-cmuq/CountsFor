@@ -214,7 +214,7 @@ class CourseRepository:
             if has_prereqs:
                 query = query.filter(Course.prereqs_text.isnot(None), Course.prereqs_text != "")
             else:
-                query = query.filter((Course.prereqs_text == None) | (Course.prereqs_text == ""))
+                query = query.filter((Course.prereqs_text is None) | (Course.prereqs_text == ""))
 
         # Filter by offered location
         if offered_qatar is not None:
@@ -227,16 +227,21 @@ class CourseRepository:
             query = query.join(Offering, Course.course_code == Offering.course_code)\
                         .filter(Offering.semester == semester)
 
-        # Filter by requirements: join with CountsFor and Requirement if any requirement filter is set
+        # Filter by requirements: join with CountsFor and Requirement
+        # if any requirement filter is set
         requirement_filters = []
         if cs_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("cs%"), CountsFor.requirement == cs_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("cs%"),
+                                            CountsFor.requirement == cs_requirement))
         if is_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("is%"), CountsFor.requirement == is_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("is%"),
+                                            CountsFor.requirement == is_requirement))
         if ba_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("ba%"), CountsFor.requirement == ba_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("ba%"),
+                                            CountsFor.requirement == ba_requirement))
         if bs_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("bio%"), CountsFor.requirement == bs_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("bio%"),
+                                            CountsFor.requirement == bs_requirement))
         if requirement_filters:
             query = query.join(CountsFor, Course.course_code == CountsFor.course_code)\
                         .join(Requirement, CountsFor.requirement == Requirement.requirement)\
