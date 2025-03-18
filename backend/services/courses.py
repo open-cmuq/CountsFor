@@ -167,6 +167,27 @@ class CourseService:
             ]
         )
 
+    def fetch_courses_by_semester(self, semester: str) -> CourseListResponse:
+        """fetch and structure courses offered in the specified semester."""
+        courses = self.course_repo.get_courses_by_semester(semester)
+        return CourseListResponse(
+            courses=[
+                CourseResponse(
+                    course_code=course["course_code"],
+                    course_name=course["course_name"],
+                    department=course["department"],
+                    units=course["units"],
+                    description=course["description"],
+                    prerequisites=course["prerequisites"],
+                    offered=course["offered"],
+                    offered_qatar=course["offered_qatar"],
+                    offered_pitts=course["offered_pitts"],
+                    requirements=course["requirements"],
+                )
+                for course in courses
+            ]
+        )
+
     def fetch_courses_by_filters(
     self,
     department: Optional[str] = None,

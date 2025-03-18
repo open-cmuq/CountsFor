@@ -192,6 +192,32 @@ class CourseRepository:
 
         return result
 
+    def get_courses_by_semester(self, semester: str):
+        """fetch courses that are offered in the given semester."""
+        courses = (
+            self.db.query(Course)
+            .join(Offering, Course.course_code == Offering.course_code)
+            .filter(Offering.semester == semester)
+            .all()
+        )
+        result = []
+        for course in courses:
+            offered_semesters = self.get_offered_semesters(course.course_code)
+            requirements = self.get_course_requirements(course.course_code)
+            result.append({
+                "course_code": course.course_code,
+                "course_name": course.name,
+                "department": course.dep_code,
+                "units": course.units,
+                "description": course.description,
+                "prerequisites": course.prereqs_text or "None",
+                "offered_qatar": course.offered_qatar,
+                "offered_pitts": course.offered_pitts,
+                "offered": offered_semesters,
+                "requirements": requirements,
+            })
+        return result
+
     def get_courses_by_filters(self,
                             department: Optional[str] = None,
                             search_query: Optional[str] = None,
