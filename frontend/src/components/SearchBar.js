@@ -81,28 +81,33 @@ const SearchBar = ({
           <label>
             <input
               type="checkbox"
-              checked={noPrereqs === true}
-              onChange={(e) => setNoPrereqs(e.target.checked)}
+              // When checked, we want no prerequisites (set noPrereqs to false);
+              // when unchecked, set it to null (i.e. no filtering on prerequisites)
+              checked={noPrereqs === false}
+              onChange={(e) => setNoPrereqs(e.target.checked ? false : null)}
             />
             No Pre-reqs
           </label>
           <label>
             <input
               type="checkbox"
+              // When checked, offeredQatar becomes true; when unchecked, null.
               checked={offeredQatar === true}
-              onChange={(e) => setOfferedQatar(e.target.checked)}
+              onChange={(e) => setOfferedQatar(e.target.checked ? true : null)}
             />
             Qatar
           </label>
           <label>
             <input
               type="checkbox"
+              // When checked, offeredPitts becomes true; when unchecked, null.
               checked={offeredPitts === true}
-              onChange={(e) => setOfferedPitts(e.target.checked)}
+              onChange={(e) => setOfferedPitts(e.target.checked ? true : null)}
             />
             Pitts
           </label>
         </div>
+
 
         {/* Search & Clear Buttons */}
         <button className="search-btn">🔍</button>
