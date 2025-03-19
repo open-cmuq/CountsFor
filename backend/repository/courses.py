@@ -247,16 +247,20 @@ class CourseRepository:
             else:
                 query = query.filter((Course.prereqs_text.is_(None)) | (Course.prereqs_text == ""))
 
-        # Filter by offered location
+        # Filter by offered location (applied first)
         if offered_qatar is not None:
             query = query.filter(Course.offered_qatar == offered_qatar)
         if offered_pitts is not None:
             query = query.filter(Course.offered_pitts == offered_pitts)
 
-        # Filter by semester: join with the Offering table if semester is provided
+        # Filter by semester using a subquery instead of a join
         if semester:
-            query = query.join(Offering, Course.course_code == Offering.course_code)\
-                        .filter(Offering.semester == semester)
+            subq = self.db.query(Offering.course_code)\
+                    .filter(Offering.semester == semester)\
+                    .subquery()
+            query = query.filter(Course.course_code.in_(subq))
+
+
 
         # Filter by requirements
         requirement_filters = []

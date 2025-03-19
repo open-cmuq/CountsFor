@@ -158,6 +158,9 @@ const CourseTablePage = () => {
         selectedOfferedSemesters={selectedOfferedSemesters}
         removeOfferedSemester={removeOfferedSemester}
       />
+       <div className="course-count">
+        Showing {courses.length} courses
+      </div>
       <CourseTable
         courses={courses}
         allRequirements={requirements}
