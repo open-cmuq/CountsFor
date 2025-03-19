@@ -188,6 +188,11 @@ class CourseService:
             ]
         )
 
+    def fetch_all_semesters(self):
+        """fetch a list of all semesters available in the offerings table."""
+        return self.course_repo.get_all_semesters()
+
+
     def fetch_courses_by_filters(
     self,
     department: Optional[str] = None,

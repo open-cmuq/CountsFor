@@ -22,10 +22,10 @@ const CourseTablePage = () => {
   // Courses and requirements from API
   const [courses, setCourses] = useState([]);
   const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
-  // All available offered semester options (derived from the fetched courses)
+  // All available offered semester options (fetched from the dedicated endpoint)
   const [offeredOptions, setOfferedOptions] = useState([]);
 
-  // Fetch departments from API
+  // Fetch departments from API (if needed elsewhere)
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -33,12 +33,11 @@ const CourseTablePage = () => {
         if (!response.ok) throw new Error("Failed to fetch departments");
         const data = await response.json();
         console.log("Fetched departments:", data);
-        // We only need the department list here
+        // Departments can be stored if needed for other components
       } catch (error) {
         console.error("Error fetching departments:", error);
       }
     };
-
     fetchDepartments();
   }, []);
 
@@ -50,7 +49,6 @@ const CourseTablePage = () => {
         if (!response.ok) throw new Error("Failed to fetch requirements");
         const data = await response.json();
         console.log("Requirements fetched:", data);
-
         const transformedRequirements = { BA: [], BS: [], CS: [], IS: [] };
         data.requirements.forEach(({ requirement, major }) => {
           const majorKey = {
@@ -68,7 +66,6 @@ const CourseTablePage = () => {
         console.error("Error fetching requirements:", error);
       }
     };
-
     fetchRequirements();
   }, []);
 
@@ -86,7 +83,6 @@ const CourseTablePage = () => {
         // Offered location checkboxes:
         if (offeredQatar !== null) params.append("offered_qatar", offeredQatar);
         if (offeredPitts !== null) params.append("offered_pitts", offeredPitts);
-
         // For requirement filters:
         if (selectedFilters.CS.length > 0)
           params.append("cs_requirement", selectedFilters.CS.join(","));
@@ -101,15 +97,6 @@ const CourseTablePage = () => {
         if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
         setCourses(data.courses);
-
-        // Derive offered options from the returned courses (union of all offered semesters)
-        const allSemesters = new Set();
-        data.courses.forEach(course => {
-          if (course.offered && Array.isArray(course.offered)) {
-            course.offered.forEach(sem => allSemesters.add(sem));
-          }
-        });
-        setOfferedOptions(Array.from(allSemesters));
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
@@ -117,6 +104,21 @@ const CourseTablePage = () => {
 
     fetchCourses();
   }, [selectedDepartment, searchQuery, selectedOfferedSemesters, noPrereqs, offeredQatar, offeredPitts, selectedFilters]);
+
+  // Fetch all semesters from the dedicated endpoint
+  useEffect(() => {
+    const fetchSemesters = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/courses/semesters`);
+        if (!response.ok) throw new Error("Failed to fetch semesters");
+        const data = await response.json();
+        setOfferedOptions(data.semesters);
+      } catch (error) {
+        console.error("Error fetching semesters:", error);
+      }
+    };
+    fetchSemesters();
+  }, []);
 
   // Update requirement filters (for CS, IS, BA, BS)
   const handleFilterChange = (major, newSelection) => {
@@ -158,9 +160,7 @@ const CourseTablePage = () => {
         selectedOfferedSemesters={selectedOfferedSemesters}
         removeOfferedSemester={removeOfferedSemester}
       />
-       <div className="course-count">
-        Showing {courses.length} courses
-      </div>
+      <div className="course-count">Showing {courses.length} courses</div>
       <CourseTable
         courses={courses}
         allRequirements={requirements}

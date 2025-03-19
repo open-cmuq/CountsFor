@@ -122,7 +122,17 @@ def get_courses_by_semester_route(semester: str,
     courses = course_service.fetch_courses_by_semester(semester)
     if not courses.courses:
          raise HTTPException(status_code=404, detail=f"No courses found for semester {semester}")
+
     return courses
+
+@router.get("/courses/semesters")
+def get_all_semesters(course_service: CourseService = Depends(get_course_service)):
+    """
+    Endpoint to retrieve a list of all semesters (from the Offerings table).
+    """
+    semesters = course_service.fetch_all_semesters()
+    return {"semesters": semesters}
+
 
 @router.get("/courses/{course_code}", response_model=CourseResponse)
 def get_course(course_code: str, course_service: CourseService = Depends(get_course_service)):

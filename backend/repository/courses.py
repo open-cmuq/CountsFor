@@ -218,6 +218,13 @@ class CourseRepository:
             })
         return result
 
+    def get_all_semesters(self):
+        """fetch a distinct list of all semesters from the Offerings table."""
+        semesters = self.db.query(Offering.semester).distinct().all()
+        # Each row is a tuple (semester,), so extract the first element.
+        return [semester[0] for semester in semesters]
+
+
     def get_courses_by_filters(self,
                             department: Optional[str] = None,
                             search_query: Optional[str] = None,
