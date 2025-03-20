@@ -6,7 +6,13 @@ const SearchBar = ({
   selectedDepartment,
   setSelectedDepartment,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  noPrereqs,
+  setNoPrereqs,
+  offeredQatar,
+  setOfferedQatar,
+  offeredPitts,
+  setOfferedPitts,
 }) => {
   const [departments, setDepartments] = useState([]);
 
@@ -16,10 +22,9 @@ const SearchBar = ({
       try {
         const response = await fetch(`${API_BASE_URL}/departments`);
         if (!response.ok) throw new Error("Failed to fetch departments");
-
         const data = await response.json();
-        console.log("Fetched departments:", data); // Debugging
-        setDepartments(data.departments || []); // Ensure valid array
+        console.log("Fetched departments:", data);
+        setDepartments(data.departments || []);
       } catch (error) {
         console.error("Error fetching departments:", error);
       }
@@ -31,6 +36,9 @@ const SearchBar = ({
   const handleClearSearch = () => {
     setSearchQuery("");
     setSelectedDepartment("");
+    setNoPrereqs(null);
+    setOfferedQatar(null);
+    setOfferedPitts(null);
   };
 
   // Function to get department name based on selected dep_code
@@ -47,7 +55,7 @@ const SearchBar = ({
         <select
           value={selectedDepartment}
           onChange={(e) => {
-            console.log("Selected department:", e.target.value); // Debugging
+            console.log("Selected department:", e.target.value);
             setSelectedDepartment(e.target.value);
           }}
           className="search-dropdown"
@@ -69,6 +77,38 @@ const SearchBar = ({
           className="text-input"
         />
 
+        <div className="checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              // When checked, we want no prerequisites (set noPrereqs to false);
+              // when unchecked, set it to null (i.e. no filtering on prerequisites)
+              checked={noPrereqs === false}
+              onChange={(e) => setNoPrereqs(e.target.checked ? false : null)}
+            />
+            No Pre-reqs
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              // When checked, offeredQatar becomes true; when unchecked, null.
+              checked={offeredQatar === true}
+              onChange={(e) => setOfferedQatar(e.target.checked ? true : null)}
+            />
+            Qatar
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              // When checked, offeredPitts becomes true; when unchecked, null.
+              checked={offeredPitts === true}
+              onChange={(e) => setOfferedPitts(e.target.checked ? true : null)}
+            />
+            Pitts
+          </label>
+        </div>
+
+
         {/* Search & Clear Buttons */}
         <button className="search-btn">🔍</button>
         <button onClick={handleClearSearch} className="search-clear-btn">
@@ -81,7 +121,7 @@ const SearchBar = ({
         <div className="selected-filters">
           {selectedDepartment && (
             <span className="filter-tag">
-              {getDepartmentName(selectedDepartment)} {/* Shows dep_code - name */}
+              {getDepartmentName(selectedDepartment)}
               <button onClick={() => setSelectedDepartment("")}>×</button>
             </span>
           )}

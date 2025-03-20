@@ -37,20 +37,19 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
         ) : (
           <>
             {content.requirement.map((req, index) => {
-              const fulfillingCourses = content.courses
-              .filter((c) =>
-                Object.values(c.requirements).some((reqList) => reqList.includes(req))
-              )
-              .sort((a, b) => {
-
-                const numA = parseInt(a.course_code.split("-")[1]);
-                const numB = parseInt(b.course_code.split("-")[1]);
-                return numA - numB;
-              });
+            const fulfillingCourses = content.courses.filter((c) =>
+                Object.values(c.requirements).some((reqList) =>
+                reqList.some((originalReq) =>
+                    originalReq.replace(/^[^-]+---/, "").replace(/---/g, " → ") === req ||
+                    originalReq === req // Ensure both formatted and raw names match
+                )
+                )
+            );
+  
 
               return (
                 <div key={index} className="requirement-group">
-                  <h3>{req}</h3>
+                  <h3>{req.replace(/^[^-]+---/, "").replace(/---/g, " → ")}</h3>
                   <p className="courses-title">
                     Courses Fulfilling This Requirement{" "}
                     <span className="course-count">[{fulfillingCourses.length}]</span>

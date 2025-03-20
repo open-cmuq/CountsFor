@@ -4,7 +4,16 @@ import Popup from "./PopUp";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, handleFilterChange, clearFilters, setVisibleCourses }) => {
+const CourseTable = ({
+  courses,
+  allRequirements,
+  selectedFilters,
+  handleFilterChange,
+  clearFilters,
+  offeredOptions,
+  selectedOfferedSemesters,
+  setSelectedOfferedSemesters,
+}) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
   const [popupContent, setPopupContent] = useState(null);
@@ -55,15 +64,28 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
                 <br />
                 <MultiSelectDropdown
                   major={major}
-                  allRequirements={allRequirements}
+                  allRequirements={allRequirements[major]}
                   selectedFilters={selectedFilters}
                   handleFilterChange={handleFilterChange}
                   clearFilters={clearFilters}
                 />
               </th>
             ))}
+            <th>
+              OFFERED
+              <br />
+              <MultiSelectDropdown
+                major="offered"
+                allRequirements={offeredOptions}
+                // Here we wrap our offered filter state in an object so the dropdown code (which expects selectedFilters[major]) can work:
+                selectedFilters={{ offered: selectedOfferedSemesters }}
+                handleFilterChange={(major, newSelection) =>
+                  setSelectedOfferedSemesters(newSelection)
+                }
+                clearFilters={() => setSelectedOfferedSemesters([])}
+              />
+            </th>
             <th>PRE-REQ</th>
-            <th>OFFERED</th>
           </tr>
         </thead>
         <tbody>
@@ -73,9 +95,8 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
                 <button
                   className="remove-btn"
                   onClick={() =>
-                    setVisibleCourses((prev) =>
-                      prev.filter((c) => c.course_code !== course.course_code)
-                    )
+                    // For example, you might want to remove the course from display.
+                    console.log("Remove", course.course_code)
                   }
                 >
                   ✖
@@ -85,7 +106,11 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
                 <b
                   className="clickable"
                   onClick={() => openPopup("course", course)}
-                  style={{ cursor: "pointer", textDecoration: "underline", color: "black" }}
+                  style={{
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    color: "black",
+                  }}
                 >
                   {course.course_code}
                 </b>
@@ -94,49 +119,69 @@ const CourseTable = ({ courses, allCourses, allRequirements, selectedFilters, ha
               </td>
 
               {Object.keys(allRequirements).map((major) => {
-              const requirements = course.requirements?.[major]?.map(req =>
-                typeof req === "string" ? req : req.requirement
-              ) || [];
+                const requirements = course.requirements?.[major] || [];
 
+                if (requirements.length === 0) return <td key={major}></td>;
 
-              if (requirements.length === 0) return <td key={major}></td>;
+                // 🛠 Transform the requirement display without changing the actual data
+                const formattedRequirements = requirements.map(req =>
+                    req.replace(/^[^-]+---/, "").replace(/---/g, " → ")
+                );
 
-              return (
-                <td
-                  key={major}
-                  className={`cell cell-${major.toLowerCase()}`}
-                  onClick={() =>
-                    openPopup("requirement", {
-                      requirement: requirements,
-                      courses: allCourses.filter((c) =>
-                        c.requirements?.[major]?.some((r) => requirements.includes(r))
-                      ),
-                    })
-                  }
-                  style={{ cursor: "pointer", color: "blue", textAlign: "center" }}
-                >
-                  {requirements.length === 1 ? (
-                    requirements[0] // Display single requirement as text
-                  ) : (
-                    <ul style={{ margin: "5px 0", paddingLeft: "20px", textAlign: "left" }}>
-                      {requirements.map((req, index) => (
-                        <li key={index} style={{ listStyleType: "disc" }}>{req}</li>
-                      ))}
-                    </ul>
-                  )}
-                </td>
-              );
-            })}
-
-              <td>{course.prerequisites || "NONE"}</td>
-              <td>{course.offered.join(", ")}</td>
+                return (
+                    <td
+                    key={major}
+                    className={`cell cell-${major.toLowerCase()}`}
+                    onClick={() =>
+                        openPopup("requirement", {
+                        requirement: formattedRequirements, // Pass formatted data to popup
+                        courses: courses.filter((c) =>
+                            c.requirements?.[major]?.some((r) =>
+                            requirements.includes(r)
+                            )
+                        ),
+                        })
+                    }
+                    style={{
+                        cursor: "pointer",
+                        color: "blue",
+                        textAlign: "center",
+                    }}
+                    >
+                    {formattedRequirements.length === 1 ? (
+                        formattedRequirements[0]
+                    ) : (
+                        <ul
+                        style={{
+                            margin: "5px 0",
+                            paddingLeft: "20px",
+                            textAlign: "left",
+                        }}
+                        >
+                        {formattedRequirements.map((req, index) => (
+                            <li key={index} style={{ listStyleType: "disc" }}>
+                            {req}
+                            </li>
+                        ))}
+                        </ul>
+                    )}
+                    </td>
+                );
+                })}
+                <td>{course.offered.join(", ")}</td>
+                <td>{course.prerequisites || "NONE"}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Popup Component */}
-      <Popup isOpen={isPopupOpen} onClose={closePopup} type={popupType} content={popupContent} openPopup={openPopup}/>
+      <Popup
+        isOpen={isPopupOpen}
+        onClose={closePopup}
+        type={popupType}
+        content={popupContent}
+        openPopup={openPopup}
+      />
     </div>
   );
 };

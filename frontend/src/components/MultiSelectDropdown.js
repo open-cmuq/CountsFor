@@ -18,16 +18,15 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Ensure allOptions updates when allRequirements change
-  const allOptions = allRequirements?.[major] ?? [];
+  // Use the key from selectedFilters if major is provided; otherwise, assume selectedFilters is directly an array.
+  const selectedForMajor = major ? (selectedFilters[major] || []) : selectedFilters;
+  const options = allRequirements || [];
 
-  // Track selected requirements for this major
-  const selectedForMajor = selectedFilters[major] || [];
-  const isAllSelected = allOptions.length > 0 && selectedForMajor.length === allOptions.length;
+  const isAllSelected = options.length > 0 && selectedForMajor.length === options.length;
 
   // Handle "Select All"
   const handleSelectAll = () => {
-    handleFilterChange(major, isAllSelected ? [] : allOptions);
+    handleFilterChange(major, isAllSelected ? [] : options);
   };
 
   return (
@@ -38,9 +37,6 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
       {isOpen && (
         <div className="dropdown-content">
-          {/* Debugging: Log available options */}
-          {console.log(`Dropdown for ${major}:`, allOptions)}
-
           {/* "Select All" Option */}
           <label className="dropdown-item">
             <input type="checkbox" checked={isAllSelected} onChange={handleSelectAll} />
@@ -48,25 +44,29 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
           </label>
 
           {/* Individual Options */}
-          {allOptions.length === 0 ? (
-            <p className="dropdown-item">No requirements available</p>
+          {options.length === 0 ? (
+            <p className="dropdown-item">No options available</p>
           ) : (
-            allOptions.map((req, index) => (
-              <label key={index} className="dropdown-item">
-                <input
-                  type="checkbox"
-                  checked={selectedForMajor.includes(req)}
-                  onChange={(e) => {
-                    const newSelection = e.target.checked
-                      ? [...selectedForMajor, req] // Add selection
-                      : selectedForMajor.filter((item) => item !== req); // Remove selection
-
-                    handleFilterChange(major, newSelection);
-                  }}
-                />
-                {req}
-              </label>
-            ))
+            options.map((option, index) => {
+                // 🛠 Apply transformation ONLY when displaying
+                const formattedOption = option.replace(/^[^-]+---/, "").replace(/---/g, " → ");
+              
+                return (
+                  <label key={index} className="dropdown-item">
+                    <input
+                      type="checkbox"
+                      checked={selectedForMajor.includes(option)}
+                      onChange={(e) => {
+                        const newSelection = e.target.checked
+                          ? [...selectedForMajor, option] // Keep the actual value the same
+                          : selectedForMajor.filter((item) => item !== option);
+                        handleFilterChange(major, newSelection);
+                      }}
+                    />
+                    {formattedOption} {/* Display transformed text */}
+                  </label>
+                );
+              }) 
           )}
 
           {/* Clear Selection Button */}

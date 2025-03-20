@@ -2,6 +2,7 @@
 This script implements the data access layer for courses.
 """
 
+from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from backend.database.models import Course, CountsFor, Requirement, Offering
@@ -190,6 +191,7 @@ class CourseRepository:
             })
 
         return result
+
     def get_courses_by_semester(self, semester: str):
         """fetch courses that are offered in the given semester."""
         courses = (
@@ -198,7 +200,6 @@ class CourseRepository:
             .filter(Offering.semester == semester)
             .all()
         )
-
         result = []
         for course in courses:
             offered_semesters = self.get_offered_semesters(course.course_code)
@@ -217,3 +218,103 @@ class CourseRepository:
             })
         return result
 
+    def get_all_semesters(self):
+        """fetch a distinct list of all semesters from the Offerings table."""
+        semesters = self.db.query(Offering.semester).distinct().all()
+        # Each row is a tuple (semester,), so extract the first element.
+        return [semester[0] for semester in semesters]
+
+
+    def get_courses_by_filters(self,
+                            department: Optional[str] = None,
+                            search_query: Optional[str] = None,
+                            semester: Optional[str] = None,
+                            has_prereqs: Optional[bool] = None,
+                            cs_requirement: Optional[str] = None,
+                            is_requirement: Optional[str] = None,
+                            ba_requirement: Optional[str] = None,
+                            bs_requirement: Optional[str] = None,
+                            offered_qatar: Optional[bool] = None,
+                            offered_pitts: Optional[bool] = None):
+        """Fetch courses matching any combination of provided filters."""
+        query = self.db.query(Course)
+
+        # Filter by department
+        if department:
+            query = query.filter(Course.dep_code == department)
+
+        # Filter by search query on course code
+        if search_query:
+            query = query.filter(Course.course_code.ilike(f"%{search_query}%"))
+
+        # Filter by prerequisites
+        if has_prereqs is not None:
+            if has_prereqs:
+                query = query.filter(Course.prereqs_text.isnot(None), Course.prereqs_text != "")
+            else:
+                query = query.filter((Course.prereqs_text.is_(None)) | (Course.prereqs_text == ""))
+
+        # Filter by requirements (using your existing logic)
+        requirement_filters = []
+        if cs_requirement:
+            requirement_filters.append(and_(Requirement.audit_id.like("cs%"), CountsFor.requirement == cs_requirement))
+        if is_requirement:
+            requirement_filters.append(and_(Requirement.audit_id.like("is%"), CountsFor.requirement == is_requirement))
+        if ba_requirement:
+            requirement_filters.append(and_(Requirement.audit_id.like("ba%"), CountsFor.requirement == ba_requirement))
+        if bs_requirement:
+            requirement_filters.append(and_(Requirement.audit_id.like("bio%"), CountsFor.requirement == bs_requirement))
+        if requirement_filters:
+            query = query.join(CountsFor, Course.course_code == CountsFor.course_code)\
+                        .join(Requirement, CountsFor.requirement == Requirement.requirement)\
+                        .filter(or_(*requirement_filters))
+
+        # --- New Logic for Semester and Offered Location Filters ---
+        # We'll assume the Offering model has a 'location' field
+        if offered_qatar is not None or offered_pitts is not None:
+            # Build location conditions
+            location_conditions = []
+            if offered_qatar:
+                location_conditions.append(Offering.campus_id == 2)
+            if offered_pitts:
+                location_conditions.append(Offering.campus_id == 1)
+            # Start a subquery on Offerings
+            subq = self.db.query(Offering.course_code)
+            # If a semester filter is provided, add that condition
+            if semester:
+                # Process the comma-separated semester string into a list
+                semester_list = [s.strip() for s in semester.split(",") if s.strip()]
+                if semester_list:
+                    subq = subq.filter(Offering.semester.in_(semester_list))
+            # Apply the location filter(s)
+            if location_conditions:
+                subq = subq.filter(or_(*location_conditions))
+            subq = subq.subquery()
+            query = query.filter(Course.course_code.in_(subq))
+        elif semester:
+            # If only a semester filter is provided (and no location filter)
+            semester_list = [s.strip() for s in semester.split(",") if s.strip()]
+            if semester_list:
+                subq = self.db.query(Offering.course_code).filter(Offering.semester.in_(semester_list)).subquery()
+                query = query.filter(Course.course_code.in_(subq))
+        # --- End New Logic ---
+
+        courses = query.distinct().all()
+
+        result = []
+        for course in courses:
+            offered_semesters = self.get_offered_semesters(course.course_code)
+            requirements = self.get_course_requirements(course.course_code)
+            result.append({
+                "course_code": course.course_code,
+                "course_name": course.name,
+                "department": course.dep_code,
+                "units": course.units,
+                "description": course.description,
+                "prerequisites": course.prereqs_text or "None",
+                "offered_qatar": course.offered_qatar,  # Might not be used now
+                "offered_pitts": course.offered_pitts,  # Might not be used now
+                "offered": offered_semesters,
+                "requirements": requirements,
+            })
+        return result
