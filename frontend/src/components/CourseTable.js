@@ -65,12 +65,11 @@ const CourseTable = ({
                 {/* For filtering, we pass an array of strings (requirement texts) */}
                 <MultiSelectDropdown
                   major={major}
-                  allRequirements={allRequirements[major]}   // pass directly!
+                  allRequirements={allRequirements[major]} // pass directly!
                   selectedFilters={selectedFilters}
                   handleFilterChange={handleFilterChange}
                   clearFilters={clearFilters}
                 />
-
               </th>
             ))}
             <th>
@@ -119,47 +118,40 @@ const CourseTable = ({
                 {course.course_name}
               </td>
               {Object.keys(allRequirements).map((major) => {
-              // Get the array of requirement objects for this major
-              const reqObjects = course.requirements?.[major] || [];
-              if (reqObjects.length === 0) return <td key={major}></td>;
+                // Get the array of requirement objects for this major
+                const reqObjects = course.requirements?.[major] || [];
+                if (reqObjects.length === 0) return <td key={major}></td>;
 
-              // Map each requirement object to a formatted element.
-              const formattedRequirements = reqObjects.map((reqObj, index) => {
-                // Apply the original transformation: remove any leading part (up to the first triple-dash)
-                // and replace remaining triple-dashes with arrows.
-                const formattedText = reqObj.requirement
-                  .replace(/^[^-]+---/, "")
-                  .replace(/---/g, " → ");
+                // Map each requirement object to a formatted element.
+                const formattedRequirements = reqObjects.map((reqObj, index) => {
+                  const formattedText = reqObj.requirement
+                    .replace(/^[^-]+---/, "")
+                    .replace(/---/g, " → ");
+                  return reqObj.type
+                    ? <i key={index}>{formattedText}</i>  // Italics for GenEd
+                    : <b key={index}>{formattedText}</b>; // Bold for Core
+                });
 
-                // If reqObj.type is true, it's GenEd so underline; if false, it's Core so bold.
-                return reqObj.type
-                  ? <u key={index}>{formattedText}</u>
-                  : <b key={index}>{formattedText}</b>;
-              });
-
-              return (
-                <td
-                  key={major}
-                  className={`cell cell-${major.toLowerCase()}`}
-                  onClick={() =>
-                    openPopup("requirement", {
-                      requirement: reqObjects, // Pass raw requirement objects to the popup
-                      courses: courses.filter((c) =>
-                        c.requirements?.[major]?.some(
-                          (rObj) => rObj.requirement === reqObjects[0].requirement
-                        )
-                      ),
-                    })
-                  }
-                  style={{
-                    cursor: "pointer",
-                    color: "blue",
-                    textAlign: "center",
-                  }}
-                >
-                  {formattedRequirements.length === 1 ? (
-                    formattedRequirements[0]
-                  ) : (
+                return (
+                  <td
+                    key={major}
+                    className={`cell cell-${major.toLowerCase()}`}
+                    onClick={() =>
+                      openPopup("requirement", {
+                        requirement: reqObjects, // Pass raw requirement objects to the popup
+                        courses: courses.filter((c) =>
+                          c.requirements?.[major]?.some(
+                            (rObj) => rObj.requirement === reqObjects[0].requirement
+                          )
+                        ),
+                      })
+                    }
+                    style={{
+                      cursor: "pointer",
+                      color: "blue",
+                      textAlign: "left",
+                    }}
+                  >
                     <ul
                       style={{
                         margin: "5px 0",
@@ -173,11 +165,9 @@ const CourseTable = ({
                         </li>
                       ))}
                     </ul>
-                  )}
-                </td>
-              );
-            })}
-
+                  </td>
+                );
+              })}
               <td>{course.offered.join(", ")}</td>
               <td>{course.prerequisites || "NONE"}</td>
             </tr>
