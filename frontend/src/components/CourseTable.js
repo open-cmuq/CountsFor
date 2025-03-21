@@ -138,57 +138,58 @@ const CourseTable = ({
                 {course.course_name}
               </td>
               {Object.keys(allRequirements).map((major) => {
-                const reqObjects = course.requirements?.[major] || [];
-                if (reqObjects.length === 0) return <td key={major}></td>;
+              const reqObjects = course.requirements?.[major] || [];
+              // Filter out the ones that don’t match the active (Core/GenEd) filter
+              const filteredReqObjects = filterRequirementObjects(reqObjects);
 
-                const filteredReqObjects = filterRequirementObjects(reqObjects);
+              // If, after filtering, there’s nothing left, return an empty cell
+              if (filteredReqObjects.length === 0) {
+                return <td key={major}></td>;
+              }
 
-                // Map each filtered requirement object to a formatted element.
-                const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
-                  const formattedText = reqObj.requirement
-                    .replace(/^[^-]+---/, "")
-                    .replace(/---/g, " → ");
-                  return reqObj.type
-                    ? <i key={index}>{formattedText}</i>
-                    : <b key={index}>{formattedText}</b>;
-                });
+              // Otherwise, build the list items using the *filtered* objects
+              const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
+                const formattedText = reqObj.requirement
+                  .replace(/^[^-]+---/, "")
+                  .replace(/---/g, " → ");
+                return reqObj.type
+                  ? <i key={index}>{formattedText}</i>   // GenEd
+                  : <b key={index}>{formattedText}</b>;  // Core
+              });
 
-                return (
-                  <td
-                    key={major}
-                    className={`cell cell-${major.toLowerCase()}`}
-                    onClick={() =>
-                      openPopup("requirement", {
-                        requirement: filteredReqObjects,
-                        courses: courses.filter((c) =>
-                          c.requirements?.[major]?.some(
-                            (rObj) => rObj.requirement === reqObjects[0].requirement
-                          )
-                        ),
-                      })
-                    }
-                    style={{
-                      cursor: "pointer",
-                      color: "blue",
-                      textAlign: "left",
-                    }}
-                  >
-                    <ul
-                      style={{
-                        margin: "5px 0",
-                        paddingLeft: "20px",
-                        textAlign: "left",
-                      }}
-                    >
-                      {formattedRequirements.map((el, index) => (
-                        <li key={index} style={{ listStyleType: "disc" }}>
-                          {el}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                );
-              })}
+              return (
+                <td
+                  key={major}
+                  className={`cell cell-${major.toLowerCase()}`}
+                  onClick={() => openPopup("requirement", {
+                    // Pass the *filtered* objects to the popup
+                    requirement: filteredReqObjects,
+                    // Also filter courses based on the *filtered* requirement strings
+                    courses: courses.filter((c) =>
+                      c.requirements?.[major]?.some((rObj) =>
+                        filteredReqObjects.some(
+                          (fObj) => fObj.requirement === rObj.requirement
+                        )
+                      )
+                    ),
+                  })}
+                  style={{
+                    cursor: "pointer",
+                    color: "blue",
+                    textAlign: "left",
+                  }}
+                >
+                  <ul style={{ margin: "5px 0", paddingLeft: "20px", textAlign: "left" }}>
+                    {formattedRequirements.map((el, idx) => (
+                      <li key={idx} style={{ listStyleType: "disc" }}>
+                        {el}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+              );
+            })}
+
               <td>{course.offered.join(", ")}</td>
               <td>{course.prerequisites || "NONE"}</td>
             </tr>
