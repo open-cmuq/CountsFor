@@ -250,9 +250,16 @@ class CourseRepository:
         # Filter by prerequisites
         if has_prereqs is not None:
             if has_prereqs:
-                query = query.filter(Course.prereqs_text.isnot(None), Course.prereqs_text != "")
+                query = query.filter(
+                    Course.prereqs_text.isnot(None),
+                    Course.prereqs_text != "",
+                    Course.prereqs_text != "None"
+                )
             else:
-                query = query.filter((Course.prereqs_text.is_(None)) | (Course.prereqs_text == ""))
+                query = query.filter(
+                    (Course.prereqs_text.is_(None)) | (Course.prereqs_text == "") | (Course.prereqs_text == "None")
+                )
+
 
         # Filter by requirements (using your existing logic)
         requirement_filters = []
