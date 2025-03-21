@@ -321,36 +321,36 @@ class CourseRepository:
                         .join(Requirement, CountsFor.requirement == Requirement.requirement)\
                         .filter(or_(*requirement_filters))
 
-        # --- New Logic for Semester and Offered Location Filters ---
-        if offered_qatar is not None or offered_pitts is not None:
-            # Build location conditions.
+        if offered_qatar is True and offered_pitts is True:
+            if semester:
+                semester_list = [s.strip() for s in semester.split(",") if s.strip()]
+                if semester_list:
+                    subq = self.db.query(Offering.course_code).filter(
+                        Offering.semester.in_(semester_list)
+                    ).subquery()
+                    query = query.filter(Course.course_code.in_(subq))
+        elif offered_qatar is not None or offered_pitts is not None:
             location_conditions = []
             if offered_qatar:
                 location_conditions.append(Offering.campus_id == 2)
             if offered_pitts:
                 location_conditions.append(Offering.campus_id == 1)
-            # Start a subquery on Offerings.
             subq = self.db.query(Offering.course_code)
-            # If a semester filter is provided, add that condition.
             if semester:
                 semester_list = [s.strip() for s in semester.split(",") if s.strip()]
                 if semester_list:
                     subq = subq.filter(Offering.semester.in_(semester_list))
-            # Apply the location filter(s).
             if location_conditions:
                 subq = subq.filter(or_(*location_conditions))
             subq = subq.subquery()
             query = query.filter(Course.course_code.in_(subq))
         elif semester:
-            # If only a semester filter is provided (and no location filter).
             semester_list = [s.strip() for s in semester.split(",") if s.strip()]
             if semester_list:
                 subq = self.db.query(Offering.course_code).filter(
                     Offering.semester.in_(semester_list)
                 ).subquery()
                 query = query.filter(Course.course_code.in_(subq))
-        # --- End New Logic ---
-
         courses = query.distinct().all()
 
         result = []
@@ -364,8 +364,8 @@ class CourseRepository:
                 "units": course.units,
                 "description": course.description,
                 "prerequisites": course.prereqs_text or "None",
-                "offered_qatar": course.offered_qatar,  # Might not be used now.
-                "offered_pitts": course.offered_pitts,  # Might not be used now.
+                "offered_qatar": course.offered_qatar,
+                "offered_pitts": course.offered_pitts,
                 "offered": offered_semesters,
                 "requirements": requirements,
             })
