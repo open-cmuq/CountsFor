@@ -24,11 +24,39 @@ const CourseTablePage = () => {
   const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
   // All available offered semester options (fetched from the dedicated endpoint)
   const [offeredOptions, setOfferedOptions] = useState([]);
-
   // New state for requirement type filtering
   const [coreOnly, setCoreOnly] = useState(null);
   const [genedOnly, setGenedOnly] = useState(null);
+  // For pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [coursesPerPage, setCoursesPerPage] = useState(50);
+  // Pagination logic
+  const totalPages = Math.ceil(courses.length / coursesPerPage);
+  const indexOfLastCourse = currentPage * coursesPerPage;
+  const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
+  const currentCourses = courses.slice(indexOfFirstCourse, indexOfLastCourse);
 
+  // Scroll to top when switching pages
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const getPaginationButtons = () => {
+    const buttons = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) buttons.push(i);
+    } else {
+      buttons.push(1);
+      if (currentPage > 3) buttons.push("...");
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++)
+        buttons.push(i);
+      if (currentPage < totalPages - 2) buttons.push("...");
+      buttons.push(totalPages);
+    }
+    return buttons;
+  };
+  
   // Fetch departments from API
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -196,15 +224,21 @@ const CourseTablePage = () => {
         genedOnly={genedOnly}
         setGenedOnly={setGenedOnly}
       />
+
       <SelectedFilters
         selectedFilters={selectedFilters}
         handleFilterChange={handleFilterChange}
         selectedOfferedSemesters={selectedOfferedSemesters}
         removeOfferedSemester={removeOfferedSemester}
       />
-      <div className="course-count">Showing {courses.length} courses</div>
+
+      {/* Top-left pagination */}
+      <div className="pagination-top">
+      <span>Showing {indexOfFirstCourse + 1} - {Math.min(indexOfLastCourse, courses.length)} of {courses.length}</span>
+      </div>
+
       <CourseTable
-        courses={courses}
+        courses={currentCourses}
         allRequirements={requirements}
         selectedFilters={selectedFilters}
         handleFilterChange={handleFilterChange}
@@ -215,6 +249,28 @@ const CourseTablePage = () => {
         coreOnly={coreOnly}
         genedOnly={genedOnly}
       />
+
+      {/* Bottom pagination */}
+      <div className="pagination-container">
+        <button onClick={() => handlePageChange(Math.max(currentPage - 1, 1))} disabled={currentPage === 1}>‹</button>
+        {getPaginationButtons().map((num, idx) => (
+          <button
+            key={idx}
+            onClick={() => typeof num === "number" && handlePageChange(num)}
+            className={num === currentPage ? "active" : ""}
+            disabled={num === "..."}
+          >
+            {num}
+          </button>
+        ))}
+        <button onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))} disabled={currentPage === totalPages}>›</button>
+
+        <select value={coursesPerPage} onChange={(e) => { setCoursesPerPage(parseInt(e.target.value)); setCurrentPage(1); }}>
+          {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+        </select>
+      </div>
+
+
     </div>
   );
 };

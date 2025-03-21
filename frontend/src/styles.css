@@ -290,12 +290,6 @@ table {
     padding: 8px;
   }
 
-  .selected-filters {
-    display: flex;
-    gap: 1px;
-    margin-top: 4px;
-    margin-bottom: 4px;
-  }
 
   .filter-tag {
     background: darkgrey;
@@ -311,8 +305,9 @@ table {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 3px;
+    padding-right: 7px;
     display: inline-block;
+    margin-top: 2px;
   }
 
   .filter-tag:hover {
@@ -329,7 +324,7 @@ table {
     margin-left: 0px;
     cursor: pointer;
     padding-left: 3px;
-    padding-right: 3px;
+    padding-right: 4px;
   }
 
   .h1 {
@@ -610,9 +605,11 @@ table {
 
   .selected-filters {
     display: flex;
-    gap: 1px;
+    overflow: hidden;
+    gap: 2px;
     margin-top: 5px;
     margin-bottom: 5px;
+    padding-right: 5px;
   }
 
   .search-label {
@@ -765,21 +762,6 @@ table {
     margin-bottom: 3px;
   }
 
-  .selected-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-  }
-
-  .filter-tag {
-    display: flex;
-    align-items: center;
-    padding: 5px 10px;
-    border-radius: 4px;
-    color: #fff;
-  }
-
   .checkbox-group {
     display: flex;
     flex-direction: column;
@@ -787,3 +769,46 @@ table {
     margin-top: 5px; /* Optional: spacing from other elements */
   }
 
+  .pagination-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  .pagination-container button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .pagination-container button.active {
+    background: #4A90E2;
+    color: white;
+    font-weight: bold;
+    border-color: #4A90E2;
+  }
+  
+  .pagination-container button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .pagination-container select {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .pagination-top {
+    text-align: left;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    margin-top: 8px;
+  }
+  
