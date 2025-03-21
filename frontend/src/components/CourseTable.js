@@ -62,13 +62,15 @@ const CourseTable = ({
               <th key={major} className={`header-${major.toLowerCase()}`}>
                 {major}
                 <br />
+                {/* For filtering, we pass an array of strings (requirement texts) */}
                 <MultiSelectDropdown
                   major={major}
-                  allRequirements={allRequirements[major]}
+                  allRequirements={allRequirements[major]}   // pass directly!
                   selectedFilters={selectedFilters}
                   handleFilterChange={handleFilterChange}
                   clearFilters={clearFilters}
                 />
+
               </th>
             ))}
             <th>
@@ -77,7 +79,7 @@ const CourseTable = ({
               <MultiSelectDropdown
                 major="offered"
                 allRequirements={offeredOptions}
-                // Here we wrap our offered filter state in an object so the dropdown code (which expects selectedFilters[major]) can work:
+                // Wrap our offered filter state in an object so the dropdown works as expected
                 selectedFilters={{ offered: selectedOfferedSemesters }}
                 handleFilterChange={(major, newSelection) =>
                   setSelectedOfferedSemesters(newSelection)
@@ -95,7 +97,6 @@ const CourseTable = ({
                 <button
                   className="remove-btn"
                   onClick={() =>
-                    // For example, you might want to remove the course from display.
                     console.log("Remove", course.course_code)
                   }
                 >
@@ -117,59 +118,68 @@ const CourseTable = ({
                 <br />
                 {course.course_name}
               </td>
-
               {Object.keys(allRequirements).map((major) => {
-                const requirements = course.requirements?.[major] || [];
+              // Get the array of requirement objects for this major
+              const reqObjects = course.requirements?.[major] || [];
+              if (reqObjects.length === 0) return <td key={major}></td>;
 
-                if (requirements.length === 0) return <td key={major}></td>;
+              // Map each requirement object to a formatted element.
+              const formattedRequirements = reqObjects.map((reqObj, index) => {
+                // Apply the original transformation: remove any leading part (up to the first triple-dash)
+                // and replace remaining triple-dashes with arrows.
+                const formattedText = reqObj.requirement
+                  .replace(/^[^-]+---/, "")
+                  .replace(/---/g, " → ");
 
-                // 🛠 Transform the requirement display without changing the actual data
-                const formattedRequirements = requirements.map(req =>
-                    req.replace(/^[^-]+---/, "").replace(/---/g, " → ")
-                );
+                // If reqObj.type is true, it's GenEd so underline; if false, it's Core so bold.
+                return reqObj.type
+                  ? <u key={index}>{formattedText}</u>
+                  : <b key={index}>{formattedText}</b>;
+              });
 
-                return (
-                    <td
-                    key={major}
-                    className={`cell cell-${major.toLowerCase()}`}
-                    onClick={() =>
-                        openPopup("requirement", {
-                        requirement: formattedRequirements, // Pass formatted data to popup
-                        courses: courses.filter((c) =>
-                            c.requirements?.[major]?.some((r) =>
-                            requirements.includes(r)
-                            )
-                        ),
-                        })
-                    }
-                    style={{
-                        cursor: "pointer",
-                        color: "blue",
-                        textAlign: "center",
-                    }}
+              return (
+                <td
+                  key={major}
+                  className={`cell cell-${major.toLowerCase()}`}
+                  onClick={() =>
+                    openPopup("requirement", {
+                      requirement: reqObjects, // Pass raw requirement objects to the popup
+                      courses: courses.filter((c) =>
+                        c.requirements?.[major]?.some(
+                          (rObj) => rObj.requirement === reqObjects[0].requirement
+                        )
+                      ),
+                    })
+                  }
+                  style={{
+                    cursor: "pointer",
+                    color: "blue",
+                    textAlign: "center",
+                  }}
+                >
+                  {formattedRequirements.length === 1 ? (
+                    formattedRequirements[0]
+                  ) : (
+                    <ul
+                      style={{
+                        margin: "5px 0",
+                        paddingLeft: "20px",
+                        textAlign: "left",
+                      }}
                     >
-                    {formattedRequirements.length === 1 ? (
-                        formattedRequirements[0]
-                    ) : (
-                        <ul
-                        style={{
-                            margin: "5px 0",
-                            paddingLeft: "20px",
-                            textAlign: "left",
-                        }}
-                        >
-                        {formattedRequirements.map((req, index) => (
-                            <li key={index} style={{ listStyleType: "disc" }}>
-                            {req}
-                            </li>
-                        ))}
-                        </ul>
-                    )}
-                    </td>
-                );
-                })}
-                <td>{course.offered.join(", ")}</td>
-                <td>{course.prerequisites || "NONE"}</td>
+                      {formattedRequirements.map((el, index) => (
+                        <li key={index} style={{ listStyleType: "disc" }}>
+                          {el}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
+              );
+            })}
+
+              <td>{course.offered.join(", ")}</td>
+              <td>{course.prerequisites || "NONE"}</td>
             </tr>
           ))}
         </tbody>

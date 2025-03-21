@@ -20,13 +20,17 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
   // Use the key from selectedFilters if major is provided; otherwise, assume selectedFilters is directly an array.
   const selectedForMajor = major ? (selectedFilters[major] || []) : selectedFilters;
-  const options = allRequirements || [];
 
-  const isAllSelected = options.length > 0 && selectedForMajor.length === options.length;
+  // Filter out any undefined/null options first.
+  const safeOptions = (allRequirements || []).filter(opt => opt != null);
+
+  // Build an array of raw strings (if options are objects, we extract their requirement property)
+  const allOptionStrings = safeOptions.map(opt => (typeof opt === "object" ? opt.requirement : opt));
+  const isAllSelected = allOptionStrings.length > 0 && selectedForMajor.length === allOptionStrings.length;
 
   // Handle "Select All"
   const handleSelectAll = () => {
-    handleFilterChange(major, isAllSelected ? [] : options);
+    handleFilterChange(major, isAllSelected ? [] : allOptionStrings);
   };
 
   return (
@@ -44,29 +48,31 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
           </label>
 
           {/* Individual Options */}
-          {options.length === 0 ? (
+          {safeOptions.length === 0 ? (
             <p className="dropdown-item">No options available</p>
           ) : (
-            options.map((option, index) => {
-                // 🛠 Apply transformation ONLY when displaying
-                const formattedOption = option.replace(/^[^-]+---/, "").replace(/---/g, " → ");
-              
+            safeOptions.map((option, index) => {
+                // If option is an object, extract its requirement field; else use the option itself.
+                const rawOption = typeof option === "object" ? option.requirement : option;
+                // Guard against undefined and then apply transformation.
+                const formattedOption = (rawOption || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
+
                 return (
                   <label key={index} className="dropdown-item">
                     <input
                       type="checkbox"
-                      checked={selectedForMajor.includes(option)}
+                      checked={selectedForMajor.includes(rawOption)}
                       onChange={(e) => {
                         const newSelection = e.target.checked
-                          ? [...selectedForMajor, option] // Keep the actual value the same
-                          : selectedForMajor.filter((item) => item !== option);
+                          ? [...selectedForMajor, rawOption]
+                          : selectedForMajor.filter((item) => item !== rawOption);
                         handleFilterChange(major, newSelection);
                       }}
                     />
-                    {formattedOption} {/* Display transformed text */}
+                    {formattedOption}
                   </label>
                 );
-              }) 
+              })
           )}
 
           {/* Clear Selection Button */}

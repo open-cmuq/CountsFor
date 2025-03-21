@@ -79,7 +79,7 @@ const CourseTablePage = () => {
         if (selectedOfferedSemesters.length > 0)
           params.append("semester", selectedOfferedSemesters.join(","));
         // When "No Prerequisites" is checked, send has_prereqs=false.
-        if (noPrereqs === true) params.append("has_prereqs", false);
+        if (noPrereqs === false) params.append("has_prereqs", false);
         // Offered location checkboxes:
         if (offeredQatar !== null) params.append("offered_qatar", offeredQatar);
         if (offeredPitts !== null) params.append("offered_pitts", offeredPitts);
