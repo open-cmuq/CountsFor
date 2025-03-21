@@ -13,6 +13,8 @@ const CourseTable = ({
   offeredOptions,
   selectedOfferedSemesters,
   setSelectedOfferedSemesters,
+  coreOnly,    // new prop
+  genedOnly,   // new prop
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -51,6 +53,18 @@ const CourseTable = ({
     setPopupContent(null);
   };
 
+  // Helper to filter requirement objects based on coreOnly/genedOnly:
+  const filterRequirementObjects = (reqObjs) => {
+    return reqObjs.filter(reqObj => {
+      if (coreOnly && !genedOnly) {
+        return reqObj.type === false; // Only Core
+      } else if (genedOnly && !coreOnly) {
+        return reqObj.type === true; // Only GenEd
+      }
+      return true;
+    });
+  };
+
   return (
     <div>
       <table>
@@ -58,27 +72,35 @@ const CourseTable = ({
           <tr>
             <th></th>
             <th>COURSES</th>
-            {Object.keys(allRequirements).map((major) => (
+            {Object.keys(allRequirements).map((major) => {
+            // Filter the requirement objects for this major based on active type filters.
+            const optionsForMajor = allRequirements[major].filter((reqObj) => {
+              if (coreOnly && !genedOnly) return reqObj.type === false;
+              if (genedOnly && !coreOnly) return reqObj.type === true;
+              return true;
+            });
+            return (
               <th key={major} className={`header-${major.toLowerCase()}`}>
                 {major}
                 <br />
-                {/* For filtering, we pass an array of strings (requirement texts) */}
                 <MultiSelectDropdown
                   major={major}
-                  allRequirements={allRequirements[major]} // pass directly!
+                  // Pass the filtered options (as objects) to the dropdown.
+                  allRequirements={optionsForMajor}
                   selectedFilters={selectedFilters}
                   handleFilterChange={handleFilterChange}
                   clearFilters={clearFilters}
+                  // (If your dropdown logic still extracts the raw string from each object, it will work.)
                 />
               </th>
-            ))}
+            );
+          })}
             <th>
               OFFERED
               <br />
               <MultiSelectDropdown
                 major="offered"
                 allRequirements={offeredOptions}
-                // Wrap our offered filter state in an object so the dropdown works as expected
                 selectedFilters={{ offered: selectedOfferedSemesters }}
                 handleFilterChange={(major, newSelection) =>
                   setSelectedOfferedSemesters(newSelection)
@@ -95,9 +117,7 @@ const CourseTable = ({
               <td>
                 <button
                   className="remove-btn"
-                  onClick={() =>
-                    console.log("Remove", course.course_code)
-                  }
+                  onClick={() => console.log("Remove", course.course_code)}
                 >
                   ✖
                 </button>
@@ -118,18 +138,19 @@ const CourseTable = ({
                 {course.course_name}
               </td>
               {Object.keys(allRequirements).map((major) => {
-                // Get the array of requirement objects for this major
                 const reqObjects = course.requirements?.[major] || [];
                 if (reqObjects.length === 0) return <td key={major}></td>;
 
-                // Map each requirement object to a formatted element.
-                const formattedRequirements = reqObjects.map((reqObj, index) => {
+                const filteredReqObjects = filterRequirementObjects(reqObjects);
+
+                // Map each filtered requirement object to a formatted element.
+                const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
                   const formattedText = reqObj.requirement
                     .replace(/^[^-]+---/, "")
                     .replace(/---/g, " → ");
                   return reqObj.type
-                    ? <i key={index}>{formattedText}</i>  // Italics for GenEd
-                    : <b key={index}>{formattedText}</b>; // Bold for Core
+                    ? <i key={index}>{formattedText}</i>
+                    : <b key={index}>{formattedText}</b>;
                 });
 
                 return (
@@ -138,7 +159,7 @@ const CourseTable = ({
                     className={`cell cell-${major.toLowerCase()}`}
                     onClick={() =>
                       openPopup("requirement", {
-                        requirement: reqObjects, // Pass raw requirement objects to the popup
+                        requirement: filteredReqObjects,
                         courses: courses.filter((c) =>
                           c.requirements?.[major]?.some(
                             (rObj) => rObj.requirement === reqObjects[0].requirement
