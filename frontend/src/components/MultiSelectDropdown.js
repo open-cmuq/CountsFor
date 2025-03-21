@@ -36,7 +36,7 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
   return (
     <div className="dropdown cell-container" ref={dropdownRef}>
       <button className="dropdown-btn" onClick={toggleDropdown}>
-        Select ▼
+        Select▼
       </button>
 
       {isOpen && (
