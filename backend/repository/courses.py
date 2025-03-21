@@ -5,7 +5,7 @@ This script implements the data access layer for courses.
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from backend.database.models import Course, CountsFor, Requirement, Offering
+from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
 
 class CourseRepository:
     """encapsulates all database operations for the 'Course' entity."""
@@ -87,23 +87,42 @@ class CourseRepository:
         """fetch requirements per major for a course."""
         requirements = {"CS": [], "IS": [], "BA": [], "BS": []}
         requirements_query = (
-            self.db.query(CountsFor.requirement, Requirement.audit_id)
+            self.db.query(CountsFor.requirement, Requirement.audit_id, Audit.type)
             .join(Requirement, CountsFor.requirement == Requirement.requirement)
+            .join(Audit, Requirement.audit_id == Audit.audit_id)
             .filter(CountsFor.course_code == course_code)
             .all()
         )
 
-        for req, audit_id in requirements_query:
+        for req, audit_id, req_bool in requirements_query:
             if audit_id.startswith("cs"):
-                requirements["CS"].append(req)
+                requirements["CS"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "CS"
+                })
             elif audit_id.startswith("is"):
-                requirements["IS"].append(req)
+                requirements["IS"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "IS"
+                })
             elif audit_id.startswith("ba"):
-                requirements["BA"].append(req)
+                requirements["BA"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "BA"
+                })
             elif audit_id.startswith("bio"):
-                requirements["BS"].append(req)
+                requirements["BS"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "BS"
+                })
 
         return requirements
+
+
 
     def get_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
                                     ba_requirement=None, bs_requirement=None):
@@ -239,15 +258,15 @@ class CourseRepository:
         """Fetch courses matching any combination of provided filters."""
         query = self.db.query(Course)
 
-        # Filter by department
+        # Filter by department.
         if department:
             query = query.filter(Course.dep_code == department)
 
-        # Filter by search query on course code
+        # Filter by search query on course code.
         if search_query:
             query = query.filter(Course.course_code.ilike(f"%{search_query}%"))
 
-        # Filter by prerequisites
+        # Filter by prerequisites.
         if has_prereqs is not None:
             if has_prereqs:
                 query = query.filter(
@@ -261,51 +280,84 @@ class CourseRepository:
                 )
 
 
-        # Filter by requirements (using your existing logic)
+        # Build requirement filters.
         requirement_filters = []
+
         if cs_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("cs%"), CountsFor.requirement == cs_requirement))
+            cs_reqs = [r.strip() for r in cs_requirement.split(",") if r.strip()]
+            if cs_reqs:
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("cs%"),
+                        CountsFor.requirement.in_(cs_reqs)
+                    )
+                )
+
         if is_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("is%"), CountsFor.requirement == is_requirement))
+            is_reqs = [r.strip() for r in is_requirement.split(",") if r.strip()]
+            if is_reqs:
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("is%"),
+                        CountsFor.requirement.in_(is_reqs)
+                    )
+                )
+
         if ba_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("ba%"), CountsFor.requirement == ba_requirement))
+            ba_reqs = [r.strip() for r in ba_requirement.split(",") if r.strip()]
+            if ba_reqs:
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("ba%"),
+                        CountsFor.requirement.in_(ba_reqs)
+                    )
+                )
+
         if bs_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("bio%"), CountsFor.requirement == bs_requirement))
+            bs_reqs = [r.strip() for r in bs_requirement.split(",") if r.strip()]
+            if bs_reqs:
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("bio%"),
+                        CountsFor.requirement.in_(bs_reqs)
+                    )
+                )
+
         if requirement_filters:
             query = query.join(CountsFor, Course.course_code == CountsFor.course_code)\
                         .join(Requirement, CountsFor.requirement == Requirement.requirement)\
                         .filter(or_(*requirement_filters))
 
-        # --- New Logic for Semester and Offered Location Filters ---
-        # We'll assume the Offering model has a 'location' field
-        if offered_qatar is not None or offered_pitts is not None:
-            # Build location conditions
+        if offered_qatar is True and offered_pitts is True:
+            if semester:
+                semester_list = [s.strip() for s in semester.split(",") if s.strip()]
+                if semester_list:
+                    subq = self.db.query(Offering.course_code).filter(
+                        Offering.semester.in_(semester_list)
+                    ).subquery()
+                    query = query.filter(Course.course_code.in_(subq))
+        elif offered_qatar is not None or offered_pitts is not None:
             location_conditions = []
             if offered_qatar:
                 location_conditions.append(Offering.campus_id == 2)
             if offered_pitts:
                 location_conditions.append(Offering.campus_id == 1)
-            # Start a subquery on Offerings
             subq = self.db.query(Offering.course_code)
-            # If a semester filter is provided, add that condition
             if semester:
-                # Process the comma-separated semester string into a list
                 semester_list = [s.strip() for s in semester.split(",") if s.strip()]
                 if semester_list:
                     subq = subq.filter(Offering.semester.in_(semester_list))
-            # Apply the location filter(s)
             if location_conditions:
                 subq = subq.filter(or_(*location_conditions))
             subq = subq.subquery()
             query = query.filter(Course.course_code.in_(subq))
         elif semester:
-            # If only a semester filter is provided (and no location filter)
             semester_list = [s.strip() for s in semester.split(",") if s.strip()]
             if semester_list:
-                subq = self.db.query(Offering.course_code).filter(Offering.semester.in_(semester_list)).subquery()
+                subq = self.db.query(Offering.course_code).filter(
+                    Offering.semester.in_(semester_list)
+                ).subquery()
                 query = query.filter(Course.course_code.in_(subq))
-        # --- End New Logic ---
-
         courses = query.distinct().all()
 
         result = []
@@ -319,8 +371,8 @@ class CourseRepository:
                 "units": course.units,
                 "description": course.description,
                 "prerequisites": course.prereqs_text or "None",
-                "offered_qatar": course.offered_qatar,  # Might not be used now
-                "offered_pitts": course.offered_pitts,  # Might not be used now
+                "offered_qatar": course.offered_qatar,
+                "offered_pitts": course.offered_pitts,
                 "offered": offered_semesters,
                 "requirements": requirements,
             })

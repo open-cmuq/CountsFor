@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const API_BASE_URL = "http://127.0.0.1:8000"; // Ensure correct API base
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const SearchBar = ({
   selectedDepartment,
@@ -13,6 +13,10 @@ const SearchBar = ({
   setOfferedQatar,
   offeredPitts,
   setOfferedPitts,
+  coreOnly,       // new prop for Core checkbox
+  setCoreOnly,    // setter for Core checkbox
+  genedOnly,      // new prop for GenEd checkbox
+  setGenedOnly    // setter for GenEd checkbox
 }) => {
   const [departments, setDepartments] = useState([]);
 
@@ -39,6 +43,8 @@ const SearchBar = ({
     setNoPrereqs(null);
     setOfferedQatar(null);
     setOfferedPitts(null);
+    setCoreOnly(null);
+    setGenedOnly(null);
   };
 
   // Function to get department name based on selected dep_code
@@ -81,33 +87,55 @@ const SearchBar = ({
           <label>
             <input
               type="checkbox"
-              // When checked, we want no prerequisites (set noPrereqs to false);
-              // when unchecked, set it to null (i.e. no filtering on prerequisites)
               checked={noPrereqs === false}
-              onChange={(e) => setNoPrereqs(e.target.checked ? false : null)}
+              onChange={(e) =>
+                setNoPrereqs(e.target.checked ? false : null)
+              }
             />
             No Pre-reqs
           </label>
           <label>
             <input
               type="checkbox"
-              // When checked, offeredQatar becomes true; when unchecked, null.
               checked={offeredQatar === true}
-              onChange={(e) => setOfferedQatar(e.target.checked ? true : null)}
+              onChange={(e) =>
+                setOfferedQatar(e.target.checked ? true : null)
+              }
             />
             Qatar
           </label>
           <label>
             <input
               type="checkbox"
-              // When checked, offeredPitts becomes true; when unchecked, null.
               checked={offeredPitts === true}
-              onChange={(e) => setOfferedPitts(e.target.checked ? true : null)}
+              onChange={(e) =>
+                setOfferedPitts(e.target.checked ? true : null)
+              }
             />
             Pitts
           </label>
+          {/* New checkboxes for requirement type filtering */}
+          <label>
+            <input
+              type="checkbox"
+              checked={coreOnly === true}
+              onChange={(e) =>
+                setCoreOnly(e.target.checked ? true : null)
+              }
+            />
+            Core
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={genedOnly === true}
+              onChange={(e) =>
+                setGenedOnly(e.target.checked ? true : null)
+              }
+            />
+            GenEd
+          </label>
         </div>
-
 
         {/* Search & Clear Buttons */}
         <button className="search-btn">🔍</button>
