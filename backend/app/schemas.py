@@ -16,20 +16,27 @@ class CourseFilter(BaseModel):
     bs_requirement: Optional[str] = Field(None, description="BS requirement)")
 
 
+class RequirementResponse(BaseModel):
+    """Pydantic schema for a single requirement."""
+    requirement: str
+    type: bool
+    major: str
+
 class CourseResponse(BaseModel):
-    """Pydantic schema for a single course response."""
+    """
+    represents a single course.
+    """
     course_code: str
     course_name: str
     department: str
     units: Optional[int] = None
     description: Optional[str] = None
     prerequisites: Optional[str] = "None"
-    offered: List[str]  # List of semesters the course is offered
-    offered_qatar: bool  # True if offered in Qatar
-    offered_pitts: bool  # True if offered in Pittsburgh
-    requirements: Dict[str, List[str]]
-
-
+    offered: List[str]
+    offered_qatar: bool
+    offered_pitts: bool
+    # Now each major maps to a list of requirement objects
+    requirements: Dict[str, List[RequirementResponse]]
 
 class CourseListResponse(BaseModel):
     """
@@ -37,12 +44,6 @@ class CourseListResponse(BaseModel):
     """
     courses: List[CourseResponse]
 
-
-class RequirementResponse(BaseModel):
-    """Pydantic schema for a single requirement."""
-    requirement: str
-    type: bool
-    major: str
 
 class RequirementsResponse(BaseModel):
     """Pydantic schema for returning a list of requirements."""

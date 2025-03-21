@@ -5,7 +5,7 @@ This script implements the data access layer for courses.
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from backend.database.models import Course, CountsFor, Requirement, Offering
+from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
 
 class CourseRepository:
     """encapsulates all database operations for the 'Course' entity."""
@@ -87,23 +87,42 @@ class CourseRepository:
         """fetch requirements per major for a course."""
         requirements = {"CS": [], "IS": [], "BA": [], "BS": []}
         requirements_query = (
-            self.db.query(CountsFor.requirement, Requirement.audit_id)
+            self.db.query(CountsFor.requirement, Requirement.audit_id, Audit.type)
             .join(Requirement, CountsFor.requirement == Requirement.requirement)
+            .join(Audit, Requirement.audit_id == Audit.audit_id)
             .filter(CountsFor.course_code == course_code)
             .all()
         )
 
-        for req, audit_id in requirements_query:
+        for req, audit_id, req_bool in requirements_query:
             if audit_id.startswith("cs"):
-                requirements["CS"].append(req)
+                requirements["CS"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "CS"
+                })
             elif audit_id.startswith("is"):
-                requirements["IS"].append(req)
+                requirements["IS"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "IS"
+                })
             elif audit_id.startswith("ba"):
-                requirements["BA"].append(req)
+                requirements["BA"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "BA"
+                })
             elif audit_id.startswith("bio"):
-                requirements["BS"].append(req)
+                requirements["BS"].append({
+                    "requirement": req,
+                    "type": bool(req_bool),
+                    "major": "BS"
+                })
 
         return requirements
+
+
 
     def get_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
                                     ba_requirement=None, bs_requirement=None):
@@ -257,13 +276,17 @@ class CourseRepository:
         # Filter by requirements (using your existing logic)
         requirement_filters = []
         if cs_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("cs%"), CountsFor.requirement == cs_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("cs%"),
+                                            CountsFor.requirement == cs_requirement))
         if is_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("is%"), CountsFor.requirement == is_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("is%"),
+                                            CountsFor.requirement == is_requirement))
         if ba_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("ba%"), CountsFor.requirement == ba_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("ba%"),
+                                            CountsFor.requirement == ba_requirement))
         if bs_requirement:
-            requirement_filters.append(and_(Requirement.audit_id.like("bio%"), CountsFor.requirement == bs_requirement))
+            requirement_filters.append(and_(Requirement.audit_id.like("bio%"),
+                                            CountsFor.requirement == bs_requirement))
         if requirement_filters:
             query = query.join(CountsFor, Course.course_code == CountsFor.course_code)\
                         .join(Requirement, CountsFor.requirement == Requirement.requirement)\
@@ -295,7 +318,8 @@ class CourseRepository:
             # If only a semester filter is provided (and no location filter)
             semester_list = [s.strip() for s in semester.split(",") if s.strip()]
             if semester_list:
-                subq = self.db.query(Offering.course_code).filter(Offering.semester.in_(semester_list)).subquery()
+                subq = self.db.query(Offering.course_code).filter(
+                    Offering.semester.in_(semester_list)).subquery()
                 query = query.filter(Course.course_code.in_(subq))
         # --- End New Logic ---
 
