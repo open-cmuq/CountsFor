@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "../styles.css";
 import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
@@ -44,7 +44,7 @@ const CourseTablePage = () => {
     fetchDepartments();
   }, []);
 
-  // Fetch requirements from API (requirements are returned as objects already)
+  // Fetch requirements from API
   useEffect(() => {
     const fetchRequirements = async () => {
       try {
@@ -56,7 +56,6 @@ const CourseTablePage = () => {
         data.requirements.forEach(({ requirement, type, major }) => {
           const majorKey = { cs: "CS", is: "IS", ba: "BA", bio: "BS" }[major];
           if (majorKey && transformedRequirements[majorKey]) {
-            // Ensure type is boolean (using !! might help if it's 0/1)
             transformedRequirements[majorKey].push({ requirement, type: !!type, major: majorKey });
           }
         });
@@ -69,8 +68,8 @@ const CourseTablePage = () => {
     fetchRequirements();
   }, []);
 
-  // Helper to check if a course meets the active requirement type filters.
-  const courseMatchesRequirementFilter = (course) => {
+  // Memoize the helper function so it only changes when coreOnly or genedOnly change.
+  const courseMatchesRequirementFilter = useCallback((course) => {
     // If neither filter is active, include all courses.
     if (coreOnly === null && genedOnly === null) return true;
 
@@ -82,8 +81,7 @@ const CourseTablePage = () => {
     // If a course has no requirement data, include it.
     if (!hasAnyReq) return true;
 
-    // Otherwise, for each major, filter the requirement objects.
-    // If at least one major has one or more requirement objects matching the filter, include the course.
+    // For each major, filter the requirement objects.
     for (let major of majors) {
       const reqObjs = course.requirements[major] || [];
       const filtered = reqObjs.filter((reqObj) => {
@@ -92,12 +90,12 @@ const CourseTablePage = () => {
         } else if (genedOnly && !coreOnly) {
           return reqObj.type === true;  // Only GenEd requirements.
         }
-        return true; // If both are active (or both inactive), include all.
+        return true; // If both filters are inactive or both active, include all.
       });
       if (filtered.length > 0) return true;
     }
     return false;
-  };
+  }, [coreOnly, genedOnly]);
 
   // Fetch courses using combined filters from backend
   useEffect(() => {
@@ -125,7 +123,6 @@ const CourseTablePage = () => {
         const data = await response.json();
         const filteredCourses = data.courses.filter(courseMatchesRequirementFilter);
         setCourses(filteredCourses);
-
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
@@ -139,9 +136,13 @@ const CourseTablePage = () => {
     noPrereqs,
     offeredQatar,
     offeredPitts,
-    JSON.stringify(selectedFilters), // Instead of selectedFilters directly
+    selectedFilters.BA,
+    selectedFilters.BS,
+    selectedFilters.CS,
+    selectedFilters.IS,
     coreOnly,
     genedOnly,
+    courseMatchesRequirementFilter
   ]);
 
   // Fetch all semesters from the dedicated endpoint
