@@ -4,7 +4,7 @@ import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
 import SelectedFilters from "./SelectedFilters";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CourseTablePage = () => {
   // States for department and course search input

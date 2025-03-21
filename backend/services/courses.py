@@ -34,18 +34,17 @@ class CourseService:
         )
 
     def fetch_all_courses(self) -> CourseListResponse:
-        """fetch and structure all courses, prioritizing those fulfilling at l
-        east one requirement."""
+        """fetch and structure all courses, prioritizing those fulfilling at least one requirement."""
         courses = self.course_repo.get_all_courses()
 
         for course in courses:
             course["num_requirements"] = sum(len(reqs) for reqs in course["requirements"].values())
             course["num_offered_semesters"] = len(course["offered"])
 
+        # Sort courses by the numeric value of course_code (after removing the dash)
         sorted_courses = sorted(
             courses,
-            key=lambda c: (c["num_requirements"] == 0, -c["num_offered_semesters"]),
-            reverse=False
+            key=lambda c: int(c["course_code"].replace("-", ""))
         )
 
         return CourseListResponse(
@@ -65,6 +64,7 @@ class CourseService:
                 for course in sorted_courses
             ]
         )
+
 
     def fetch_courses_by_requirement(self, cs_requirement=None,
                                      is_requirement=None,
@@ -207,7 +207,8 @@ class CourseService:
     search_query: Optional[str] = None
 ) -> CourseListResponse:
         """
-        fetch courses based on a combination of filters.
+        Fetch courses based on a combination of filters, sorted by the numeric part
+        of the course code.
         """
         courses = self.course_repo.get_courses_by_filters(
             department=department,
@@ -221,6 +222,12 @@ class CourseService:
             offered_qatar=offered_qatar,
             offered_pitts=offered_pitts
         )
+
+        sorted_courses = sorted(
+            courses,
+            key=lambda c: int(c["course_code"].replace("-", ""))
+        )
+
         return CourseListResponse(
             courses=[
                 CourseResponse(
@@ -235,6 +242,6 @@ class CourseService:
                     offered_pitts=course["offered_pitts"],
                     requirements=course["requirements"],
                 )
-                for course in courses
+                for course in sorted_courses
             ]
         )
