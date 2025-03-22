@@ -11,6 +11,8 @@ import re
 import json
 import logging
 import pandas as pd
+from backend.database.db import SessionLocal
+from backend.database.models import Course
 import backend.scripts.utils as utils
 
 # Import the common base class.
@@ -25,7 +27,7 @@ class AuditDataExtractor(DataExtractor):
     """
     Extracts course and requirement details from audit JSON files.
     """
-    def __init__(self, audit_base_path, course_base_path, course_table_path):
+    def __init__(self, audit_base_path, course_base_path):
         """
         Initializes the extractor with the paths to the audit files,
         course JSON files, and the course table Excel file.
@@ -33,7 +35,6 @@ class AuditDataExtractor(DataExtractor):
         super().__init__()
         self.audit_base_path = audit_base_path
         self.course_base_path = course_base_path
-        self.course_table_path = course_table_path
 
     def get_audit_files(self, folder_path):
         """
@@ -70,27 +71,21 @@ class AuditDataExtractor(DataExtractor):
             "gened": os.path.join(folder_path, gened_file)
         }
 
-    def get_course_codes(self, course_dir):
+    def get_course_codes(self):
         """
-        Retrieves all course codes from the given course directory.
-        Assumes course files are named like '02-201.json'.
+        Retrieves all course codes directly from the database.
         """
         codes = set()
+        session = SessionLocal()
         try:
-            for filename in os.listdir(course_dir):
-                if filename.endswith(".json"):
-                    file_path = os.path.join(course_dir, filename)
-                    try:
-                        with open(file_path, "r", encoding="utf-8") as file:
-                            data = json.load(file)
-                        if not data.get("success", True):
-                            continue
-                        codes.add(filename.replace(".json", ""))
-                    except (OSError, json.JSONDecodeError) as error:
-                        logging.warning("Skipping %s due to error: %s", filename, error)
-        except OSError as error:
-            logging.error("Failed to list files in %s: %s", course_dir, error)
+            result = session.query(Course.course_code).all()
+            codes = {row[0] for row in result}
+        except Exception as e:
+            logging.error(f"Failed to retrieve course codes from database: {e}")
+        finally:
+            session.close()
         return codes
+
 
     def get_courses_from_range(self, begin, end, req_chain, parent_min_units=None):
         """
@@ -123,7 +118,7 @@ class AuditDataExtractor(DataExtractor):
         Extracts courses (or codes) from a constraint.
         Returns tuples: (Course or code, Requirement, Inclusion/Exclusion, Type, Min Units)
         """
-        course_codes = self.get_course_codes(self.course_base_path)
+        course_codes = self.get_course_codes()
         courses = []
         min_units = parent_min_units
         try:
@@ -189,7 +184,7 @@ class AuditDataExtractor(DataExtractor):
         try:
             current_min_units = data.get("min_units", parent_min_units)
             req = data.get('screen_name', '')
-            req = "GenEd" if "General Education" in req else req
+            # req = "GenEd" if "General Education" in req else req
             new_req_chain = req if not req_chain else f"{req_chain}---{req}"
 
             courses = []
@@ -374,7 +369,7 @@ class AuditDataExtractor(DataExtractor):
         Outputs multiple Excel files and returns a dictionary of output file paths.
         """
         try:
-            course_codes = self.get_course_codes(os.path.join(self.course_base_path, "courses"))
+            course_codes = self.get_course_codes()
             combined_data = []
 
             for major in os.listdir(self.audit_base_path):
@@ -407,50 +402,92 @@ class AuditDataExtractor(DataExtractor):
                     combined_data.append(d)
 
             if combined_data:
-                df_audit = pd.DataFrame(combined_data)[["audit", "audit_type",
-                                                        "major"]].drop_duplicates()
+                df_audit = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
                 df_audit["audit_id"] = df_audit["major"] + "_" + df_audit["audit_type"].astype(str)
                 df_audit = df_audit.rename(columns={"audit": "name", "audit_type": "type"})
 
-                df_course = pd.read_excel(self.course_table_path)
-                existing_courses = set(df_course["course_code"].astype(str))
-                df_countsfor = pd.DataFrame(combined_data)[
-                    ["requirement","course"]].rename(columns={"course": "course_code"})
-                df_countsfor = df_countsfor[
-                    df_countsfor["course_code"].isin(existing_courses)].drop_duplicates()
+                # ✅ Get course codes from DB instead of Excel
+                session = SessionLocal()
+                try:
+                    existing_courses = set(row[0] for row in session.query(Course.course_code).all())
+                finally:
+                    session.close()
+
+                df_countsfor = pd.DataFrame(combined_data)[["requirement", "course"]]
+                df_countsfor = df_countsfor.rename(columns={"course": "course_code"}).drop_duplicates()
+                df_countsfor = df_countsfor[df_countsfor["course_code"].isin(existing_courses)]
 
                 df_requirement = pd.DataFrame(combined_data)[
-                    ["requirement", "major", "audit_type"]].drop_duplicates()
+                    ["requirement", "major", "audit_type"]
+                ].drop_duplicates()
                 df_requirement = df_requirement.rename(columns={"audit_type": "type"})
-                df_requirement = df_requirement.merge(df_audit[["audit_id", "major", "type"]],
-                                                       on=["major", "type"], how="left")
+                df_requirement = df_requirement.merge(
+                    df_audit[["audit_id", "major", "type"]],
+                    on=["major", "type"], how="left"
+                )
                 df_requirement = df_requirement[["requirement", "audit_id"]]
 
-                counts_for_output_path = os.path.join(self.audit_base_path, "CountsFor.xlsx")
-                requirement_output_path = os.path.join(self.audit_base_path, "Requirement.xlsx")
-                audit_output_path = os.path.join(self.audit_base_path, "Audit.xlsx")
-
-                self.save_to_excel(df_countsfor.to_dict(orient='records'), counts_for_output_path)
-                self.save_to_excel(df_requirement.to_dict(orient='records'),
-                                   requirement_output_path)
-                self.save_to_excel(df_audit.to_dict(orient='records'), audit_output_path)
-
-                logging.info("Audit data processing complete, files saved.")
+                # No longer save Excel files — just return the data
                 return {
-                    "counts_for": counts_for_output_path,
-                    "requirement": requirement_output_path,
-                    "audit": audit_output_path
+                    "audit": df_audit.to_dict(orient="records"),
+                    "requirement": df_requirement.to_dict(orient="records"),
+                    "countsfor": df_countsfor.to_dict(orient="records")
                 }
         except (OSError, KeyError, ValueError) as error:
             logging.error("Error occurred during audit processing: %s", error)
             return None
 
+    def get_results(self) -> dict[str, list[dict]]:
+        course_codes = self.get_course_codes()
+        combined_data = []
 
-if __name__ == "__main__":
-    # Adjust these paths as needed for your environment.
-    AUDIT_BASE = "data/audit"
-    COURSE_BASE = "data/course/courses"
-    COURSE_TABLE = "data/course/Course.xlsx"
+        for major in os.listdir(self.audit_base_path):
+            major_path = os.path.join(self.audit_base_path, major)
+            if not os.path.isdir(major_path):
+                continue
 
-    extractor = AuditDataExtractor(AUDIT_BASE, COURSE_BASE, COURSE_TABLE)
-    extractor.process_all_audits()
+            audit_files = self.get_audit_files(major_path)
+            if not audit_files:
+                continue
+
+            # Extract audit data (core and gened)
+            core_data = self.extract_audit_data(audit_files["core"], course_codes)
+            for d in core_data:
+                d.update({"audit_type": 0, "major": major,
+                        "audit": d["requirement"].split('---')[0].strip()})
+                combined_data.append(d)
+
+            gened_data = self.extract_audit_data(audit_files["gened"], course_codes)
+            for d in gened_data:
+                d.update({"audit_type": 1, "major": major,
+                        "audit": d["requirement"].split('---')[0].strip()})
+                combined_data.append(d)
+
+        # Audit table
+        audit_df = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
+        audit_df["audit_id"] = audit_df["major"] + "_" + audit_df["audit_type"].astype(str)
+        audit_df = audit_df.rename(columns={"audit": "name", "audit_type": "type"})
+
+        # CountsFor table
+        counts_df = pd.DataFrame(combined_data)[["requirement", "course"]]
+        counts_df = counts_df.rename(columns={"course": "course_code"}).drop_duplicates()
+
+        # Requirement table
+        req_df = pd.DataFrame(combined_data)[["requirement", "major", "audit_type"]].drop_duplicates()
+        req_df = req_df.rename(columns={"audit_type": "type"})
+        req_df = req_df.merge(audit_df[["audit_id", "major", "type"]],
+                            on=["major", "type"], how="left")
+        req_df = req_df[["requirement", "audit_id"]]
+        print (req_df.head())
+
+        dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
+        if not dupes.empty:
+            print("❌ DUPLICATE REQUIREMENTS ACROSS AUDITS FOUND!")
+            print(dupes.to_string(index=False))
+
+
+        return {
+            "audit": audit_df.to_dict(orient="records"),
+            "requirement": req_df.to_dict(orient="records"),
+            "countsfor": counts_df.to_dict(orient="records")
+        }

@@ -82,23 +82,9 @@ class EnrollmentDataExtractor(DataExtractor):
         )
 
         desired_order = ["enrollment_id", "course_code", "semester", "section",
-                         "department", "class", "enrollment_count"]
+                     "department", "class", "enrollment_count"]
         df = df[[col for col in desired_order if col in df.columns]]
 
-        # Define output path (can be parameterized)
-        output_path = os.path.join(os.path.dirname(file_path), "Enrollment.xlsx")
-        self.save_to_excel(df, output_path)
-        return output_path
+        return df.to_dict(orient="records")
 
 
-if __name__ == "__main__":
-    ENROLLMENT_PATH = "data/enrollment/CourseEnrollmentByMajorClassS20-S25.xlsx"
-    logging.info("Using default enrollment file: %s", ENROLLMENT_PATH)
-
-    extractor = EnrollmentDataExtractor()
-    result = extractor.extract_enrollment_data(ENROLLMENT_PATH)
-
-    if result:
-        logging.info("Enrollment data processed and saved to: %s", result)
-    else:
-        logging.error("Failed to process enrollment data.")

@@ -276,16 +276,19 @@ class CourseDataExtractor(DataExtractor):
 
 
     def process_all_courses(self) -> None:
-        """
-        Iterates over all JSON files in the folder and processes them.
-        """
         if not os.path.exists(self.folder_path):
             logging.error("Folder not found: %s", self.folder_path)
             return
-        for filename in os.listdir(self.folder_path):
-            if filename.endswith(".json"):
-                file_path = os.path.join(self.folder_path, filename)
-                self.process_course_file(file_path)
+        # Recursively walk through the folder structure
+        for root, dirs, files in os.walk(self.folder_path):
+            logging.info("Scanning directory: %s", root)
+            for filename in files:
+                if filename.endswith(".json"):
+                    file_path = os.path.join(root, filename)
+                    logging.info("Processing file: %s", file_path)
+                    self.process_course_file(file_path)
+
+
 
     def save_results(self) -> None:
         """
@@ -345,11 +348,22 @@ class CourseDataExtractor(DataExtractor):
         except (KeyError, ValueError, TypeError) as error:
             logging.error("Error saving to %s: %s", output_file, error)
 
+    def get_results(self) -> dict[str, list[dict]]:
+        return {
+            "course": self.courses_data,
+            "prereqs": self.prereq_relationships,
+            "offering": self.offerings_records,
+            "course_instructor": self.course_instructor,
+            "instructor": list(self.instructors_data.values()),
+        }
+
+
 
 def process_courses(course_base_path: str) -> Dict[str, str]:
     """
     Convenience function to process course data.
     """
+
     folder_path = os.path.join(course_base_path, "courses")
     extractor = CourseDataExtractor(folder_path=folder_path, base_dir=course_base_path)
     extractor.process_all_courses()
@@ -361,13 +375,3 @@ def process_courses(course_base_path: str) -> Dict[str, str]:
         "course_instructor_file": extractor.course_instructor_table_file,
         "instructor_file": extractor.instructor_table_file,
     }
-
-
-if __name__ == "__main__":
-    base_directory = os.path.abspath("data/course")
-    course_extractor = CourseDataExtractor(
-        folder_path=os.path.join(base_directory, "courses"),
-        base_dir=base_directory
-    )
-    course_extractor.process_all_courses()
-    course_extractor.save_results()
