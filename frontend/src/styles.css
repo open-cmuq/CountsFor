@@ -761,7 +761,6 @@ table {
 
   .prereq-expandable {
     max-width: 240px;
-    background-color: #eee;
     padding: 8px;
     border-radius: 6px;
     white-space: pre-wrap;
@@ -775,6 +774,43 @@ table {
     cursor: pointer;
     font-weight: bold;
     font-size: smaller;
+  }
+  
+  .dropdown-group {
+    margin-bottom: 0.5rem;
+    padding-left: 5px;
+  }
+  
+  .dropdown-group-label {
+    background-color: #f0f0f0;
+    color: #222;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .dropdown-group-label:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .dropdown-subgroup {
+    padding: 6px 12px;
+    padding-left: 16px;
+  }
+  
+  .dropdown-item.nested {
+    font-size: 13px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   
   
