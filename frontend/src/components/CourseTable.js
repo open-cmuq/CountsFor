@@ -65,6 +65,31 @@ const CourseTable = ({
     });
   };
 
+  // For expandable Pre-Req cells
+  const PrereqCell = ({ text }) => {
+    const [expanded, setExpanded] = useState(false);
+    const previewText = text.length > 100 ? text.slice(0, 100) + "..." : text;
+  
+    return (
+      <td className="prereq-expandable">
+        {expanded ? text : previewText}
+        {text.length > 100 && (
+          <span
+            className="expand-toggle"
+            onClick={(e) => {
+              e.stopPropagation(); // prevent table row clicks if needed
+              setExpanded(!expanded);
+            }}
+          >
+            {expanded ? " Show less" : " Show more"}
+          </span>
+        )}
+      </td>
+    );
+  };
+  
+
+
   return (
     <div>
       <table>
@@ -191,8 +216,8 @@ const CourseTable = ({
             })}
 
               <td>{course.offered.join(", ")}</td>
-              <td>{course.prerequisites || "NONE"}</td>
-            </tr>
+              <PrereqCell text={course.prerequisites} />
+              </tr>
           ))}
         </tbody>
       </table>

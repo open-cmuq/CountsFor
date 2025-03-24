@@ -29,7 +29,7 @@ const CourseTablePage = () => {
   const [genedOnly, setGenedOnly] = useState(null);
   // For pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [coursesPerPage, setCoursesPerPage] = useState(50);
+  const [coursesPerPage, setCoursesPerPage] = useState(25);
   // Pagination logic
   const totalPages = Math.ceil(courses.length / coursesPerPage);
   const indexOfLastCourse = currentPage * coursesPerPage;
