@@ -24,23 +24,94 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
   // Filter out any undefined/null options first.
   const safeOptions = (allRequirements || []).filter(opt => opt != null);
   
-  const groupedOptions = {};
-  safeOptions.forEach((opt) => {
-    const raw = typeof opt === "object" ? opt.requirement : opt;
-    const parts = raw.split("---").slice(1); // skip major name
-
-    if (!parts.length) return;
-
-    const parent = parts[0]; // top-level group
-    const label = parts.slice(1).join(" → ") || parent;
-
-    if (!groupedOptions[parent]) groupedOptions[parent] = [];
-
-    groupedOptions[parent].push({
-        rawValue: raw,
-        label,
+  const buildNestedGroups = (options) => {
+    const tree = {};
+  
+    options.forEach((opt) => {
+      const raw = typeof opt === "object" ? opt.requirement : opt;
+      const parts = raw.split("---").slice(1); // Remove major
+  
+      let node = tree;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const key = parts[i];
+        if (!node[key]) node[key] = {};
+        node = node[key];
+      }
+  
+      const label = parts[parts.length - 1];
+      if (!node._items) node._items = [];
+      node._items.push({ label, rawValue: raw });
     });
+  
+    return tree;
+  };
+
+  const renderGroupTree = (node, path = "") => {
+    return Object.entries(node)
+    .filter(([key]) => key !== "_items")
+    .map(([group, child]) => {
+      const isExpanded = expandedGroups[path + group];
+      const toggle = () =>
+        setExpandedGroups((prev) => ({
+          ...prev,
+          [path + group]: !isExpanded,
+        }));
+  
+      return (
+        <div key={path + group} className="dropdown-group">
+          <div className="dropdown-group-label" onClick={toggle}>
+            <span>{group}</span>
+            <span>{isExpanded ? "▼" : "▶"}</span>
+          </div>
+  
+          {isExpanded && (
+  <div className="dropdown-subgroup">
+
+    {/* ✅ Select all in group */}
+    {child._items?.length > 1 && (
+      <label className="dropdown-item nested">
+        <input
+          type="checkbox"
+          checked={child._items.every(item => selectedForMajor.includes(item.rawValue))}
+          onChange={(e) => {
+            const groupValues = child._items.map(item => item.rawValue);
+            const newSelection = e.target.checked
+              ? [...new Set([...selectedForMajor, ...groupValues])]
+              : selectedForMajor.filter(val => !groupValues.includes(val));
+            handleFilterChange(major, newSelection);
+          }}
+        />
+        <strong>Select All in {group}</strong>
+      </label>
+    )}
+
+    {child._items?.map(({ rawValue, label }) => (
+      <label key={rawValue} className="dropdown-item nested">
+        <input
+          type="checkbox"
+          checked={selectedForMajor.includes(rawValue)}
+          onChange={(e) => {
+            const newSelection = e.target.checked
+              ? [...selectedForMajor, rawValue]
+              : selectedForMajor.filter((item) => item !== rawValue);
+            handleFilterChange(major, newSelection);
+          }}
+        />
+        {label}
+      </label>
+    ))}
+
+    {/* 🪄 Recursive call */}
+    {renderGroupTree(child, path + group + " > ")}
+  </div>
+)}
+
+        </div>
+      );
     });
+  };
+  
+  
 
   // Build an array of raw strings (if options are objects, we extract their requirement property)
   const allOptionStrings = safeOptions.map(opt => (typeof opt === "object" ? opt.requirement : opt));
@@ -53,12 +124,12 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
   const [expandedGroups, setExpandedGroups] = useState({});
 
-  const toggleGroup = (group) => {
-    setExpandedGroups((prev) => ({
-      ...prev,
-      [group]: !prev[group],
-    }));
-  };
+//   const toggleGroup = (group) => {
+//     setExpandedGroups((prev) => ({
+//       ...prev,
+//       [group]: !prev[group],
+//     }));
+//   };
   
 
   return (
@@ -68,65 +139,54 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
       </button>
 
       {isOpen && (
-        <div className="dropdown-content">
-          {/* "Select All" Option */}
-          <label className="dropdown-item">
-            <input type="checkbox" checked={isAllSelected} onChange={handleSelectAll} />
-            <strong>SELECT ALL</strong>
-          </label>
-
-          {/* Individual Options */}
-
-          {safeOptions.length === 0 ? (
-            <p className="dropdown-item">No options available</p>
-            ) : (
-            Object.entries(groupedOptions).map(([group, items]) => (
-                <div key={group} className="dropdown-group">
-                <div
-                    className="dropdown-group-label"
-                    onClick={() => toggleGroup(group)}
-                    style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                >
-                    <strong>{group}</strong>
-                    <span>{expandedGroups[group] ? "▼" : "▶"}</span>
-                </div>
-
-                {expandedGroups[group] && (
-                    <div className="dropdown-subgroup">
-                    {items.map(({ rawValue, label }) => (
-                        <label key={rawValue} className="dropdown-item nested">
-                        <input
-                            type="checkbox"
-                            checked={selectedForMajor.includes(rawValue)}
-                            onChange={(e) => {
-                            const newSelection = e.target.checked
-                                ? [...selectedForMajor, rawValue]
-                                : selectedForMajor.filter((item) => item !== rawValue);
-                            handleFilterChange(major, newSelection);
-                            }}
-                        />
-                        {label}
-                        </label>
-                    ))}
-                    </div>
-                )}
-                </div>
-            ))
-            )}
-
+                <div className="dropdown-content">
+            <label className="select-all-label">
+            <button
+        className="select-all-btn"
+        onClick={() => handleSelectAll()}
+        >
+        {isAllSelected ? "DeSelect All" : "Select All"}
+        </button>
+        </label>
 
           {/* Clear Selection Button */}
-          <label className="clear-btn">
+          <label className="select-all-label">
             <button
-              className="clear-btn"
+              className="select-all-btn"
               onClick={() => {
                 clearFilters(major);
                 setIsOpen(false);
               }}
             >
-              Clear Selection
+              Clear All
             </button>
           </label>
+
+          {/* Individual Options */}
+          {safeOptions.length === 0 ? (
+            <p className="dropdown-item">No options available</p>
+            ) : safeOptions.every(opt => !(typeof opt === 'string' ? opt.includes('---') : (opt.requirement || '').includes('---'))) ? (
+            safeOptions.map((opt, index) => {
+                const raw = typeof opt === "object" ? opt.requirement : opt;
+                return (
+                <label key={index} className="dropdown-item">
+                    <input
+                    type="checkbox"
+                    checked={selectedForMajor.includes(raw)}
+                    onChange={(e) => {
+                        const newSelection = e.target.checked
+                        ? [...selectedForMajor, raw]
+                        : selectedForMajor.filter(item => item !== raw);
+                        handleFilterChange(major, newSelection);
+                    }}
+                    />
+                    {raw}
+                </label>
+                );
+            })
+            ) : (
+            renderGroupTree(buildNestedGroups(safeOptions))
+            )}
         </div>
       )}
     </div>
