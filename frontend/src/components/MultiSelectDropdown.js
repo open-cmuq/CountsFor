@@ -67,7 +67,7 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
           {isExpanded && (
   <div className="dropdown-subgroup">
 
-    {/* ✅ Select all in group */}
+    {/* Select all in group */}
     {child._items?.length > 1 && (
       <label className="dropdown-item nested">
         <input
@@ -101,7 +101,6 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
       </label>
     ))}
 
-    {/* 🪄 Recursive call */}
     {renderGroupTree(child, path + group + " > ")}
   </div>
 )}
@@ -112,7 +111,6 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
   };
   
   
-
   // Build an array of raw strings (if options are objects, we extract their requirement property)
   const allOptionStrings = safeOptions.map(opt => (typeof opt === "object" ? opt.requirement : opt));
   const isAllSelected = allOptionStrings.length > 0 && selectedForMajor.length === allOptionStrings.length;
@@ -124,13 +122,6 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
   const [expandedGroups, setExpandedGroups] = useState({});
 
-//   const toggleGroup = (group) => {
-//     setExpandedGroups((prev) => ({
-//       ...prev,
-//       [group]: !prev[group],
-//     }));
-//   };
-  
 
   return (
     <div className="dropdown cell-container" ref={dropdownRef}>

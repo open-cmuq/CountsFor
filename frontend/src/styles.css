@@ -824,6 +824,85 @@ table {
     background-color: darkred;
   }
 
+  .tab-bar {
+    display: flex;
+    background-color: #f2f2f2;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 1rem;
+  }
+  
+  .tab {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .tab:hover {
+    background-color: #eaeaea;
+  }
+  
+  .tab.active {
+    border-bottom: 3px solid #000;
+    background-color: white;
+  }
+  
+  .tab-content {
+    padding: 1rem;
+  }
+
+  .search-results {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+    max-width: 600px;
+  }
+  
+  .search-result-list {
+    list-style: none;
+    padding-left: 0;
+  }
+  
+  .search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.4rem;
+    border-bottom: 1px solid #e2e2e2;
+  }
+  
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+  
+  .course-link {
+    color: #0074cc;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .add-btn {
+    background-color: #0074cc;
+    color: white;
+    border: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  
+  .add-btn:hover {
+    background-color: #005fa3;
+  }
+  
+  
+
   
   
   
