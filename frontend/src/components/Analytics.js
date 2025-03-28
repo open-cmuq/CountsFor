@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
@@ -17,7 +17,7 @@ const AnalyticsPage = () => {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -35,11 +35,11 @@ const AnalyticsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMajor, semester]);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [selectedMajor, semester]);
+  }, [fetchAnalytics]);
 
   // Prepare trace data if we have chartData
   let plotTrace = null;
