@@ -183,18 +183,29 @@ async def initialize_database(
         clear_existing_course_data()  # Clear existing course data if needed
         course_dir = os.path.join(UPLOAD_DIR, "courses")
         os.makedirs(course_dir, exist_ok=True)
+
         for zip_file in files_to_process["course_zips"]:
             standardized_name = standardize_folder_name(zip_file.filename)
             path = os.path.join(course_dir, standardized_name)
             with open(path, "wb") as f:
                 shutil.copyfileobj(zip_file.file, f)
 
+            # Validate the ZIP content
             if not validate_zip_content(path, "course"):
                 raise HTTPException(status_code=400,
                                     detail=f"Invalid course data in {zip_file.filename}.")
 
+            # Unzip and validate course structure
             unzip_and_flatten(path, course_dir)
             os.remove(path)
+
+            # Check for JSON files in the course directory and its subdirectories
+            json_files = find_json_files(course_dir)
+            if len(json_files) < 1600:  # Replace with the actual expected count
+                logging.warning("Warning: Only %d course JSON files found, expected more.",
+                                len(json_files))
+                results["message"] = f"Warning: Only {len(json_files)} course JSON files found,\
+                      expected more."
 
         course_extractor = CourseDataExtractor(folder_path=course_dir, base_dir=UPLOAD_DIR)
         load_data_from_dicts(course_extractor.get_results())
@@ -206,6 +217,7 @@ async def initialize_database(
         clear_existing_audit_data()  # Clear existing audit data if needed
         audit_root = os.path.join(UPLOAD_DIR, "audit")
         os.makedirs(audit_root, exist_ok=True)
+
         for zip_file in files_to_process["audit_zips"]:
             standardized_name = standardize_folder_name(zip_file.filename)
             zip_path = os.path.join(audit_root, standardized_name)
@@ -214,13 +226,36 @@ async def initialize_database(
                     shutil.copyfileobj(zip_file.file, f)
 
                 if not validate_zip_content(zip_path, "audit"):
-                    raise HTTPException(status_code=400,
-                                        detail=f"Invalid audit data in {zip_file.filename}.")
+                    raise HTTPException(status_code=400, detail=f"Invalid audit \
+                                        data in {zip_file.filename}.")
 
+                # Unzip and validate audit structure
                 unzip_and_flatten(zip_path, audit_root)
                 os.remove(zip_path)
 
+                # Check for required major folders in the audit directory
+                required_subfolders = ["ba", "bio", "is", "cs"]
+                found_subfolders = set()
+
+                # Walk through the extracted directory to find the required subfolders
+                for _, dirs, _ in os.walk(audit_root):
+                    for subfolder in required_subfolders:
+                        if subfolder in dirs:
+                            found_subfolders.add(subfolder)
+
+                # Check if all required subfolders are found
+                missing_subfolders = [subfolder for subfolder in required_subfolders
+                                      if subfolder not in found_subfolders]
+                if missing_subfolders:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Audit ZIP must contain the following subfolders: \
+                            {', '.join(missing_subfolders)}."
+                    )
+
+
             except Exception as e:
+                logging.error("Error processing audit ZIP file %s: %s", zip_file.filename, str(e))
                 raise HTTPException(status_code=400, detail=str(e)) from e
 
         audit_extractor = AuditDataExtractor(audit_base_path=audit_root,
@@ -285,3 +320,12 @@ def clear_existing_enrollment_data():
     if os.path.exists(enrollment_dir):
         shutil.rmtree(enrollment_dir)
     os.makedirs(enrollment_dir)  # Recreate the folder after clearing
+
+def find_json_files(directory):
+    """Find all JSON files in the given directory and its subdirectories."""
+    json_files = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.json') and not file.startswith('__MACOSX'):
+                json_files.append(os.path.join(root, file))
+    return json_files

@@ -34,12 +34,19 @@ const DataUpload = () => {
       const contents = await zip.loadAsync(file);
 
       if (type === 'course') {
-        // Course ZIP should contain course JSON files
+        // Course ZIP should contain only course JSON files
         const hasCourseFiles = Object.keys(contents.files).some(path =>
           path.endsWith('.json') && !path.includes('__MACOSX')
         );
+        const hasAuditFiles = Object.keys(contents.files).some(path =>
+          path.includes('audit') && !path.includes('__MACOSX')
+        );
+
         if (!hasCourseFiles) {
           throw new Error('Course ZIP must contain course JSON files');
+        }
+        if (hasAuditFiles) {
+          throw new Error('Course ZIP must not contain audit files');
         }
       } else if (type === 'audit') {
         // Audit ZIP should contain audit JSON files
