@@ -7,6 +7,7 @@ and enrollment Excel file.
 import shutil
 import os
 import zipfile
+import logging
 from typing import Optional, List
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 import pandas as pd
@@ -18,11 +19,15 @@ from backend.database.load_data import load_data_from_dicts
 from backend.database.db import reset_db, SessionLocal
 from backend.database.models import Department
 
+
 router = APIRouter()
 
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 # Use absolute path for UPLOAD_DIR
-UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../temp_uploads"))
-print(f"Using upload directory: {UPLOAD_DIR}")
+UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data"))
+print(f"Using data directory: {UPLOAD_DIR}")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def unzip_and_flatten(zip_path: str, extract_to: str):
@@ -122,17 +127,16 @@ async def initialize_database(
     """
     Initialize or update the database with uploaded files.
     """
-    print("\n=== Starting Database Initialization ===")
-    print("Received files:")
-    print(f"Course zips: {[f.filename for f in course_zips] if course_zips else []}")
-    print(f"Audit zips: {[f.filename for f in audit_zips] if audit_zips else []}")
-    print(f"Enrollment file: {enrollment_file.filename if enrollment_file else None}")
-    print(f"Department CSV: {department_csv.filename if department_csv else None}")
-    print(f"Department CSV object: {department_csv}")
-    print(f"Reset flag: {reset}")
+    logging.info("=== Starting Database Initialization ===")
+    logging.info("Received files:")
+    logging.info("Course zips: %s", [f.filename for f in course_zips] if course_zips else [])
+    logging.info("Audit zips: %s", [f.filename for f in audit_zips] if audit_zips else [])
+    logging.info("Enrollment file: %s", enrollment_file.filename if enrollment_file else None)
+    logging.info("Department CSV: %s", department_csv.filename if department_csv else None)
+    logging.info("Reset flag: %s", reset)
 
     if reset:
-        print("Resetting database...")
+        logging.info("Resetting database...")
         reset_db()
         return {"message": "Database reset successfully"}
 
@@ -144,22 +148,10 @@ async def initialize_database(
         "department_csv": department_csv
     }
 
-    print("\nFiles to process:")
-    for k, v in files_to_process.items():
-        if isinstance(v, list):
-            print(f"{k}: {len(v)} files")
-        elif isinstance(v, UploadFile):
-            print(f"{k}: {v.filename}")
-            if k == "department_csv":
-                print("Department CSV details:")
-                print(f"  - Filename: {v.filename}")
-                print(f"  - Content type: {v.content_type}")
-                print(f"  - File object: {v}")
-        else:
-            print(f"{k}: None")
+    logging.info("Files to process: %s", files_to_process)
 
     if not any(files_to_process.values()):
-        print("No valid files found in the request")
+        logging.warning("No valid files found in the request")
         raise HTTPException(
             status_code=400,
             detail="No valid files provided for upload. Please ensure at least one file is selected"
@@ -169,7 +161,7 @@ async def initialize_database(
 
     # Handle Department CSV first as it's a dependency for courses
     if files_to_process["department_csv"]:
-        print("\nProcessing department CSV...")
+        logging.info("Processing department CSV...")
 
         # Ensure temp directory exists and is absolute
         os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -178,7 +170,7 @@ async def initialize_database(
         print(f"Temp directory is writable: {os.access(UPLOAD_DIR, os.W_OK)}")
 
         dept_csv_path = os.path.join(UPLOAD_DIR, "departments.csv")
-        print(f"Target CSV absolute path: {os.path.abspath(dept_csv_path)}")
+        logging.info("Saving department CSV to: %s", dept_csv_path)
 
         try:
             # Read the file content
@@ -334,22 +326,32 @@ async def initialize_database(
 
     # Handle Course Data
     if files_to_process["course_zips"]:
+        logging.info("Processing course ZIP files...")
         course_dir = os.path.join(UPLOAD_DIR, "courses")
         os.makedirs(course_dir, exist_ok=True)
         for zip_file in files_to_process["course_zips"]:
             path = os.path.join(course_dir, zip_file.filename)
+            logging.info("Saving course ZIP to: %s", path)
             with open(path, "wb") as f:
                 shutil.copyfileobj(zip_file.file, f)
+            logging.info("Successfully saved course ZIP: %s", zip_file.filename)
 
             # Validate ZIP content before processing
             if not validate_zip_content(path, "course"):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid course data in {zip_file.filename}.\
-                      The file must contain course JSON files."
+                    detail=(f"Invalid course data in {zip_file.filename}. \
+                            The file must contain course JSON files.")
                 )
 
             unzip_and_flatten(path, course_dir)
+
+            # Delete the ZIP file after processing
+            try:
+                os.remove(path)
+                logging.info("Deleted course ZIP file: %s", path)
+            except OSError as e:
+                logging.error("Error deleting course ZIP file %s: %s", path, str(e))
 
         course_extractor = CourseDataExtractor(folder_path=course_dir, base_dir=UPLOAD_DIR)
         course_extractor.process_all_courses()
@@ -358,22 +360,32 @@ async def initialize_database(
 
     # Handle Audit Data
     if files_to_process["audit_zips"]:
+        logging.info("Processing audit ZIP files...")
         audit_root = os.path.join(UPLOAD_DIR, "audit")
         os.makedirs(audit_root, exist_ok=True)
         for zip_file in files_to_process["audit_zips"]:
             zip_path = os.path.join(audit_root, zip_file.filename)
+            logging.info("Saving audit ZIP to: %s", zip_path)
             with open(zip_path, "wb") as f:
                 shutil.copyfileobj(zip_file.file, f)
+            logging.info("Successfully saved audit ZIP: %s", zip_file.filename)
 
             # Validate ZIP content before processing
             if not validate_zip_content(zip_path, "audit"):
                 raise HTTPException(
                     status_code=400,
                     detail=f"Invalid audit data in {zip_file.filename}. \
-                        The file must contain audit JSON files."
+                         The file must contain audit JSON files."
                 )
 
             unzip_and_flatten(zip_path, audit_root)
+
+            # Delete the ZIP file after processing
+            try:
+                os.remove(zip_path)
+                logging.info("Deleted audit ZIP file: %s", zip_path)
+            except OSError as e:
+                logging.error("Error deleting audit ZIP file %s: %s", zip_path, str(e))
 
         audit_extractor = AuditDataExtractor(
             audit_base_path=audit_root,
@@ -384,6 +396,7 @@ async def initialize_database(
 
     # Handle Enrollment Data
     if files_to_process["enrollment_file"]:
+        logging.info("Processing enrollment file...")
         # Check if course data is present
         if not files_to_process["course_zips"]:
             raise HTTPException(
@@ -393,9 +406,11 @@ async def initialize_database(
             )
 
         enrollment_path = os.path.join(UPLOAD_DIR, "enrollment.xlsx")
+        logging.info("Saving enrollment file to: %s", enrollment_path)
         with open(enrollment_path, "wb") as f:
             shutil.copyfileobj(files_to_process["enrollment_file"].file, f)
-            print(f"Successfully wrote enrollment file to {enrollment_path}")
+        logging.info("Successfully saved enrollment file: %s",
+                     files_to_process["enrollment_file"].filename)
 
         try:
             print("Creating enrollment extractor...")
@@ -428,4 +443,5 @@ async def initialize_database(
     else:
         results["message"] = "No data was loaded"
 
+    logging.info("=== Finished Database Initialization ===")
     return results

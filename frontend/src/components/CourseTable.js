@@ -23,6 +23,7 @@ const CourseTable = ({
   const fetchCourseDetails = async (course_code) => {
     try {
       const response = await fetch(`${API_BASE_URL}/courses/${course_code}`);
+      // Ensure the backend is set to read from the data directory
       if (!response.ok) throw new Error("Failed to fetch course details");
       const data = await response.json();
       return data;
@@ -139,10 +140,10 @@ const CourseTable = ({
               </td>
               {Object.keys(allRequirements).map((major) => {
               const reqObjects = course.requirements?.[major] || [];
-              // Filter out the ones that don’t match the active (Core/GenEd) filter
+              // Filter out the ones that don't match the active (Core/GenEd) filter
               const filteredReqObjects = filterRequirementObjects(reqObjects);
 
-              // If, after filtering, there’s nothing left, return an empty cell
+              // If, after filtering, there's nothing left, return an empty cell
               if (filteredReqObjects.length === 0) {
                 return <td key={major}></td>;
               }

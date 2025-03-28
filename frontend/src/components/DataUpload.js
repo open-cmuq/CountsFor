@@ -15,6 +15,8 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 const DataUpload = () => {
   const [state, setState] = useState({
     courseZips: [],
@@ -197,7 +199,7 @@ const DataUpload = () => {
     }
 
     try {
-      const apiUrl = `${process.env.REACT_APP_API_BASE_URL}/upload/init-db/`;
+      const apiUrl = `${API_BASE_URL}/upload/init-db/`;
       console.log('Attempting to fetch from:', apiUrl);
 
       const response = await fetch(apiUrl, {
