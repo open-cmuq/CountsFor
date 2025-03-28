@@ -23,7 +23,6 @@ const DataUpload = () => {
     auditZips: [],
     enrollmentFile: null,
     departmentCsv: null,
-    reset: false,
     loading: false,
     error: null,
     success: null,
@@ -149,7 +148,6 @@ const DataUpload = () => {
       auditZips: state.auditZips.length,
       enrollmentFile: state.enrollmentFile?.name,
       departmentCsv: state.departmentCsv?.name,
-      reset: state.reset
     });
 
     // Validate upload combinations
@@ -190,7 +188,6 @@ const DataUpload = () => {
       console.log('Adding department CSV to form data:', state.departmentCsv.name);
       formData.append('department_csv', state.departmentCsv);
     }
-    formData.append('reset', state.reset.toString());
 
     // Debug log for form data
     console.log('FormData entries:');
@@ -443,24 +440,6 @@ const DataUpload = () => {
               Selected: {state.departmentCsv.name}
             </Typography>
           )}
-        </Box>
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Database Reset Option
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Check this box to reset the database before uploading new data.
-            This will delete all existing data before adding the new data.
-          </Typography>
-          <Button
-            variant={state.reset ? "contained" : "outlined"}
-            color={state.reset ? "error" : "primary"}
-            onClick={() => setState(prev => ({ ...prev, reset: !prev.reset }))}
-            fullWidth
-          >
-            {state.reset ? "Reset Database (Enabled)" : "Reset Database (Disabled)"}
-          </Button>
         </Box>
 
         {state.error && (

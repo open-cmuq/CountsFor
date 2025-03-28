@@ -81,7 +81,8 @@ class AuditDataExtractor(DataExtractor):
             result = session.query(Course.course_code).all()
             codes = {row[0] for row in result}
         except Exception as e:
-            logging.error(f"Failed to retrieve course codes from database: {e}")
+            logging.error("Failed to retrieve course codes from database: %s", e)
+            raise e
         finally:
             session.close()
         return codes
@@ -402,19 +403,22 @@ class AuditDataExtractor(DataExtractor):
                     combined_data.append(d)
 
             if combined_data:
-                df_audit = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
+                df_audit = pd.DataFrame(combined_data)[["audit",
+                                                        "audit_type", "major"]].drop_duplicates()
                 df_audit["audit_id"] = df_audit["major"] + "_" + df_audit["audit_type"].astype(str)
                 df_audit = df_audit.rename(columns={"audit": "name", "audit_type": "type"})
 
                 # ✅ Get course codes from DB instead of Excel
                 session = SessionLocal()
                 try:
-                    existing_courses = set(row[0] for row in session.query(Course.course_code).all())
+                    existing_courses = set(row[0] for row in
+                                        session.query(Course.course_code).all())
                 finally:
                     session.close()
 
                 df_countsfor = pd.DataFrame(combined_data)[["requirement", "course"]]
-                df_countsfor = df_countsfor.rename(columns={"course": "course_code"}).drop_duplicates()
+                df_countsfor = df_countsfor.rename(columns={"course":
+                                                            "course_code"}).drop_duplicates()
                 df_countsfor = df_countsfor[df_countsfor["course_code"].isin(existing_courses)]
 
                 df_requirement = pd.DataFrame(combined_data)[
@@ -438,6 +442,9 @@ class AuditDataExtractor(DataExtractor):
             return None
 
     def get_results(self) -> dict[str, list[dict]]:
+        """
+        Extracts audit data from JSON files and returns a dictionary of results.
+        """
         course_codes = self.get_course_codes()
         combined_data = []
 
@@ -454,40 +461,52 @@ class AuditDataExtractor(DataExtractor):
             core_data = self.extract_audit_data(audit_files["core"], course_codes)
             for d in core_data:
                 d.update({"audit_type": 0, "major": major,
-                        "audit": d["requirement"].split('---')[0].strip()})
+                           "audit": d["requirement"].split('---')[0].strip()})
                 combined_data.append(d)
 
             gened_data = self.extract_audit_data(audit_files["gened"], course_codes)
             for d in gened_data:
                 d.update({"audit_type": 1, "major": major,
-                        "audit": d["requirement"].split('---')[0].strip()})
+                           "audit": d["requirement"].split('---')[0].strip()})
                 combined_data.append(d)
 
-        # Audit table
-        audit_df = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
-        audit_df["audit_id"] = audit_df["major"] + "_" + audit_df["audit_type"].astype(str)
-        audit_df = audit_df.rename(columns={"audit": "name", "audit_type": "type"})
+        # Ensure the DataFrame is created with the correct columns
+        if combined_data:
+            audit_df = pd.DataFrame(combined_data)
+            if not all(col in audit_df.columns for col in ["audit", "audit_type", "major"]):
+                logging.error("Expected columns are missing in the combined data.")
+                raise ValueError("Missing expected columns in the audit data.")
 
-        # CountsFor table
-        counts_df = pd.DataFrame(combined_data)[["requirement", "course"]]
-        counts_df = counts_df.rename(columns={"course": "course_code"}).drop_duplicates()
+            audit_df["audit_id"] = audit_df["major"] + "_" + audit_df["audit_type"].astype(str)
+            audit_df = audit_df.rename(columns={"audit": "name", "audit_type": "type"})
 
-        # Requirement table
-        req_df = pd.DataFrame(combined_data)[["requirement", "major", "audit_type"]].drop_duplicates()
-        req_df = req_df.rename(columns={"audit_type": "type"})
-        req_df = req_df.merge(audit_df[["audit_id", "major", "type"]],
-                            on=["major", "type"], how="left")
-        req_df = req_df[["requirement", "audit_id"]]
-        print (req_df.head())
+            # CountsFor table
+            counts_df = pd.DataFrame(combined_data)[["requirement", "course"]]
+            counts_df = counts_df.rename(columns={"course": "course_code"}).drop_duplicates()
 
-        dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
-        if not dupes.empty:
-            print("❌ DUPLICATE REQUIREMENTS ACROSS AUDITS FOUND!")
-            print(dupes.to_string(index=False))
+            # Requirement table
+            req_df = pd.DataFrame(combined_data)[["requirement", "major",
+                                                  "audit_type"]].drop_duplicates()
+            req_df = req_df.rename(columns={"audit_type": "type"})
+            req_df = req_df.merge(audit_df[["audit_id", "major", "type"]],
+                                on=["major", "type"], how="left")
+            req_df = req_df[["requirement", "audit_id"]]
+            print (req_df.head())
 
+            dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
+            if not dupes.empty:
+                print("❌ DUPLICATE REQUIREMENTS ACROSS AUDITS FOUND!")
+                print(dupes.to_string(index=False))
 
-        return {
-            "audit": audit_df.to_dict(orient="records"),
-            "requirement": req_df.to_dict(orient="records"),
-            "countsfor": counts_df.to_dict(orient="records")
-        }
+            return {
+                "audit": audit_df.to_dict(orient="records"),
+                "requirement": req_df.to_dict(orient="records"),
+                "countsfor": counts_df.to_dict(orient="records")
+            }
+        else:
+            logging.warning("No combined data found for audits.")
+            return {
+                "audit": [],
+                "requirement": [],
+                "countsfor": []
+            }
