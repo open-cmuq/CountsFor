@@ -14,33 +14,29 @@ class AnalyticsRepository:
         self.db = db
 
     def get_course_coverage(self, major: str, semester: Optional[str] = None):
-        """fetch the count of courses fulfilling each requirement for a given major,
-        optionally filtering by semester."""
+        """Fetch the count of courses fulfilling each requirement for a given major,
+        optionally filtering by semester and campus ID."""
 
-        # Base query
+        # Base query for requirements
         requirement_counts = (
             self.db.query(Requirement.requirement)
             .join(CountsFor, CountsFor.requirement == Requirement.requirement)
-            .join(Course, Course.course_code == CountsFor.course_code)
             .join(Audit, Requirement.audit_id == Audit.audit_id)
-            .join(Offering, Offering.course_code == Course.course_code)
-            .filter(Audit.major == major, Course.offered_qatar)
+            .filter(Audit.major == major)
             .distinct()
-        )
+        ).all()
 
-        if semester:
-            requirement_counts = requirement_counts.filter(Offering.semester == semester)
-
-        requirement_counts = requirement_counts.all()
         result = {}
-        for (req,) in requirement_counts:
-            course_query = self.db.query(Course).join(CountsFor).join(Offering).filter(
-                CountsFor.requirement == req,
-                Course.offered_qatar
-            )
-            if semester:
-                course_query = course_query.filter(Offering.semester == semester)
-            result[req] = course_query.count()
 
+        for (req,) in requirement_counts:
+            # Count courses fulfilling the requirement
+            course_count = self.db.query(Course).join(CountsFor).join(Offering).filter(
+                CountsFor.requirement == req,
+                Course.offered_qatar == True,  # Assuming you want courses offered in Qatar
+                Offering.semester == semester,
+                Offering.campus_id == 2  # Filter by campus ID
+            ).distinct(Course.course_code).count()
+
+            result[req] = course_count
 
         return result
