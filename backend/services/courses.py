@@ -34,18 +34,17 @@ class CourseService:
         )
 
     def fetch_all_courses(self) -> CourseListResponse:
-        """fetch and structure all courses, prioritizing those fulfilling at l
-        east one requirement."""
+        """fetch and structure all courses, prioritizing those fulfilling at least one requirement."""
         courses = self.course_repo.get_all_courses()
 
         for course in courses:
             course["num_requirements"] = sum(len(reqs) for reqs in course["requirements"].values())
             course["num_offered_semesters"] = len(course["offered"])
 
+        # Sort courses by the numeric value of course_code (after removing the dash)
         sorted_courses = sorted(
             courses,
-            key=lambda c: (c["num_requirements"] == 0, -c["num_offered_semesters"]),
-            reverse=False
+            key=lambda c: int(c["course_code"].replace("-", ""))
         )
 
         return CourseListResponse(
@@ -65,6 +64,7 @@ class CourseService:
                 for course in sorted_courses
             ]
         )
+
 
     def fetch_courses_by_requirement(self, cs_requirement=None,
                                      is_requirement=None,
@@ -164,5 +164,84 @@ class CourseService:
                     requirements=c["requirements"],
                 )
                 for c in raw_courses
+            ]
+        )
+
+    def fetch_courses_by_semester(self, semester: str) -> CourseListResponse:
+        """fetch and structure courses offered in the specified semester."""
+        courses = self.course_repo.get_courses_by_semester(semester)
+        return CourseListResponse(
+            courses=[
+                CourseResponse(
+                    course_code=course["course_code"],
+                    course_name=course["course_name"],
+                    department=course["department"],
+                    units=course["units"],
+                    description=course["description"],
+                    prerequisites=course["prerequisites"],
+                    offered=course["offered"],
+                    offered_qatar=course["offered_qatar"],
+                    offered_pitts=course["offered_pitts"],
+                    requirements=course["requirements"],
+                )
+                for course in courses
+            ]
+        )
+
+    def fetch_all_semesters(self):
+        """fetch a list of all semesters available in the offerings table."""
+        return self.course_repo.get_all_semesters()
+
+
+    def fetch_courses_by_filters(
+    self,
+    department: Optional[str] = None,
+    semester: Optional[str] = None,
+    has_prereqs: Optional[bool] = None,
+    cs_requirement: Optional[str] = None,
+    is_requirement: Optional[str] = None,
+    ba_requirement: Optional[str] = None,
+    bs_requirement: Optional[str] = None,
+    offered_qatar: Optional[bool] = None,
+    offered_pitts: Optional[bool] = None,
+    search_query: Optional[str] = None
+) -> CourseListResponse:
+        """
+        Fetch courses based on a combination of filters, sorted by the numeric part
+        of the course code.
+        """
+        courses = self.course_repo.get_courses_by_filters(
+            department=department,
+            search_query=search_query,
+            semester=semester,
+            has_prereqs=has_prereqs,
+            cs_requirement=cs_requirement,
+            is_requirement=is_requirement,
+            ba_requirement=ba_requirement,
+            bs_requirement=bs_requirement,
+            offered_qatar=offered_qatar,
+            offered_pitts=offered_pitts
+        )
+
+        sorted_courses = sorted(
+            courses,
+            key=lambda c: int(c["course_code"].replace("-", ""))
+        )
+
+        return CourseListResponse(
+            courses=[
+                CourseResponse(
+                    course_code=course["course_code"],
+                    course_name=course["course_name"],
+                    department=course["department"],
+                    units=course["units"],
+                    description=course["description"],
+                    prerequisites=course["prerequisites"],
+                    offered=course["offered"],
+                    offered_qatar=course["offered_qatar"],
+                    offered_pitts=course["offered_pitts"],
+                    requirements=course["requirements"],
+                )
+                for course in sorted_courses
             ]
         )

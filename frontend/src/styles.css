@@ -585,7 +585,7 @@ table {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    width: 50%
+    width: 70%
   }
 
   .search-label {
@@ -763,5 +763,27 @@ table {
   .requirement-list li {
     list-style-type: disc;
     margin-bottom: 3px;
+  }
+
+  .selected-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .filter-tag {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #fff;
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* Adjust spacing as needed */
+    margin-top: 5px; /* Optional: spacing from other elements */
   }
 

@@ -18,29 +18,29 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Ensure allOptions updates when allRequirements change
-  const allOptions = allRequirements?.[major] ?? [];
+  // Use the key from selectedFilters if major is provided; otherwise, assume selectedFilters is directly an array.
+  const selectedForMajor = major ? (selectedFilters[major] || []) : selectedFilters;
 
-  // Track selected requirements for this major
-  const selectedForMajor = selectedFilters[major] || [];
-  const isAllSelected = allOptions.length > 0 && selectedForMajor.length === allOptions.length;
+  // Filter out any undefined/null options first.
+  const safeOptions = (allRequirements || []).filter(opt => opt != null);
+
+  // Build an array of raw strings (if options are objects, we extract their requirement property)
+  const allOptionStrings = safeOptions.map(opt => (typeof opt === "object" ? opt.requirement : opt));
+  const isAllSelected = allOptionStrings.length > 0 && selectedForMajor.length === allOptionStrings.length;
 
   // Handle "Select All"
   const handleSelectAll = () => {
-    handleFilterChange(major, isAllSelected ? [] : allOptions);
+    handleFilterChange(major, isAllSelected ? [] : allOptionStrings);
   };
 
   return (
     <div className="dropdown cell-container" ref={dropdownRef}>
       <button className="dropdown-btn" onClick={toggleDropdown}>
-        Select ▼
+        Select▼
       </button>
 
       {isOpen && (
         <div className="dropdown-content">
-          {/* Debugging: Log available options */}
-          {console.log(`Dropdown for ${major}:`, allOptions)}
-
           {/* "Select All" Option */}
           <label className="dropdown-item">
             <input type="checkbox" checked={isAllSelected} onChange={handleSelectAll} />
@@ -48,25 +48,31 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
           </label>
 
           {/* Individual Options */}
-          {allOptions.length === 0 ? (
-            <p className="dropdown-item">No requirements available</p>
+          {safeOptions.length === 0 ? (
+            <p className="dropdown-item">No options available</p>
           ) : (
-            allOptions.map((req, index) => (
-              <label key={index} className="dropdown-item">
-                <input
-                  type="checkbox"
-                  checked={selectedForMajor.includes(req)}
-                  onChange={(e) => {
-                    const newSelection = e.target.checked
-                      ? [...selectedForMajor, req] // Add selection
-                      : selectedForMajor.filter((item) => item !== req); // Remove selection
+            safeOptions.map((option, index) => {
+                // If option is an object, extract its requirement field; else use the option itself.
+                const rawOption = typeof option === "object" ? option.requirement : option;
+                // Guard against undefined and then apply transformation.
+                const formattedOption = (rawOption || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
 
-                    handleFilterChange(major, newSelection);
-                  }}
-                />
-                {req}
-              </label>
-            ))
+                return (
+                  <label key={index} className="dropdown-item">
+                    <input
+                      type="checkbox"
+                      checked={selectedForMajor.includes(rawOption)}
+                      onChange={(e) => {
+                        const newSelection = e.target.checked
+                          ? [...selectedForMajor, rawOption]
+                          : selectedForMajor.filter((item) => item !== rawOption);
+                        handleFilterChange(major, newSelection);
+                      }}
+                    />
+                    {formattedOption}
+                  </label>
+                );
+              })
           )}
 
           {/* Clear Selection Button */}
