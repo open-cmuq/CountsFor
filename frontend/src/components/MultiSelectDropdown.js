@@ -124,7 +124,12 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
 
   return (
-    <div className="dropdown cell-container" ref={dropdownRef}>
+    <div
+    className={`dropdown cell-container ${major === "offered" ? "dropdown-offered" : ""}`}
+    ref={dropdownRef}
+    >
+
+
       <button className="dropdown-btn" onClick={toggleDropdown}>
         Select▼
       </button>

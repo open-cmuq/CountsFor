@@ -318,13 +318,15 @@ table {
     padding-right: 4px;
   }
 
-  .h1 {
-    font-size: 50px;
-    font-weight: bold;
+  .title {
+    font-size: 45px;
+    margin-top: 5px;    
+    margin-bottom: 5px;  
   }
+  
 
   .table-container {
-    padding: 20px;
+    padding: 10px;
   }
 
   table {
@@ -828,7 +830,6 @@ table {
     display: flex;
     background-color: #f2f2f2;
     border-bottom: 2px solid #ccc;
-    margin-bottom: 1rem;
   }
   
   .tab {
@@ -836,6 +837,7 @@ table {
     border: none;
     background: none;
     font-weight: bold;
+    font-size: 15px;
     cursor: pointer;
     border-bottom: 3px solid transparent;
     transition: all 0.2s ease;
@@ -849,10 +851,7 @@ table {
     border-bottom: 3px solid #000;
     background-color: white;
   }
-  
-  .tab-content {
-    padding: 1rem;
-  }
+
 
   .search-results {
     background: #f9f9f9;
@@ -900,6 +899,17 @@ table {
   .add-btn:hover {
     background-color: #005fa3;
   }
+
+  .dropdown-offered .dropdown-content {
+    min-width: 100px;
+    max-width: 100px;
+    /* Optional: Customize height, padding, etc. */
+  }
+  
+  .dropdown-offered .drop-clear-btn {
+    width: 95%;
+  }
+  
   
   
 
