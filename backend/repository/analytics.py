@@ -15,7 +15,8 @@ class AnalyticsRepository:
 
     def get_course_coverage(self, major: str, semester: Optional[str] = None):
         """Fetch the count of courses fulfilling each requirement for a given major,
-        optionally filtering by semester and campus ID."""
+        optionally filtering by courses with an offering record in Qatar
+        and by semester if provided."""
 
         # Base query for requirements
         requirement_counts = (
@@ -29,14 +30,24 @@ class AnalyticsRepository:
         result = {}
 
         for (req,) in requirement_counts:
-            # Count courses fulfilling the requirement
-            course_count = self.db.query(Course).join(CountsFor).join(Offering).filter(
-                CountsFor.requirement == req,
-                Course.offered_qatar == True,  # Assuming you want courses offered in Qatar
-                Offering.semester == semester,
-                Offering.campus_id == 2  # Filter by campus ID
-            ).distinct(Course.course_code).count()
+            # Build a subquery for course codes with an offering record in Qatar.
+            offering_subq = self.db.query(Offering.course_code).filter(Offering.campus_id == 2)
+            if semester:
+                offering_subq = offering_subq.filter(Offering.semester == semester)
+            offering_subq = offering_subq.subquery()
 
+            # Count courses that are linked to the requirement and have
+            #  an offering record (from the subquery)
+            course_count = (
+                self.db.query(Course)
+                .join(CountsFor)
+                .filter(
+                    CountsFor.requirement == req,
+                    Course.course_code.in_(offering_subq)
+                )
+                .distinct(Course.course_code)
+                .count()
+            )
             result[req] = course_count
 
         return result
