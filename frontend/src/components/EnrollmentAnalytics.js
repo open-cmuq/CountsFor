@@ -30,6 +30,10 @@ const AggregatedEnrollmentAnalytics = () => {
   const [courseInput, setCourseInput] = useState('');
   const [courses, setCourses] = useState([]);
 
+  const removeCourse = (courseCodeToRemove) => {
+    setCourses(prev => prev.filter(course => course.courseCode !== courseCodeToRemove));
+  };
+
   const addCourse = () => {
     const courseCode = courseInput.trim();
     if (!courseCode) return;
@@ -131,10 +135,52 @@ const AggregatedEnrollmentAnalytics = () => {
         <button onClick={addCourse}>Add Course</button>
       </div>
 
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        marginBottom: "20px"
+      }}>
         {courses.map(({ courseCode, loading, error }) => (
-          <div key={courseCode}>
-            {courseCode} {loading && "(Loading...)"} {error && `(Error: ${error})`}
+          <div
+            key={courseCode}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: '#E8E8E8',
+              borderRadius: '16px',
+              padding: '4px 12px',
+              fontSize: '14px',
+              color: '#333',
+              gap: '8px'
+            }}
+          >
+            <span>
+              {courseCode} {loading && "(Loading...)"} {error && `(Error: ${error})`}
+            </span>
+            <button
+              onClick={() => removeCourse(courseCode)}
+              style={{
+                border: 'none',
+                background: 'none',
+                color: '#666',
+                cursor: 'pointer',
+                padding: '0',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                transition: 'background-color 0.2s',
+                ':hover': {
+                  backgroundColor: '#DDD'
+                }
+              }}
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
