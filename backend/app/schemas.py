@@ -88,6 +88,7 @@ class EnrollmentDataItem(BaseModel):
     """Schema for individual enrollment data."""
     semester: str
     enrollment_count: int
+    class_: int
 
 class EnrollmentDataResponse(BaseModel):
     """Schema for enrollment data response."""

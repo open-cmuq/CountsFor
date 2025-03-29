@@ -68,7 +68,7 @@ class EnrollmentDataExtractor(DataExtractor):
         try:
             df["section"] = df["section"].astype(str)
             df["department"] = df["department"].astype(str)
-            df["class_"] = df["class_"].astype(str).str.strip()
+            df["class_"] = df["class_"].astype(int)
             df["enrollment_count"] = df["enrollment_count"].astype(int)
         except ValueError as error:
             logging.error("Data type conversion error: %s", error)

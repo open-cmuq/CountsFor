@@ -74,6 +74,7 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
 
             if table_name == "enrollment":
                 for record in deduped_records:
+                    record["class_"] = int(record["class_"])  # Convert to int if necessary
                     offering = db.query(Offering).filter(
                         Offering.course_code == record["course_code"],
                         Offering.semester == record["semester"]

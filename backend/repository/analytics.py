@@ -53,11 +53,33 @@ class AnalyticsRepository:
         return result
 
     def get_enrollment_data(self, course_code: str):
-        """Fetch past enrollment data for a specific course."""
+        """Fetch past enrollment data for a specific course, including offering_id and semester."""
         enrollment_data = (
-            self.db.query(Enrollment)
-            .filter(Enrollment.course_code == course_code)
+            self.db.query(Enrollment, Offering.semester, Offering.offering_id)
+            .join(Offering, Enrollment.offering_id == Offering.offering_id)  # Join on offering_id
+            .filter(Offering.course_code == course_code)  # Filter by course_code from Offering
             .all()
         )
-        return [(enrollment.semester, enrollment.enrollment_count)
-                 for enrollment in enrollment_data]
+
+        # Create a dictionary to aggregate results
+        aggregated_data = {}
+
+        for enrollment, semester, offering_id in enrollment_data:
+            class_ = enrollment.class_  # Use class_ from Enrollment
+            enrollment_count = enrollment.enrollment_count
+
+            # Create a unique key for each semester and class combination
+            key = (semester, class_)
+
+            if key not in aggregated_data:
+                aggregated_data[key] = {
+                    "semester": semester,
+                    "class_": class_,
+                    "enrollment_count": 0
+                }
+
+            # Sum the enrollment counts
+            aggregated_data[key]["enrollment_count"] += enrollment_count
+
+        # Convert the aggregated data to a list of dictionaries
+        return list(aggregated_data.values())
