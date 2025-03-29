@@ -3,6 +3,24 @@ import Plot from 'react-plotly.js';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+const formatCourseCode = (code) => {
+  // Remove all spaces and convert to uppercase
+  code = code.replace(/\s+/g, '').toUpperCase();
+
+  // If the code is just numbers or already has a dash, return it
+  if (/^\d+$/.test(code)) {
+    // Add dash between department number and course number
+    return code.replace(/^(\d{2})(\d{3})$/, '$1-$2');
+  }
+
+  // If it already has a dash, return as is
+  if (code.includes('-')) {
+    return code;
+  }
+
+  return code;
+};
+
 function parseSemester(semesterString) {
   // "S21" => {year: 21, seasonOrder: 1}, etc.
   const seasonChar = semesterString[0];
@@ -35,7 +53,7 @@ const AggregatedEnrollmentAnalytics = () => {
   };
 
   const addCourse = () => {
-    const courseCode = courseInput.trim();
+    const courseCode = formatCourseCode(courseInput.trim());
     if (!courseCode) return;
 
     // Prevent duplicates
@@ -207,7 +225,7 @@ const ClassEnrollmentAnalytics = () => {
   const [error, setError] = useState(null);
 
   const loadCourse = () => {
-    const code = courseInput.trim();
+    const code = formatCourseCode(courseInput.trim());
     if (!code) return;
 
     setCourseCode(code);

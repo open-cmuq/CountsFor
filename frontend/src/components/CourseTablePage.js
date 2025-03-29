@@ -3,6 +3,7 @@ import "../styles.css";
 import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
 import SelectedFilters from "./SelectedFilters";
+import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -103,7 +104,7 @@ const CourseTablePage = () => {
       try {
         const params = new URLSearchParams();
         if (selectedDepartment) params.append("department", selectedDepartment);
-        if (searchQuery) params.append("searchQuery", searchQuery);
+        if (searchQuery) params.append("searchQuery", formatCourseCode(searchQuery));
         if (selectedOfferedSemesters.length > 0)
           params.append("semester", selectedOfferedSemesters.join(","));
         if (noPrereqs === false) params.append("has_prereqs", false);

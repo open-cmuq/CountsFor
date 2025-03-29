@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import Popup from "./PopUp";
+import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -22,8 +23,8 @@ const CourseTable = ({
 
   const fetchCourseDetails = async (course_code) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses/${course_code}`);
-      // Ensure the backend is set to read from the data directory
+      const formattedCode = formatCourseCode(course_code);
+      const response = await fetch(`${API_BASE_URL}/courses/${formattedCode}`);
       if (!response.ok) throw new Error("Failed to fetch course details");
       const data = await response.json();
       return data;
@@ -133,7 +134,7 @@ const CourseTable = ({
                     color: "black",
                   }}
                 >
-                  {course.course_code}
+                  {formatCourseCode(course.course_code)}
                 </b>
                 <br />
                 {course.course_name}
