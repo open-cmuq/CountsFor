@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -25,12 +25,11 @@ function parseSemester(semesterString) {
   return { year, seasonOrder };
 }
 
-const EnrollmentAnalytics = () => {
+// Aggregated Enrollment Analytics: Multiple courses, aggregated view
+const AggregatedEnrollmentAnalytics = () => {
   const [courseInput, setCourseInput] = useState('');
   const [courses, setCourses] = useState([]);
-  const [separateLines, setSeparateLines] = useState(false);
 
-  // Add a new course
   const addCourse = () => {
     const courseCode = courseInput.trim();
     if (!courseCode) return;
@@ -82,7 +81,6 @@ const EnrollmentAnalytics = () => {
       }
     });
     const all = Array.from(semesterSet);
-    // Sort using parseSemester
     all.sort((s1, s2) => {
       const A = parseSemester(s1);
       const B = parseSemester(s2);
@@ -92,7 +90,7 @@ const EnrollmentAnalytics = () => {
     return all;
   };
 
-  // Build the Plotly traces, ensuring all traces share the same x-array
+  // Build traces: aggregate enrollment counts across classes per semester
   const buildTraces = () => {
     const allSemesters = getAllSemestersSorted();
     const traces = [];
@@ -100,61 +98,28 @@ const EnrollmentAnalytics = () => {
     courses.forEach(({ courseCode, data }) => {
       if (!data) return;
 
-      if (separateLines) {
-        // Separate lines by class
-        const byClass = {};
-        data.forEach(item => {
-          if (!byClass[item.class_]) byClass[item.class_] = [];
-          byClass[item.class_].push(item);
-        });
+      const agg = {};
+      data.forEach(item => {
+        if (!agg[item.semester]) agg[item.semester] = 0;
+        agg[item.semester] += item.enrollment_count;
+      });
 
-        // For each class group, create a y-array that matches allSemesters
-        Object.entries(byClass).forEach(([classKey, items]) => {
-          // Create a quick lookup from semester => enrollment_count
-          // If multiple rows share the same semester+class, sum them or just pick one
-          const lookup = {};
-          items.forEach(item => {
-            if (!lookup[item.semester]) lookup[item.semester] = 0;
-            lookup[item.semester] += item.enrollment_count;
-          });
+      const y = allSemesters.map(sem => (agg[sem] !== undefined ? agg[sem] : 0));
 
-          // Build y-array in the correct order
-          const y = allSemesters.map(sem => (lookup[sem] !== undefined ? lookup[sem] : null));
-
-          traces.push({
-            x: allSemesters,
-            y,
-            mode: 'lines+markers',
-            name: `${courseCode} - Class ${classKey}`,
-            connectgaps: true
-          });
-        });
-      } else {
-        // Aggregate enrollment counts across classes per semester
-        const agg = {};
-        data.forEach(item => {
-          if (!agg[item.semester]) agg[item.semester] = 0;
-          agg[item.semester] += item.enrollment_count;
-        });
-
-        // Build y-array
-        const y = allSemesters.map(sem => (agg[sem] !== undefined ? agg[sem] : 0));
-
-        traces.push({
-          x: allSemesters,
-          y,
-          mode: 'lines+markers',
-          name: courseCode
-        });
-      }
+      traces.push({
+        x: allSemesters,
+        y,
+        mode: 'lines+markers',
+        name: courseCode
+      });
     });
 
     return traces;
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Enrollment Analytics</h1>
+    <div style={{ marginBottom: "40px" }}>
+      <h2>Aggregated Enrollment Analytics</h2>
       <div style={{ marginBottom: "20px" }}>
         <input
           type="text"
@@ -164,14 +129,6 @@ const EnrollmentAnalytics = () => {
           style={{ marginRight: "10px" }}
         />
         <button onClick={addCourse}>Add Course</button>
-        <label style={{ marginLeft: "20px" }}>
-          <input
-            type="checkbox"
-            checked={separateLines}
-            onChange={(e) => setSeparateLines(e.target.checked)}
-          />
-          Separate lines by class
-        </label>
       </div>
 
       <div style={{ marginBottom: "20px" }}>
@@ -185,12 +142,152 @@ const EnrollmentAnalytics = () => {
       <Plot
         data={buildTraces()}
         layout={{
-          title: "Enrollment Over Semesters",
+          title: "Aggregated Enrollment Over Semesters",
           xaxis: { title: "Semester" },
           yaxis: { title: "Enrollment Count" }
         }}
         style={{ width: "100%", height: "600px" }}
       />
+    </div>
+  );
+};
+
+// Class Enrollment Analytics: Single course with lines per class (excluding Class 0)
+const ClassEnrollmentAnalytics = () => {
+  const [courseInput, setCourseInput] = useState('');
+  const [courseData, setCourseData] = useState(null);
+  const [courseCode, setCourseCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const loadCourse = () => {
+    const code = courseInput.trim();
+    if (!code) return;
+
+    setCourseCode(code);
+    setLoading(true);
+    setError(null);
+    setCourseData(null);
+
+    fetch(`${API_BASE_URL}/analytics/enrollment-data?course_code=${code}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch enrollment data");
+        }
+        return response.json();
+      })
+      .then(json => {
+        setCourseData(json.enrollment_data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  };
+
+  const getAllSemestersSorted = () => {
+    const semesterSet = new Set();
+    if (courseData) {
+      courseData.forEach(item => semesterSet.add(item.semester));
+    }
+    const all = Array.from(semesterSet);
+    all.sort((s1, s2) => {
+      const A = parseSemester(s1);
+      const B = parseSemester(s2);
+      if (A.year !== B.year) return A.year - B.year;
+      return A.seasonOrder - B.seasonOrder;
+    });
+    return all;
+  };
+
+  // Mapping for class labels
+  const classLabels = {
+    "1": "First Years",
+    "2": "Sophomores",
+    "3": "Juniors",
+    "4": "Seniors"
+  };
+
+  const buildTraces = () => {
+    if (!courseData) return [];
+    const allSemesters = getAllSemestersSorted();
+    const traces = [];
+
+    // Group enrollment data by class, filtering out class "0"
+    const byClass = {};
+    courseData.forEach(item => {
+      // Only include classes 1-4
+      if (item.class_ === 0 || item.class_ === "0") return;
+      const classKey = String(item.class_);
+      if (!byClass[classKey]) byClass[classKey] = [];
+      byClass[classKey].push(item);
+    });
+
+    Object.entries(byClass).forEach(([classKey, items]) => {
+      // Sum enrollment counts if there are multiple rows per semester
+      const lookup = {};
+      items.forEach(item => {
+        if (!lookup[item.semester]) lookup[item.semester] = 0;
+        lookup[item.semester] += item.enrollment_count;
+      });
+
+      const y = allSemesters.map(sem => (lookup[sem] !== undefined ? lookup[sem] : null));
+
+      // Map the classKey to its corresponding label
+      const label = classLabels[classKey] || `Class ${classKey}`;
+
+      traces.push({
+        x: allSemesters,
+        y,
+        mode: 'lines+markers',
+        name: `${courseCode} - ${label}`,
+        connectgaps: true
+      });
+    });
+
+    return traces;
+  };
+
+  return (
+    <div>
+      <h2>Class Enrollment Analytics</h2>
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          type="text"
+          value={courseInput}
+          onChange={(e) => setCourseInput(e.target.value)}
+          placeholder="Enter course code"
+          style={{ marginRight: "10px" }}
+        />
+        <button onClick={loadCourse}>Load Course</button>
+      </div>
+
+      <div style={{ marginBottom: "20px" }}>
+        {loading && <p>Loading...</p>}
+        {error && <p>Error: {error}</p>}
+      </div>
+
+      <Plot
+        data={buildTraces()}
+        layout={{
+          title: courseCode ? `Enrollment for ${courseCode}` : "Enrollment Over Semesters",
+          xaxis: { title: "Semester" },
+          yaxis: { title: "Enrollment Count" }
+        }}
+        style={{ width: "100%", height: "600px" }}
+      />
+    </div>
+  );
+};
+
+const EnrollmentAnalytics = () => {
+  return (
+    <div style={{ padding: "20px" }}>
+      <h1>Enrollment Analytics Dashboard</h1>
+      <AggregatedEnrollmentAnalytics />
+      <hr style={{ margin: "40px 0" }} />
+      <ClassEnrollmentAnalytics />
     </div>
   );
 };
