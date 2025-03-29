@@ -5,7 +5,7 @@ database operations for analytics-related queries.
 
 from typing import Optional
 from sqlalchemy.orm import Session
-from backend.database.models import CountsFor, Requirement, Offering, Course, Audit
+from backend.database.models import CountsFor, Requirement, Offering, Course, Audit, Enrollment
 
 class AnalyticsRepository:
     """encapsulates database operations for analytics-related queries."""
@@ -51,3 +51,13 @@ class AnalyticsRepository:
             result[req] = course_count
 
         return result
+
+    def get_enrollment_data(self, course_code: str):
+        """Fetch past enrollment data for a specific course."""
+        enrollment_data = (
+            self.db.query(Enrollment)
+            .filter(Enrollment.course_code == course_code)
+            .all()
+        )
+        return [(enrollment.semester, enrollment.enrollment_count)
+                 for enrollment in enrollment_data]

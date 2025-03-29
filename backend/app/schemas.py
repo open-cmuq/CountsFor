@@ -83,3 +83,12 @@ class CombinedCourseFilter(BaseModel):
     offered_qatar: Optional[bool] = Field(None, description="Filter by courses offered in Qatar")
     offered_pitts: Optional[bool] = Field(None, description="Filter by courses offered in "
     "Pittsburgh")
+
+class EnrollmentDataItem(BaseModel):
+    """Schema for individual enrollment data."""
+    semester: str
+    enrollment_count: int
+
+class EnrollmentDataResponse(BaseModel):
+    """Schema for enrollment data response."""
+    enrollment_data: List[EnrollmentDataItem]

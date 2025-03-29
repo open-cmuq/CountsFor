@@ -22,3 +22,8 @@ class AnalyticsService:
                                                                         count) in raw_data.items()]
 
         return CourseCoverageResponse(major=major, semester=semester, coverage=formatted_data)
+
+    def fetch_enrollment_data(self, course_code: str):
+        """Fetch enrollment data for a specific course."""
+        raw_data = self.analytics_repo.get_enrollment_data(course_code)
+        return [{"semester": semester, "enrollment_count": count} for semester, count in raw_data]
