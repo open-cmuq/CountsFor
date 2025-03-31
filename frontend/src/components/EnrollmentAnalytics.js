@@ -114,7 +114,7 @@ const AggregatedEnrollmentAnalytics = () => {
 
   return (
     <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
-      <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Aggregated Enrollment Analytics</h2>
+      <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Enrollment Analytics Across Courses</h2>
       <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
@@ -274,7 +274,7 @@ const ClassEnrollmentAnalytics = () => {
 
   return (
     <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
-      <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Class Enrollment Analytics</h2>
+      <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Enrollment Analytics Across Classes</h2>
       <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"

@@ -9,7 +9,6 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [semester, setSemester] = useState('');
-  const [availableSemesters, setAvailableSemesters] = useState([]);
   const [validSemesters, setValidSemesters] = useState([]);
 
   // Fetch available semesters
@@ -21,7 +20,6 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         const data = await response.json();
         // Sort semesters by most recent first
         const sortedSemesters = sortSemesters(data.semesters);
-        setAvailableSemesters(sortedSemesters);
 
         // Check each semester for data
         const validSems = [];
@@ -41,7 +39,6 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         setValidSemesters(validSems);
       } catch (error) {
         console.error("Error fetching semesters:", error);
-        setAvailableSemesters([]);
         setValidSemesters([]);
       }
     };
