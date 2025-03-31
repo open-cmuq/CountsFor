@@ -12,7 +12,6 @@ const majors = {
 
 const AnalyticsPage = () => {
   const [selectedMajor, setSelectedMajor] = useState("bio");
-  const [semester, setSemester] = useState("");
 
   return (
     <div style={{ padding: "20px" }}>
@@ -26,18 +25,8 @@ const AnalyticsPage = () => {
             ))}
           </select>
         </label>
-        &nbsp;&nbsp;&nbsp;
-        <label>
-          Semester:&nbsp;
-          <input
-            type="text"
-            value={semester}
-            onChange={e => setSemester(e.target.value)}
-            placeholder="e.g., F23"
-          />
-        </label>
       </div>
-      <CategoryCoverage selectedMajor={selectedMajor} semester={semester} majors={majors} />
+      <CategoryCoverage selectedMajor={selectedMajor} majors={majors} />
       <hr />
       <EnrollmentAnalytics />
     </div>
