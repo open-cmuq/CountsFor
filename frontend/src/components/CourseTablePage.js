@@ -7,6 +7,28 @@ import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+// Helper function to parse semester string into comparable format
+const parseSemester = (semesterString) => {
+  const seasonChar = semesterString[0];
+  const year = parseInt(semesterString.slice(1), 10) || 0;
+
+  let seasonOrder;
+  switch (seasonChar) {
+    case 'S': // Spring
+      seasonOrder = 1;
+      break;
+    case 'M': // Summer
+      seasonOrder = 2;
+      break;
+    case 'F': // Fall
+      seasonOrder = 3;
+      break;
+    default:
+      seasonOrder = 0;
+  }
+  return { year, seasonOrder };
+};
+
 const CourseTablePage = () => {
   // States for department and course search input
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -153,9 +175,17 @@ const CourseTablePage = () => {
         const response = await fetch(`${API_BASE_URL}/courses/semesters`);
         if (!response.ok) throw new Error("Failed to fetch semesters");
         const data = await response.json();
-        setOfferedOptions(data.semesters);
+        // Sort semesters by most recent first
+        const sortedSemesters = [...data.semesters].sort((s1, s2) => {
+          const A = parseSemester(s1);
+          const B = parseSemester(s2);
+          if (A.year !== B.year) return B.year - A.year; // Most recent year first
+          return B.seasonOrder - A.seasonOrder; // Within same year, Fall > Summer > Spring
+        });
+        setOfferedOptions(sortedSemesters);
       } catch (error) {
         console.error("Error fetching semesters:", error);
+        setOfferedOptions([]);
       }
     };
     fetchSemesters();
