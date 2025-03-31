@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import { sortSemesters } from './utils/semesterUtils';
+import "../styles.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-const CategoryCoverage = ({ selectedMajor, majors }) => {
+const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [semester, setSemester] = useState('');
@@ -68,43 +69,100 @@ const CategoryCoverage = ({ selectedMajor, majors }) => {
       y: yData,
       type: 'bar',
       orientation: 'h',
-      hovertemplate: 'Count: %{x}<extra></extra>'
+      hovertemplate: 'Count: %{x}<extra></extra>',
+      marker: {
+        color: '#4A68FB'  // Using the same blue as other components
+      }
     };
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: "20px" }}>
-        <label>
-          Semester:&nbsp;
-          <select
-            value={semester}
-            onChange={e => setSemester(e.target.value)}
-            style={{ padding: "5px" }}
-          >
-            <option value="">All Semesters</option>
-            {availableSemesters.map(sem => (
-              <option key={sem} value={sem}>{sem}</option>
-            ))}
-          </select>
-        </label>
+    <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <div className="search-container" style={{
+        height: "100%",
+        padding: "10px",
+        width: "calc((100% - 20px) / 2 * 1.95 + 20px)",
+        maxWidth: "none"
+      }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Category Coverage</h2>
+        <div className="search-inputs" style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
+          <label className="search-label">
+            Major:&nbsp;
+            <select
+              value={selectedMajor}
+              onChange={e => setSelectedMajor(e.target.value)}
+              className="search-dropdown"
+              style={{
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                minWidth: "200px"
+              }}
+            >
+              {Object.entries(majors).map(([code, name]) => (
+                <option key={code} value={code}>{name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="search-label">
+            Semester:&nbsp;
+            <select
+              value={semester}
+              onChange={e => setSemester(e.target.value)}
+              className="search-dropdown"
+              style={{
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                minWidth: "120px"
+              }}
+            >
+              <option value="">All Semesters</option>
+              {availableSemesters.map(sem => (
+                <option key={sem} value={sem}>{sem}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {loading ? (
+          <div className="selected-filters">
+            <div className="filter-tag" style={{ backgroundColor: '#4A68FB' }}>
+              Loading analytics data...
+            </div>
+          </div>
+        ) : chartData && chartData.coverage ? (
+          <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "5px", marginTop: "20px" }}>
+            <Plot
+              data={[plotTrace]}
+              layout={{
+                title: `Course Count per Requirement for ${majors[selectedMajor]}${semester ? ` (${semester})` : ''}`,
+                xaxis: { title: 'Number of Courses' },
+                yaxis: { title: 'Requirement', automargin: true },
+                margin: { l: 250, r: 50, t: 50, b: 50 },
+                paper_bgcolor: 'white',
+                plot_bgcolor: 'white',
+                font: {
+                  family: 'Arial, sans-serif'
+                },
+                width: null,  // Allow the plot to be responsive
+                height: 600,
+                autosize: true
+              }}
+              style={{ width: "100%", height: "600px" }}
+              useResizeHandler={true}  // Enable responsive resizing
+              config={{ responsive: true }}  // Enable responsive behavior
+            />
+          </div>
+        ) : (
+          <div className="selected-filters">
+            <div className="filter-tag" style={{ backgroundColor: '#ff4d4d' }}>
+              No data available
+            </div>
+          </div>
+        )}
       </div>
-      {loading ? (
-        <p>Loading analytics data...</p>
-      ) : chartData && chartData.coverage ? (
-        <Plot
-          data={[plotTrace]}
-          layout={{
-            title: `Course Count per Requirement for ${majors[selectedMajor]}${semester ? ` (${semester})` : ''}`,
-            xaxis: { title: 'Number of Courses' },
-            yaxis: { title: 'Requirement' },
-            margin: { l: 150, r: 50, t: 50, b: 50 }
-          }}
-          style={{ width: "100%", height: "600px" }}
-        />
-      ) : (
-        <p>No data available.</p>
-      )}
     </div>
   );
 };

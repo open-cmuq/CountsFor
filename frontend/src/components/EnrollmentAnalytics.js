@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
 import { sortSemestersChronologically } from './utils/semesterUtils';
+import "../styles.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -112,78 +113,71 @@ const AggregatedEnrollmentAnalytics = () => {
   };
 
   return (
-    <div style={{ marginBottom: "40px" }}>
-      <h2>Aggregated Enrollment Analytics</h2>
-      <div style={{ marginBottom: "20px" }}>
+    <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Aggregated Enrollment Analytics</h2>
+      <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
           value={courseInput}
           onChange={(e) => setCourseInput(e.target.value)}
           placeholder="Enter course code"
-          style={{ marginRight: "10px" }}
+          className="text-input"
+          style={{ width: "200px" }}
         />
-        <button onClick={addCourse}>Add Course</button>
+        <button
+          onClick={addCourse}
+          className="search-btn"
+          style={{
+            backgroundColor: "white",
+            border: "1px solid #ccc",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+        >
+          Add Course
+        </button>
       </div>
 
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '8px',
-        marginBottom: "20px"
-      }}>
+      <div className="selected-filters" style={{ marginBottom: "15px", minHeight: "30px" }}>
         {courses.map(({ courseCode, loading, error }) => (
           <div
             key={courseCode}
+            className="filter-tag"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: '#E8E8E8',
-              borderRadius: '16px',
-              padding: '4px 12px',
-              fontSize: '14px',
-              color: '#333',
-              gap: '8px'
+              backgroundColor: error ? '#ff4d4d' : '#4A68FB',
+              margin: '2px',
+              padding: '5px 10px'
             }}
           >
             <span>
               {courseCode} {loading && "(Loading...)"} {error && `(Error: ${error})`}
             </span>
-            <button
-              onClick={() => removeCourse(courseCode)}
-              style={{
-                border: 'none',
-                background: 'none',
-                color: '#666',
-                cursor: 'pointer',
-                padding: '0',
-                fontSize: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                transition: 'background-color 0.2s',
-                ':hover': {
-                  backgroundColor: '#DDD'
-                }
-              }}
-            >
-              ×
-            </button>
+            <button onClick={() => removeCourse(courseCode)}><b>×</b></button>
           </div>
         ))}
       </div>
 
-      <Plot
-        data={buildTraces()}
-        layout={{
-          title: "Aggregated Enrollment Over Semesters",
-          xaxis: { title: "Semester" },
-          yaxis: { title: "Enrollment Count" }
-        }}
-        style={{ width: "100%", height: "600px" }}
-      />
+      <div style={{ backgroundColor: "white", padding: "10px", borderRadius: "5px", marginTop: "10px" }}>
+        <Plot
+          data={buildTraces()}
+          layout={{
+            title: "Aggregated Enrollment Over Semesters",
+            xaxis: { title: "Semester" },
+            yaxis: { title: "Enrollment Count" },
+            paper_bgcolor: 'white',
+            plot_bgcolor: 'white',
+            font: { family: 'Arial, sans-serif' },
+            width: null,
+            height: 400,
+            autosize: true,
+            margin: { l: 35, r: 15, t: 40, b: 40 }
+          }}
+          style={{ width: "100%", height: "400px", marginBottom: "0" }}
+          useResizeHandler={true}
+          config={{ responsive: true, displayModeBar: true }}
+        />
+      </div>
     </div>
   );
 };
@@ -279,44 +273,98 @@ const ClassEnrollmentAnalytics = () => {
   };
 
   return (
-    <div>
-      <h2>Class Enrollment Analytics</h2>
-      <div style={{ marginBottom: "20px" }}>
+    <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Class Enrollment Analytics</h2>
+      <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
           value={courseInput}
           onChange={(e) => setCourseInput(e.target.value)}
           placeholder="Enter course code"
-          style={{ marginRight: "10px" }}
+          className="text-input"
+          style={{ width: "200px" }}
         />
-        <button onClick={loadCourse}>Load Course</button>
+        <button
+          onClick={loadCourse}
+          className="search-btn"
+          style={{
+            backgroundColor: "white",
+            border: "1px solid #ccc",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+        >
+          Load Course
+        </button>
       </div>
 
-      <div style={{ marginBottom: "20px" }}>
-        {loading && <p>Loading...</p>}
-        {error && <p>Error: {error}</p>}
+      <div className="selected-filters" style={{ marginBottom: "15px", minHeight: "30px" }}>
+        {(loading || error) && (
+          <>
+            {loading && (
+              <div className="filter-tag" style={{ backgroundColor: '#4A68FB', padding: '5px 10px', margin: '2px' }}>
+                Loading...
+              </div>
+            )}
+            {error && (
+              <div className="filter-tag" style={{ backgroundColor: '#ff4d4d', padding: '5px 10px', margin: '2px' }}>
+                Error: {error}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      <Plot
-        data={buildTraces()}
-        layout={{
-          title: courseCode ? `Enrollment for ${courseCode}` : "Enrollment Over Semesters",
-          xaxis: { title: "Semester" },
-          yaxis: { title: "Enrollment Count" }
-        }}
-        style={{ width: "100%", height: "600px" }}
-      />
+      <div style={{ backgroundColor: "white", padding: "10px", borderRadius: "5px", marginTop: "10px" }}>
+        <Plot
+          data={buildTraces()}
+          layout={{
+            title: courseCode ? `Enrollment for ${courseCode}` : "Enrollment Over Semesters",
+            xaxis: { title: "Semester" },
+            yaxis: { title: "Enrollment Count" },
+            paper_bgcolor: 'white',
+            plot_bgcolor: 'white',
+            font: { family: 'Arial, sans-serif' },
+            width: null,
+            height: 400,
+            autosize: true,
+            margin: { l: 35, r: 15, t: 40, b: 40 }
+          }}
+          style={{ width: "100%", height: "400px", marginBottom: "0" }}
+          useResizeHandler={true}
+          config={{ responsive: true, displayModeBar: true }}
+        />
+      </div>
     </div>
   );
 };
 
 const EnrollmentAnalytics = () => {
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Enrollment Analytics Dashboard</h1>
-      <AggregatedEnrollmentAnalytics />
-      <hr style={{ margin: "40px 0" }} />
-      <ClassEnrollmentAnalytics />
+    <div style={{
+      display: 'flex',
+      gap: '20px',
+      width: '100%',
+      margin: '0',
+      padding: '0'
+    }}>
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        <AggregatedEnrollmentAnalytics />
+      </div>
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        <ClassEnrollmentAnalytics />
+      </div>
     </div>
   );
 };

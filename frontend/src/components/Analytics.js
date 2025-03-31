@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CategoryCoverage from './CategoryCoverage';
 import EnrollmentAnalytics from './EnrollmentAnalytics';
+import "../styles.css";
 
 // Define available majors (mapping code to full name)
 const majors = {
@@ -14,21 +15,26 @@ const AnalyticsPage = () => {
   const [selectedMajor, setSelectedMajor] = useState("bio");
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Analytics Dashboard</h1>
-      <div style={{ marginBottom: "20px" }}>
-        <label>
-          Select Major:&nbsp;
-          <select value={selectedMajor} onChange={e => setSelectedMajor(e.target.value)}>
-            {Object.entries(majors).map(([code, name]) => (
-              <option key={code} value={code}>{name}</option>
-            ))}
-          </select>
-        </label>
+    <div className="table-container">
+      <h1 className="title" style={{ marginBottom: "30px" }}>Analytics Dashboard</h1>
+
+      {/* Category Coverage Section */}
+      <div style={{ marginBottom: "40px" }}>
+        <CategoryCoverage selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} majors={majors} />
       </div>
-      <CategoryCoverage selectedMajor={selectedMajor} majors={majors} />
-      <hr />
-      <EnrollmentAnalytics />
+
+      {/* Separator */}
+      <hr style={{
+        margin: "40px 0",
+        border: "none",
+        borderTop: "1px solid #ddd",
+        width: "100%"
+      }} />
+
+      {/* Enrollment Analytics Section */}
+      <div style={{ marginTop: "40px" }}>
+        <EnrollmentAnalytics />
+      </div>
     </div>
   );
 };
