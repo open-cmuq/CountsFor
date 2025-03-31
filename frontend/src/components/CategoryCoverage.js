@@ -10,6 +10,7 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
   const [loading, setLoading] = useState(false);
   const [semester, setSemester] = useState('');
   const [availableSemesters, setAvailableSemesters] = useState([]);
+  const [validSemesters, setValidSemesters] = useState([]);
 
   // Fetch available semesters
   useEffect(() => {
@@ -21,13 +22,31 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         // Sort semesters by most recent first
         const sortedSemesters = sortSemesters(data.semesters);
         setAvailableSemesters(sortedSemesters);
+
+        // Check each semester for data
+        const validSems = [];
+        for (const sem of sortedSemesters) {
+          const params = new URLSearchParams();
+          params.append("major", selectedMajor);
+          params.append("semester", sem);
+          const coverageResponse = await fetch(`${API_BASE_URL}/analytics/course-coverage?${params.toString()}`);
+          if (coverageResponse.ok) {
+            const coverageData = await coverageResponse.json();
+            // Only include semester if it has at least one course with non-zero count
+            if (coverageData.coverage.some(item => item.num_courses > 0)) {
+              validSems.push(sem);
+            }
+          }
+        }
+        setValidSemesters(validSems);
       } catch (error) {
         console.error("Error fetching semesters:", error);
         setAvailableSemesters([]);
+        setValidSemesters([]);
       }
     };
     fetchSemesters();
-  }, []);
+  }, [selectedMajor]);
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
@@ -90,7 +109,10 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
             Major:&nbsp;
             <select
               value={selectedMajor}
-              onChange={e => setSelectedMajor(e.target.value)}
+              onChange={e => {
+                setSelectedMajor(e.target.value);
+                setSemester(''); // Reset semester when major changes
+              }}
               className="search-dropdown"
               style={{
                 padding: "8px",
@@ -119,7 +141,7 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
               }}
             >
               <option value="">All Semesters</option>
-              {availableSemesters.map(sem => (
+              {validSemesters.map(sem => (
                 <option key={sem} value={sem}>{sem}</option>
               ))}
             </select>
