@@ -1,29 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Plot from 'react-plotly.js';
+import { sortSemesters } from './utils/semesterUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-// Helper function to parse semester string into comparable format
-const parseSemester = (semesterString) => {
-  const seasonChar = semesterString[0];
-  const year = parseInt(semesterString.slice(1), 10) || 0;
-
-  let seasonOrder;
-  switch (seasonChar) {
-    case 'S': // Spring
-      seasonOrder = 1;
-      break;
-    case 'M': // Summer
-      seasonOrder = 2;
-      break;
-    case 'F': // Fall
-      seasonOrder = 3;
-      break;
-    default:
-      seasonOrder = 0;
-  }
-  return { year, seasonOrder };
-};
 
 const CategoryCoverage = ({ selectedMajor, majors }) => {
   const [chartData, setChartData] = useState(null);
@@ -35,38 +14,11 @@ const CategoryCoverage = ({ selectedMajor, majors }) => {
   useEffect(() => {
     const fetchSemesters = async () => {
       try {
-        // First get all semesters
         const response = await fetch(`${API_BASE_URL}/courses/semesters`);
         if (!response.ok) throw new Error("Failed to fetch semesters");
         const data = await response.json();
-
-        // For each semester, check if it has any courses
-        const semestersWithData = [];
-        for (const sem of data.semesters) {
-          const params = new URLSearchParams();
-          params.append("major", selectedMajor);
-          params.append("semester", sem);
-          try {
-            const coverageResponse = await fetch(`${API_BASE_URL}/analytics/course-coverage?${params.toString()}`);
-            if (coverageResponse.ok) {
-              const coverageData = await coverageResponse.json();
-              // Only include semester if it has at least one course with non-zero count
-              if (coverageData.coverage && coverageData.coverage.some(item => item.num_courses > 0)) {
-                semestersWithData.push(sem);
-              }
-            }
-          } catch (error) {
-            console.error(`Error checking semester ${sem}:`, error);
-          }
-        }
-
         // Sort semesters by most recent first
-        const sortedSemesters = semestersWithData.sort((s1, s2) => {
-          const A = parseSemester(s1);
-          const B = parseSemester(s2);
-          if (A.year !== B.year) return B.year - A.year;
-          return B.seasonOrder - A.seasonOrder;
-        });
+        const sortedSemesters = sortSemesters(data.semesters);
         setAvailableSemesters(sortedSemesters);
       } catch (error) {
         console.error("Error fetching semesters:", error);
@@ -74,7 +26,7 @@ const CategoryCoverage = ({ selectedMajor, majors }) => {
       }
     };
     fetchSemesters();
-  }, [selectedMajor]); // Add selectedMajor as dependency since we use it in the fetch
+  }, []);
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);

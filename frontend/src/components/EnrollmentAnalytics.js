@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
+import { sortSemestersChronologically } from './utils/semesterUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -20,28 +21,6 @@ const formatCourseCode = (code) => {
 
   return code;
 };
-
-function parseSemester(semesterString) {
-  // "S21" => {year: 21, seasonOrder: 1}, etc.
-  const seasonChar = semesterString[0];
-  const year = parseInt(semesterString.slice(1), 10) || 0;
-
-  let seasonOrder;
-  switch (seasonChar) {
-    case 'S': // Spring
-      seasonOrder = 1;
-      break;
-    case 'M': // Summer
-      seasonOrder = 2;
-      break;
-    case 'F': // Fall
-      seasonOrder = 3;
-      break;
-    default:
-      seasonOrder = 0;
-  }
-  return { year, seasonOrder };
-}
 
 // Aggregated Enrollment Analytics: Multiple courses, aggregated view
 const AggregatedEnrollmentAnalytics = () => {
@@ -92,7 +71,7 @@ const AggregatedEnrollmentAnalytics = () => {
       });
   };
 
-  // Gather all semesters across all courses & sort them
+  // Gather all semesters across all courses & sort them chronologically
   const getAllSemestersSorted = () => {
     const semesterSet = new Set();
     courses.forEach(({ data }) => {
@@ -102,14 +81,7 @@ const AggregatedEnrollmentAnalytics = () => {
         });
       }
     });
-    const all = Array.from(semesterSet);
-    all.sort((s1, s2) => {
-      const A = parseSemester(s1);
-      const B = parseSemester(s2);
-      if (A.year !== B.year) return A.year - B.year;
-      return A.seasonOrder - B.seasonOrder;
-    });
-    return all;
+    return sortSemestersChronologically(Array.from(semesterSet));
   };
 
   // Build traces: aggregate enrollment counts across classes per semester
@@ -255,14 +227,7 @@ const ClassEnrollmentAnalytics = () => {
     if (courseData) {
       courseData.forEach(item => semesterSet.add(item.semester));
     }
-    const all = Array.from(semesterSet);
-    all.sort((s1, s2) => {
-      const A = parseSemester(s1);
-      const B = parseSemester(s2);
-      if (A.year !== B.year) return A.year - B.year;
-      return A.seasonOrder - B.seasonOrder;
-    });
-    return all;
+    return sortSemestersChronologically(Array.from(semesterSet));
   };
 
   // Mapping for class labels
