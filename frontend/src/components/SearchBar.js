@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -53,6 +54,12 @@ const SearchBar = ({
     return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
   };
 
+  // Modify the search input handler
+  const handleSearchChange = (e) => {
+    const formattedCode = formatCourseCode(e.target.value);
+    setSearchQuery(formattedCode);
+  };
+
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
@@ -79,7 +86,7 @@ const SearchBar = ({
           type="text"
           placeholder="Specific course number"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="text-input"
         />
 

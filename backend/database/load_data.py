@@ -72,6 +72,17 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
             df = pd.DataFrame(records).drop_duplicates()
             deduped_records = df.to_dict(orient="records")
 
+            if table_name == "enrollment":
+                for record in deduped_records:
+                    record["class_"] = int(record["class_"])  # Convert to int if necessary
+                    offering = db.query(Offering).filter(
+                        Offering.course_code == record["course_code"],
+                        Offering.semester == record["semester"]
+                    ).first()
+
+                    if offering:
+                        record["offering_id"] = offering.offering_id
+
             try:
                 keys = primary_keys.get(table_name, [])
 
