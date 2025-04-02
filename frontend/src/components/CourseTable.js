@@ -15,6 +15,7 @@ const CourseTable = ({
   setSelectedOfferedSemesters,
   coreOnly,    // new prop
   genedOnly,   // new prop
+  handleRemoveCourse
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -142,7 +143,7 @@ const CourseTable = ({
               <td>
                 <button
                   className="remove-btn"
-                  onClick={() => console.log("Remove", course.course_code)}
+                  onClick={() => handleRemoveCourse(course.course_code)}
                 >
                   ✖
                 </button>

@@ -205,6 +205,10 @@ const CourseTablePage = () => {
     setSelectedOfferedSemesters((prev) => prev.filter((s) => s !== semester));
   };
 
+  const handleRemoveCourse = (courseCode) => {
+    setCourses((prev) => prev.filter((c) => c.course_code !== courseCode));
+  };
+
   return (
     <div className="table-container">
       <h1 className="title">CMU-Q General Education</h1>
@@ -248,6 +252,7 @@ const CourseTablePage = () => {
         setSelectedOfferedSemesters={setSelectedOfferedSemesters}
         coreOnly={coreOnly}
         genedOnly={genedOnly}
+        handleRemoveCourse={handleRemoveCourse}
       />
 
       {/* Bottom pagination */}
