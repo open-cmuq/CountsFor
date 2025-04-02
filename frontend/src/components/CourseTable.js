@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
+import SingleSelectDropdown from "./SingleSelectDropdown";
 import Popup from "./PopUp";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -15,7 +16,9 @@ const CourseTable = ({
   setSelectedOfferedSemesters,
   coreOnly,    // new prop
   genedOnly,   // new prop
-  handleRemoveCourse
+  handleRemoveCourse,
+  noPrereqs, 
+  setNoPrereqs
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -134,7 +137,26 @@ const CourseTable = ({
                 clearFilters={() => setSelectedOfferedSemesters([])}
               />
             </th>
-            <th>PRE-REQ</th>
+            <th>
+            PRE-REQ
+            <br />
+            <SingleSelectDropdown
+              major="prereq"
+              options={["all", "with", "without"]}
+              selected={
+                noPrereqs === null
+                  ? "all"
+                  : noPrereqs === false
+                  ? "without"
+                  : "with"
+              }
+              onChange={(value) => {
+                if (value === "all") setNoPrereqs(null);
+                else if (value === "without") setNoPrereqs(false);
+                else if (value === "with") setNoPrereqs(true);
+              }}
+            />
+          </th>
           </tr>
         </thead>
         <tbody>

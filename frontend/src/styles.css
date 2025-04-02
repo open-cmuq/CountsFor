@@ -90,9 +90,9 @@
     border: 1px solid #ccc;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 100;
-    top: 100%; /* Appears below the button */
+    top: 100%; 
     left: 0;
-    width: 300px; /* Adjust width as needed */
+    width: 275px; 
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -123,7 +123,6 @@
   }
 
   .dropdown-btn {
-    width: 60%;  /* Full width of the cell */
     height: 90%; /* Full height of the cell */
     text-align: center;
     font-size: 1rem;
@@ -145,24 +144,12 @@
     color: black !important; /* Override other styles */
   }
 
-
-  .dropdown-content {
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    text-align: left;
-    font-weight: normal; /* Remove bold */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
   .dropdown-item {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 14px;
     cursor: pointer;
-
   }
 
 
@@ -226,14 +213,12 @@ table {
     border-radius: 6px;
   }
 
-
 /* Gray out N/A cells */
 .na-cell {
   background-color: white !important;
   color: transparent; /* Hide text */
   pointer-events: none; /* Prevent interactions */
 }
-
 
   /* Close Button */
   .close-btn {
@@ -247,8 +232,6 @@ table {
   .close-btn:hover {
     color: #ffdddd;
   }
-
-
 
   /* Resize Handle */
   .react-resizable-handle {
@@ -703,8 +686,8 @@ table {
   .checkbox-group {
     display: flex;
     flex-direction: column;
-    gap: 5px; /* Adjust spacing as needed */
-    margin-top: 5px; /* Optional: spacing from other elements */
+    gap: 5px; 
+    margin-top: 5px; 
   }
 
   .pagination-container {
@@ -812,10 +795,10 @@ table {
     color: white;
     border: 1px solid #ccc;
     border-radius: 6px;
-    padding: 6px 10px;
+    padding: 7px 10px;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     font-weight: bold;
     font-size: 15px;
     width: 100%;
@@ -903,12 +886,17 @@ table {
   .dropdown-offered .dropdown-content {
     min-width: 100px;
     max-width: 100px;
-    /* Optional: Customize height, padding, etc. */
   }
   
   .dropdown-offered .drop-clear-btn {
     width: 95%;
   }
+
+  .dropdown-prereq .dropdown-content {
+    width: 95%;
+  }
+
+  
   
   
   

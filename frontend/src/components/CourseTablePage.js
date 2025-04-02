@@ -145,6 +145,8 @@ const CourseTablePage = () => {
           params.append("ba_requirement", selectedFilters.BA.join(","));
         if (selectedFilters.BS.length > 0)
           params.append("bs_requirement", selectedFilters.BS.join(","));
+        if (noPrereqs === false) params.append("has_prereqs", false);
+        else if (noPrereqs === true) params.append("has_prereqs", true);
 
         const response = await fetch(`${API_BASE_URL}/courses/search?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch courses");
@@ -253,6 +255,8 @@ const CourseTablePage = () => {
         coreOnly={coreOnly}
         genedOnly={genedOnly}
         handleRemoveCourse={handleRemoveCourse}
+        noPrereqs={noPrereqs}
+        setNoPrereqs={setNoPrereqs}
       />
 
       {/* Bottom pagination */}

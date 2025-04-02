@@ -87,16 +87,6 @@ const SearchBar = ({
           <label>
             <input
               type="checkbox"
-              checked={noPrereqs === false}
-              onChange={(e) =>
-                setNoPrereqs(e.target.checked ? false : null)
-              }
-            />
-            No Pre-reqs
-          </label>
-          <label>
-            <input
-              type="checkbox"
               checked={offeredQatar === true}
               onChange={(e) =>
                 setOfferedQatar(e.target.checked ? true : null)
