@@ -238,7 +238,7 @@ table {
 
   .search-label {
     font-weight: bold;
-    font-size: large;
+    font-size: 25px;
   }
 
   .search-inputs {
@@ -492,11 +492,6 @@ table {
     width: 1050px
   }
 
-  .search-label {
-    font-weight: bold;
-    font-size: large;
-  }
-
   .search-inputs {
     display: flex;
     gap: 8px;
@@ -519,11 +514,6 @@ table {
     margin-top: 5px;
     margin-bottom: 5px;
     padding-right: 5px;
-  }
-
-  .search-label {
-    font-weight: bold;
-    white-space: nowrap;
   }
 
   .search-inputs {

@@ -61,7 +61,7 @@ const SearchBar = ({
         {/* Course Search Input */}
         <input
           type="text"
-          placeholder="Specific course number"
+          placeholder="Search for a specific course number"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="text-input"
