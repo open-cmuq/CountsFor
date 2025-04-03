@@ -46,9 +46,17 @@ const MultiSelectDropdown = ({
     const tree = {};
   
     options.forEach((opt) => {
-      const raw = opt.value || opt.requirement || opt;  // get raw value
-      const parts = raw.split("---").slice(1); // Remove major
+      const raw = opt.value || opt.requirement || opt;
+      const parts = raw.split("---").slice(1); // remove major
   
+      // If it's flat (no nesting or only 1 level), put into a fake group
+      if (parts.length <= 1) {
+        if (!tree._ungrouped) tree._ungrouped = { _items: [] };
+        tree._ungrouped._items.push({ label: parts[0] || raw, rawValue: raw });
+        return;
+      }
+  
+      // Nested case
       let node = tree;
       for (let i = 0; i < parts.length - 1; i++) {
         const key = parts[i];
@@ -63,72 +71,84 @@ const MultiSelectDropdown = ({
   
     return tree;
   };
-
+ 
   const renderGroupTree = (node, path = "") => {
-    return Object.entries(node)
-    .filter(([key]) => key !== "_items")
-    .map(([group, child]) => {
-      const isExpanded = expandedGroups[path + group];
-      const toggle = () =>
-        setExpandedGroups((prev) => ({
-          ...prev,
-          [path + group]: !isExpanded,
-        }));
-  
-      return (
-        <div key={path + group} className="dropdown-group">
-          <div className="dropdown-group-label" onClick={toggle}>
-            <span>{group}</span>
-            <span>{isExpanded ? "▼" : "▶"}</span>
-          </div>
-  
-          {isExpanded && (
-  <div className="dropdown-subgroup">
-
-    {/* Select all in group */}
-    {child._items?.length > 1 && (
-      <label className="dropdown-item nested">
-        <input
-          type="checkbox"
-          checked={child._items.every(item => selectedForMajor.includes(item.rawValue))}
-          onChange={(e) => {
-            const groupValues = child._items.map(item => item.rawValue);
-            const newSelection = e.target.checked
-              ? [...new Set([...selectedForMajor, ...groupValues])]
-              : selectedForMajor.filter(val => !groupValues.includes(val));
-            handleFilterChange(major, newSelection);
-          }}
-        />
-        <strong>Select All in {group}</strong>
-      </label>
-    )}
-
-    {child._items?.map(({ rawValue, label }) => (
-      <label key={rawValue} className="dropdown-item nested">
-        <input
-          type="checkbox"
-          checked={selectedForMajor.includes(rawValue)}
-          onChange={(e) => {
-            const newSelection = e.target.checked
-              ? [...selectedForMajor, rawValue]
-              : selectedForMajor.filter((item) => item !== rawValue);
-            handleFilterChange(major, newSelection);
-          }}
-        />
-        {label}
-      </label>
-    ))}
-
-    {renderGroupTree(child, path + group + " > ")}
-  </div>
-)}
-
+    return (
+      <>
+        {/* Render top-level items first */}
+        {node._items?.map(({ rawValue, label }) => (
+        <div key={rawValue} className="dropdown-group">
+          <label className="dropdown-group-label dropdown-item checkbox-right">
+            <span className="item-text">{displayMap[rawValue] || label}</span>
+            <input
+              type="checkbox"
+              checked={selectedForMajor.includes(rawValue)}
+              onChange={(e) => {
+                const newSelection = e.target.checked
+                  ? [...selectedForMajor, rawValue]
+                  : selectedForMajor.filter((item) => item !== rawValue);
+                handleFilterChange(major, newSelection);
+              }}
+            />
+          </label>
         </div>
-      );
-    });
+      ))}
+
+
+  
+        {/* Then render nested groups */}
+        {Object.entries(node)
+          .filter(([key]) => key !== "_items")
+          .map(([group, child]) => {
+            const isExpanded = expandedGroups[path + group];
+            const toggle = () =>
+              setExpandedGroups((prev) => ({
+                ...prev,
+                [path + group]: !isExpanded,
+              }));
+  
+            return (
+              <div key={path + group} className="dropdown-group">
+                <div className="dropdown-group-label" onClick={toggle}>
+                <span>{group === "_ungrouped" ? "Ungrouped Requirements" : group}</span>
+                <span>{isExpanded ? "▼" : "▶"}</span>
+                </div>
+  
+                {isExpanded && (
+                  <div className="dropdown-subgroup">
+                    {/* Select all in group */}
+                    {child._items?.length > 1 && (
+                      <label className="dropdown-item nested">
+                        <input
+                          type="checkbox"
+                          checked={child._items.every(item =>
+                            selectedForMajor.includes(item.rawValue)
+                          )}
+                          onChange={(e) => {
+                            const groupValues = child._items.map(item => item.rawValue);
+                            const newSelection = e.target.checked
+                              ? [...new Set([...selectedForMajor, ...groupValues])]
+                              : selectedForMajor.filter(val => !groupValues.includes(val));
+                            handleFilterChange(major, newSelection);
+                          }}
+                        />
+                      <strong>Select All in {group === "_ungrouped" ? "Other Requirements" : group}</strong>
+                      </label>
+                    )}
+  
+                    {/* Recursively render children */}
+                    {renderGroupTree(child, path + group + " > ")}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+      </>
+      
+    );
+    
   };
-  
-  
+
   // Build an array of raw strings (if options are objects, we extract their requirement property)
   const allOptionStrings = safeOptions.map(opt => (typeof opt === "object" ? opt.requirement : opt));
   const isAllSelected = allOptionStrings.length > 0 && selectedForMajor.length === allOptionStrings.length;

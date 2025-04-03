@@ -935,6 +935,28 @@ table {
     background-color: #f0f0f0;
   }
 
+  .dropdown-item.checkbox-right {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #f8f8f8;
+    margin: 4px 0;
+  }
+  
+  .item-text {
+    text-align: left;
+    flex: 1;
+    padding-right: 10px;
+  }
+  
+  .dropdown-item.checkbox-right input[type="checkbox"] {
+    margin-left: 12px;
+    transform: scale(1.1);
+  }
+  
+
 
   
   

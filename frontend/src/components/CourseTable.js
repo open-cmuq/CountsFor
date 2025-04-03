@@ -109,6 +109,8 @@ const CourseTable = ({
               if (genedOnly && !coreOnly) return reqObj.type === true;
               return true;
             });
+            console.log(`[${major}] optionsForMajor`, optionsForMajor); // ✅ LOG HERE
+
             return (
               <th key={major} className={`header-${major.toLowerCase()}`}>
                 {major}
