@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import MultiSelectDropdown from "./MultiSelectDropdown";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -83,49 +84,52 @@ const SearchBar = ({
           className="text-input"
         />
 
-        <div className="checkbox-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={offeredQatar === true}
-              onChange={(e) =>
-                setOfferedQatar(e.target.checked ? true : null)
-              }
-            />
-            Qatar
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={offeredPitts === true}
-              onChange={(e) =>
-                setOfferedPitts(e.target.checked ? true : null)
-              }
-            />
-            Pitts
-          </label>
-          {/* New checkboxes for requirement type filtering */}
-          <label>
-            <input
-              type="checkbox"
-              checked={coreOnly === true}
-              onChange={(e) =>
-                setCoreOnly(e.target.checked ? true : null)
-              }
-            />
-            Core
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={genedOnly === true}
-              onChange={(e) =>
-                setGenedOnly(e.target.checked ? true : null)
-              }
-            />
-            GenEd
-          </label>
-        </div>
+  <div className="search-filters">
+    <div className="filter-group">
+      <label className="filter-label">Location</label>
+      <MultiSelectDropdown
+        major="location"
+        showSelectedInButton={true} 
+        hideSelectButtons={true} 
+        allRequirements={["qatar", "pitts"]}
+        selectedFilters={{ location: [
+          ...(offeredQatar ? ["qatar"] : []),
+          ...(offeredPitts ? ["pitts"] : [])
+        ] }}
+        handleFilterChange={(major, selected) => {
+          setOfferedQatar(selected.includes("qatar") ? true : null);
+          setOfferedPitts(selected.includes("pitts") ? true : null);
+        }}
+        clearFilters={() => {
+          setOfferedQatar(null);
+          setOfferedPitts(null);
+        }}
+      />
+    </div>
+
+    <div className="filter-group">
+      <label className="filter-label">Course Type</label>
+      <MultiSelectDropdown
+        major="courseType"
+        showSelectedInButton={true} 
+        hideSelectButtons={true} 
+        allRequirements={["core", "gened"]}
+        selectedFilters={{ courseType: [
+          ...(coreOnly ? ["core"] : []),
+          ...(genedOnly ? ["gened"] : [])
+        ] }}
+        handleFilterChange={(major, selected) => {
+          setCoreOnly(selected.includes("core") ? true : null);
+          setGenedOnly(selected.includes("gened") ? true : null);
+        }}
+        clearFilters={() => {
+          setCoreOnly(null);
+          setGenedOnly(null);
+        }}
+      />
+    </div>
+  </div>
+
 
         {/* Search & Clear Buttons */}
         <button className="search-btn">🔍</button>

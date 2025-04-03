@@ -11,7 +11,7 @@ const CourseTablePage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   // States for offered-location checkboxes
-  const [offeredQatar, setOfferedQatar] = useState(null);
+  const [offeredQatar, setOfferedQatar] = useState(true);
   const [offeredPitts, setOfferedPitts] = useState(null);
   // "No Prerequisites" flag: when true, fetch courses with no prerequisites
   const [noPrereqs, setNoPrereqs] = useState(null);
@@ -25,8 +25,8 @@ const CourseTablePage = () => {
   // All available offered semester options (fetched from the dedicated endpoint)
   const [offeredOptions, setOfferedOptions] = useState([]);
   // New state for requirement type filtering
-  const [coreOnly, setCoreOnly] = useState(null);
-  const [genedOnly, setGenedOnly] = useState(null);
+  const [coreOnly, setCoreOnly] = useState(true);
+  const [genedOnly, setGenedOnly] = useState(true);
   // For pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage, setCoursesPerPage] = useState(25);

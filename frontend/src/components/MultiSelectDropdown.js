@@ -1,8 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFilterChange, clearFilters }) => {
+const MultiSelectDropdown = ({ 
+  major, 
+  allRequirements, 
+  selectedFilters, 
+  handleFilterChange, 
+  clearFilters, 
+  showSelectedInButton = false,
+  hideSelectButtons = false
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const displayMap = {
+    qatar: "Qatar",
+    pitts: "Pittsburgh",
+    core: "Core",
+    gened: "Gen-Ed",
+    all: "All Courses",
+    with: "Has Pre-reqs",
+    without: "No Pre-reqs",
+  };
+  
 
   // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen(!isOpen);
@@ -131,11 +149,18 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
 
 
       <button className="dropdown-btn" onClick={toggleDropdown}>
-        Select▼
+        {showSelectedInButton && selectedForMajor.length > 0
+          ? selectedForMajor
+              .map((val) => displayMap[val] || val)
+              .join(", ")
+          : "Select ▼"}
       </button>
+
 
       {isOpen && (
                 <div className="dropdown-content">
+                  {!hideSelectButtons && (
+  <>
             <label className="select-all-label">
             <button
         className="select-all-btn"
@@ -157,6 +182,8 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
               Clear All
             </button>
           </label>
+          </>
+)}
 
           {/* Individual Options */}
           {safeOptions.length === 0 ? (
@@ -176,7 +203,7 @@ const MultiSelectDropdown = ({ major, allRequirements, selectedFilters, handleFi
                         handleFilterChange(major, newSelection);
                     }}
                     />
-                    {raw}
+                    {displayMap[raw] || raw}
                 </label>
                 );
             })
