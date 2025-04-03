@@ -8,7 +8,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CourseTablePage = () => {
   // States for department and course search input
-  const [selectedDepartments, setSelectedDepartments] = useState("");
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   // States for offered-location checkboxes
   const [offeredQatar, setOfferedQatar] = useState(true);

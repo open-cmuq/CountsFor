@@ -22,7 +22,6 @@ const MultiSelectDropdown = ({
     without: "No Pre-reqs",
   };
   
-
   // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen(!isOpen);
 
@@ -206,7 +205,7 @@ const MultiSelectDropdown = ({
                         handleFilterChange(major, newSelection);
                       }}
                     />
-                    {label}
+                    {displayMap[raw] || label}
                   </label>
                 );
               })

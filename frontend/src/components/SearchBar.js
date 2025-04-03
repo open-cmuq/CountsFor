@@ -40,7 +40,7 @@ const SearchBar = ({
 
   const handleClearSearch = () => {
     setSearchQuery("");
-    setSelectedDepartments("");
+    setSelectedDepartments([]);
     setNoPrereqs(null);
     setOfferedQatar(null);
     setOfferedPitts(null);
@@ -49,10 +49,10 @@ const SearchBar = ({
   };
 
   // Function to get department name based on selected dep_code
-  // const getDepartmentName = (depCode) => {
-  //   const dept = departments.find((dept) => dept.dep_code === depCode);
-  //   return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
-  // };
+  const getDepartmentName = (depCode) => {
+    const dept = departments.find((dept) => dept.dep_code === depCode);
+    return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
+  };
 
   return (
     <div className="search-container">
@@ -131,40 +131,43 @@ const SearchBar = ({
     </div>
 
 
-        {/* Search & Clear Buttons */}
-        <button className="search-btn">🔍</button>
-        <button onClick={handleClearSearch} className="search-clear-btn">
-          CLEAR SEARCH
+      {/* Search & Clear Buttons */}
+      <button className="search-btn">🔍</button>
+      <button onClick={handleClearSearch} className="search-clear-btn">
+        CLEAR SEARCH
+      </button>
+    </div>
+
+      {/*Display Selected Filters*/}
+      {(selectedDepartments.length > 0 || searchQuery) && (
+  <div className="selected-filters">
+    {selectedDepartments.map((depCode) => (
+      <span key={depCode} className="filter-tag">
+        <button
+          onClick={() =>
+            setSelectedDepartments((prev) =>
+              prev.filter((code) => code !== depCode)
+            )
+          }
+        >
+          <span style={{ fontWeight: "bold", marginRight: "4px" }}>×</span>
         </button>
-      </div>
+        {getDepartmentName(depCode)}
+      </span>
+    ))}
 
-      {/* {selectedDepartments.map((depCode) => (
-  <span key={depCode} className="filter-tag">
-    {getDepartmentName(depCode)}
-    <button onClick={() =>
-      setSelectedDepartments((prev) => prev.filter((code) => code !== depCode))
-    }>×</button>
-  </span>
-))} */}
+    {searchQuery && (
+      <span className="filter-tag">
+        <button onClick={() => setSearchQuery("")}>
+          <span style={{ fontWeight: "bold", marginRight: "4px" }}>×</span>
+        </button>
+        {searchQuery}
+      </span>
+    )}
+  </div>
+)}
 
 
-      {/* Display Selected Filters
-      {(selectedDepartment || searchQuery) && (
-        <div className="selected-filters">
-          {selectedDepartment && (
-            <span className="filter-tag">
-              {getDepartmentName(selectedDepartment)}
-              <button onClick={() => setSelectedDepartment("")}>×</button>
-            </span>
-          )}
-          {searchQuery && (
-            <span className="filter-tag">
-              {searchQuery}
-              <button onClick={() => setSearchQuery("")}>×</button>
-            </span>
-          )}
-        </div>
-      )} */}
     </div>
   );
 };

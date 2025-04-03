@@ -257,7 +257,7 @@ table {
 
 
   .filter-tag {
-    background: darkgrey;
+    background: black;
     color: white;
     padding: 5px;
     border-radius: 5px;
@@ -276,7 +276,7 @@ table {
   }
 
   .filter-tag:hover {
-    background: #333;
+    background: #636363;
   }
 
   .filter-tag button {
