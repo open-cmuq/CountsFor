@@ -7,7 +7,8 @@ const MultiSelectDropdown = ({
   handleFilterChange, 
   clearFilters, 
   showSelectedInButton = false,
-  hideSelectButtons = false
+  hideSelectButtons = false,
+  wrapperClassName = ""
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -142,10 +143,10 @@ const MultiSelectDropdown = ({
 
 
   return (
-    <div
-    className={`dropdown cell-container ${major === "offered" ? "dropdown-offered" : ""}`}
+  <div
+    className={`dropdown cell-container ${major === "offered" ? "dropdown-offered" : ""} ${wrapperClassName || ""}`}
     ref={dropdownRef}
-    >
+  >
 
 
       <button className="dropdown-btn" onClick={toggleDropdown}>

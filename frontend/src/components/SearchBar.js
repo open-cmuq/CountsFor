@@ -57,7 +57,7 @@ const SearchBar = ({
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
-      <div className="search-inputs">
+      <div className="search-bar-row">
         {/* Department Dropdown */}
         <select
           value={selectedDepartment}
@@ -83,52 +83,51 @@ const SearchBar = ({
           onChange={(e) => setSearchQuery(e.target.value)}
           className="text-input"
         />
+        <div className="filter-group">
+          <label className="filter-label">Location</label>
+        <MultiSelectDropdown
+          major="location"
+          wrapperClassName="location-dropdown-wrapper"
+          showSelectedInButton={true} 
+          hideSelectButtons={true} 
+          allRequirements={["qatar", "pitts"]}
+          selectedFilters={{ location: [
+            ...(offeredQatar ? ["qatar"] : []),
+            ...(offeredPitts ? ["pitts"] : [])
+          ] }}
+          handleFilterChange={(major, selected) => {
+            setOfferedQatar(selected.includes("qatar") ? true : null);
+            setOfferedPitts(selected.includes("pitts") ? true : null);
+          }}
+          clearFilters={() => {
+            setOfferedQatar(null);
+            setOfferedPitts(null);
+          }}
+        />
+      </div>
 
-  <div className="search-filters">
-    <div className="filter-group">
-      <label className="filter-label">Location</label>
-      <MultiSelectDropdown
-        major="location"
-        showSelectedInButton={true} 
-        hideSelectButtons={true} 
-        allRequirements={["qatar", "pitts"]}
-        selectedFilters={{ location: [
-          ...(offeredQatar ? ["qatar"] : []),
-          ...(offeredPitts ? ["pitts"] : [])
-        ] }}
-        handleFilterChange={(major, selected) => {
-          setOfferedQatar(selected.includes("qatar") ? true : null);
-          setOfferedPitts(selected.includes("pitts") ? true : null);
-        }}
-        clearFilters={() => {
-          setOfferedQatar(null);
-          setOfferedPitts(null);
-        }}
-      />
+      <div className="filter-group">
+        <label className="filter-label">Course Type</label>
+        <MultiSelectDropdown
+          major="courseType"
+          wrapperClassName="course-type-dropdown-wrapper"
+          showSelectedInButton={true} 
+          hideSelectButtons={true} 
+          allRequirements={["core", "gened"]}
+          selectedFilters={{ courseType: [
+            ...(coreOnly ? ["core"] : []),
+            ...(genedOnly ? ["gened"] : [])
+          ] }}
+          handleFilterChange={(major, selected) => {
+            setCoreOnly(selected.includes("core") ? true : null);
+            setGenedOnly(selected.includes("gened") ? true : null);
+          }}
+          clearFilters={() => {
+            setCoreOnly(null);
+            setGenedOnly(null);
+          }}
+        />
     </div>
-
-    <div className="filter-group">
-      <label className="filter-label">Course Type</label>
-      <MultiSelectDropdown
-        major="courseType"
-        showSelectedInButton={true} 
-        hideSelectButtons={true} 
-        allRequirements={["core", "gened"]}
-        selectedFilters={{ courseType: [
-          ...(coreOnly ? ["core"] : []),
-          ...(genedOnly ? ["gened"] : [])
-        ] }}
-        handleFilterChange={(major, selected) => {
-          setCoreOnly(selected.includes("core") ? true : null);
-          setGenedOnly(selected.includes("gened") ? true : null);
-        }}
-        clearFilters={() => {
-          setCoreOnly(null);
-          setGenedOnly(null);
-        }}
-      />
-    </div>
-  </div>
 
 
         {/* Search & Clear Buttons */}
