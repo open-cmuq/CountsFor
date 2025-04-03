@@ -4,8 +4,8 @@ import MultiSelectDropdown from "./MultiSelectDropdown";
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const SearchBar = ({
-  selectedDepartment,
-  setSelectedDepartment,
+  selectedDepartments,
+  setSelectedDepartments,
   searchQuery,
   setSearchQuery,
   noPrereqs,
@@ -40,7 +40,7 @@ const SearchBar = ({
 
   const handleClearSearch = () => {
     setSearchQuery("");
-    setSelectedDepartment("");
+    setSelectedDepartments("");
     setNoPrereqs(null);
     setOfferedQatar(null);
     setOfferedPitts(null);
@@ -49,32 +49,15 @@ const SearchBar = ({
   };
 
   // Function to get department name based on selected dep_code
-  const getDepartmentName = (depCode) => {
-    const dept = departments.find((dept) => dept.dep_code === depCode);
-    return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
-  };
+  // const getDepartmentName = (depCode) => {
+  //   const dept = departments.find((dept) => dept.dep_code === depCode);
+  //   return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
+  // };
 
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
       <div className="search-bar-row">
-        {/* Department Dropdown */}
-        <select
-          value={selectedDepartment}
-          onChange={(e) => {
-            console.log("Selected department:", e.target.value);
-            setSelectedDepartment(e.target.value);
-          }}
-          className="search-dropdown"
-        >
-          <option value="">Choose a department</option>
-          {departments.map((dept, index) => (
-            <option key={dept.dep_code || index} value={dept.dep_code}>
-              {dept.dep_code} - {dept.name}
-            </option>
-          ))}
-        </select>
-
         {/* Course Search Input */}
         <input
           type="text"
@@ -83,8 +66,26 @@ const SearchBar = ({
           onChange={(e) => setSearchQuery(e.target.value)}
           className="text-input"
         />
-        <div className="filter-group">
-          <label className="filter-label">Location</label>
+
+      {/* Department Dropdown */}
+      <div className="filter-group">
+        <label className="filter-label">Departments</label>
+        <MultiSelectDropdown
+          major="department"
+          showSelectedInButton={false}
+          wrapperClassName="department-dropdown-wrapper"
+          allRequirements={departments.map((d) => ({
+            value: d.dep_code,
+            label: `${d.dep_code} - ${d.name}`,
+          }))}          
+          selectedFilters={{ department: selectedDepartments }}
+          handleFilterChange={(major, selected) => setSelectedDepartments(selected)}
+          clearFilters={() => setSelectedDepartments([])}
+        />
+      </div>
+
+      <div className="filter-group">
+        <label className="filter-label">Location</label>
         <MultiSelectDropdown
           major="location"
           wrapperClassName="location-dropdown-wrapper"
@@ -137,7 +138,17 @@ const SearchBar = ({
         </button>
       </div>
 
-      {/* Display Selected Filters */}
+      {/* {selectedDepartments.map((depCode) => (
+  <span key={depCode} className="filter-tag">
+    {getDepartmentName(depCode)}
+    <button onClick={() =>
+      setSelectedDepartments((prev) => prev.filter((code) => code !== depCode))
+    }>×</button>
+  </span>
+))} */}
+
+
+      {/* Display Selected Filters
       {(selectedDepartment || searchQuery) && (
         <div className="selected-filters">
           {selectedDepartment && (
@@ -153,7 +164,7 @@ const SearchBar = ({
             </span>
           )}
         </div>
-      )}
+      )} */}
     </div>
   );
 };

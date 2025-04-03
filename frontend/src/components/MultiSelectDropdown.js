@@ -47,7 +47,7 @@ const MultiSelectDropdown = ({
     const tree = {};
   
     options.forEach((opt) => {
-      const raw = typeof opt === "object" ? opt.requirement : opt;
+      const raw = opt.value || opt.requirement || opt;  // get raw value
       const parts = raw.split("---").slice(1); // Remove major
   
       let node = tree;
@@ -190,24 +190,27 @@ const MultiSelectDropdown = ({
           {safeOptions.length === 0 ? (
             <p className="dropdown-item">No options available</p>
             ) : safeOptions.every(opt => !(typeof opt === 'string' ? opt.includes('---') : (opt.requirement || '').includes('---'))) ? (
-            safeOptions.map((opt, index) => {
-                const raw = typeof opt === "object" ? opt.requirement : opt;
+              safeOptions.map((opt, index) => {
+                const raw = typeof opt === "object" ? (opt.value || opt.requirement) : opt;
+                const label = typeof opt === "object" ? (opt.label || raw) : opt;
+              
                 return (
-                <label key={index} className="dropdown-item">
+                  <label key={index} className="dropdown-item">
                     <input
-                    type="checkbox"
-                    checked={selectedForMajor.includes(raw)}
-                    onChange={(e) => {
+                      type="checkbox"
+                      checked={selectedForMajor.includes(raw)}
+                      onChange={(e) => {
                         const newSelection = e.target.checked
-                        ? [...selectedForMajor, raw]
-                        : selectedForMajor.filter(item => item !== raw);
+                          ? [...selectedForMajor, raw]
+                          : selectedForMajor.filter(item => item !== raw);
                         handleFilterChange(major, newSelection);
-                    }}
+                      }}
                     />
-                    {displayMap[raw] || raw}
-                </label>
+                    {label}
+                  </label>
                 );
-            })
+              })
+              
             ) : (
             renderGroupTree(buildNestedGroups(safeOptions))
             )}

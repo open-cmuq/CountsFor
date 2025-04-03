@@ -8,7 +8,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CourseTablePage = () => {
   // States for department and course search input
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedDepartments, setSelectedDepartments] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   // States for offered-location checkboxes
   const [offeredQatar, setOfferedQatar] = useState(true);
@@ -129,38 +129,59 @@ const CourseTablePage = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const params = new URLSearchParams();
-        if (selectedDepartment) params.append("department", selectedDepartment);
-        if (searchQuery) params.append("searchQuery", searchQuery);
-        if (selectedOfferedSemesters.length > 0)
-          params.append("semester", selectedOfferedSemesters.join(","));
-        if (noPrereqs === false) params.append("has_prereqs", false);
-        if (offeredQatar !== null) params.append("offered_qatar", offeredQatar);
-        if (offeredPitts !== null) params.append("offered_pitts", offeredPitts);
-        if (selectedFilters.CS.length > 0)
-          params.append("cs_requirement", selectedFilters.CS.join(","));
-        if (selectedFilters.IS.length > 0)
-          params.append("is_requirement", selectedFilters.IS.join(","));
-        if (selectedFilters.BA.length > 0)
-          params.append("ba_requirement", selectedFilters.BA.join(","));
-        if (selectedFilters.BS.length > 0)
-          params.append("bs_requirement", selectedFilters.BS.join(","));
-        if (noPrereqs === false) params.append("has_prereqs", false);
-        else if (noPrereqs === true) params.append("has_prereqs", true);
-
-        const response = await fetch(`${API_BASE_URL}/courses/search?${params.toString()}`);
-        if (!response.ok) throw new Error("Failed to fetch courses");
-        const data = await response.json();
-        const filteredCourses = data.courses.filter(courseMatchesRequirementFilter);
+        // for multi-select
+        const departmentsToFetch = selectedDepartments; 
+  
+        // If no departments are selected, send one request without the department param
+        const queries = departmentsToFetch.length > 0 ? departmentsToFetch : [null];
+  
+        const results = await Promise.all(
+          queries.map(async (dep) => {
+            const params = new URLSearchParams();
+  
+            if (dep) params.append("department", dep);
+            if (searchQuery) params.append("searchQuery", searchQuery);
+            if (selectedOfferedSemesters.length > 0)
+              params.append("semester", selectedOfferedSemesters.join(","));
+            if (noPrereqs === false) params.append("has_prereqs", false);
+            else if (noPrereqs === true) params.append("has_prereqs", true);
+            if (offeredQatar !== null) params.append("offered_qatar", offeredQatar);
+            if (offeredPitts !== null) params.append("offered_pitts", offeredPitts);
+            if (selectedFilters.CS.length > 0)
+              params.append("cs_requirement", selectedFilters.CS.join(","));
+            if (selectedFilters.IS.length > 0)
+              params.append("is_requirement", selectedFilters.IS.join(","));
+            if (selectedFilters.BA.length > 0)
+              params.append("ba_requirement", selectedFilters.BA.join(","));
+            if (selectedFilters.BS.length > 0)
+              params.append("bs_requirement", selectedFilters.BS.join(","));
+  
+            const url = `${API_BASE_URL}/courses/search?${params.toString()}`;
+            console.log("Fetching:", url);
+            const response = await fetch(url);
+            if (!response.ok) return [];
+  
+            const data = await response.json();
+            return data.courses || [];
+          })
+        );
+  
+        // Flatten and deduplicate
+        const allCourses = results.flat();
+        const uniqueCourses = Array.from(
+          new Map(allCourses.map((c) => [c.course_code, c])).values()
+        );
+  
+        const filteredCourses = uniqueCourses.filter(courseMatchesRequirementFilter);
         setCourses(filteredCourses);
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
     };
-
+  
     fetchCourses();
   }, [
-    selectedDepartment,
+    selectedDepartments,
     searchQuery,
     selectedOfferedSemesters,
     noPrereqs,
@@ -172,7 +193,7 @@ const CourseTablePage = () => {
     selectedFilters.IS,
     coreOnly,
     genedOnly,
-    courseMatchesRequirementFilter
+    courseMatchesRequirementFilter,
   ]);
 
   // Fetch all semesters from the dedicated endpoint
@@ -215,8 +236,8 @@ const CourseTablePage = () => {
     <div className="table-container">
       <h1 className="title">CMU-Q General Education</h1>
       <SearchBar
-        selectedDepartment={selectedDepartment}
-        setSelectedDepartment={setSelectedDepartment}
+        selectedDepartments={selectedDepartments}
+        setSelectedDepartments={setSelectedDepartments}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         noPrereqs={noPrereqs}
