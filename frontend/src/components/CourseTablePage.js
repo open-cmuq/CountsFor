@@ -36,6 +36,8 @@ const CourseTablePage = () => {
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
   const currentCourses = courses.slice(indexOfFirstCourse, indexOfLastCourse);
 
+  const [compactViewMode, setCompactViewMode] = useState("full");
+
   // Scroll to top when switching pages
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -259,9 +261,18 @@ const CourseTablePage = () => {
         removeOfferedSemester={removeOfferedSemester}
       />
 
-      {/* Top-left pagination */}
+      {/* Top-left pagination and compact view button*/}
       <div className="pagination-top">
       <span>Showing {indexOfFirstCourse + 1} - {Math.min(indexOfLastCourse, courses.length)} of {courses.length}</span>
+      <select
+        value={compactViewMode}
+        onChange={(e) => setCompactViewMode(e.target.value)}
+        style={{ margin: "6px", padding: "5px" }}
+      >
+        <option value="full">Full View</option>
+        <option value="last2">Compact (Last 2)</option>
+        <option value="last1">Most Compact (Last 1)</option>
+      </select>
       </div>
 
       <CourseTable
@@ -278,7 +289,8 @@ const CourseTablePage = () => {
         handleRemoveCourse={handleRemoveCourse}
         noPrereqs={noPrereqs}
         setNoPrereqs={setNoPrereqs}
-      />
+        compactViewMode={compactViewMode}
+        />
 
       {/* Bottom pagination */}
       <div className="pagination-container">

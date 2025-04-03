@@ -10,7 +10,7 @@ const SelectedFilters = ({
     BA: "#4A68FB",
     BS: "#22AA0A",
     CS: "#CF1314",
-    IS: "#FFC033",
+    IS: "#FEB204",
   };
 
   // Check if there are any filters (offered semesters or requirement filters)
@@ -36,7 +36,7 @@ const SelectedFilters = ({
             const formattedFilter = (filter || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
             // Split by `→` and get the last two parts
             const filterParts = formattedFilter.split(" → ");
-            const displayedFilter = filterParts.slice(-2).join(" → "); // Keep only last 2 parts
+            const displayedFilter = filterParts.slice(-2).join(" → "); 
 
             return (
             <div

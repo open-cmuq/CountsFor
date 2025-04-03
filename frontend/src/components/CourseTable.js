@@ -14,11 +14,12 @@ const CourseTable = ({
   offeredOptions,
   selectedOfferedSemesters,
   setSelectedOfferedSemesters,
-  coreOnly,    // new prop
-  genedOnly,   // new prop
+  coreOnly,    
+  genedOnly,   
   handleRemoveCourse,
   noPrereqs, 
-  setNoPrereqs
+  setNoPrereqs,
+  compactViewMode
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -72,12 +73,12 @@ const CourseTable = ({
   // For expandable Pre-Req cells
   const PrereqCell = ({ text }) => {
     const [expanded, setExpanded] = useState(false);
-    const previewText = text.length > 100 ? text.slice(0, 100) + "..." : text;
+    const previewText = text.length > 40 ? text.slice(0, 40) + "..." : text;
   
     return (
       <td className="prereq-expandable">
         {expanded ? text : previewText}
-        {text.length > 100 && (
+        {text.length > 40 && (
           <span
             className="expand-toggle"
             onClick={(e) => {
@@ -197,9 +198,20 @@ const CourseTable = ({
 
               // Otherwise, build the list items using the *filtered* objects
               const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
-                const formattedText = reqObj.requirement
+                let formattedText = reqObj.requirement
                   .replace(/^[^-]+---/, "")
                   .replace(/---/g, " → ");
+                
+                if (compactViewMode === "last2") {
+                  const parts = formattedText.split("→").map(s => s.trim());
+                  formattedText = parts.slice(-2).join(" → ");
+                } else if (compactViewMode === "last1") {
+                  const parts = formattedText.split("→").map(s => s.trim());
+                  formattedText = parts[parts.length - 1];
+                }
+                
+                  
+
                 return reqObj.type
                   ? <i key={index}>{formattedText}</i>   // GenEd
                   : <b key={index}>{formattedText}</b>;  // Core
