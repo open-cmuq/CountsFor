@@ -10,35 +10,100 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const CourseTablePage = () => {
   // States for department and course search input
-  const [selectedDepartments, setSelectedDepartments] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDepartments, setSelectedDepartments] = useState(() => {
+    const saved = localStorage.getItem("selectedDepartments");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return localStorage.getItem("searchQuery") || "";
+  });
+
   // States for offered-location checkboxes
-  const [offeredQatar, setOfferedQatar] = useState(true);
-  const [offeredPitts, setOfferedPitts] = useState(null);
+  const [offeredQatar, setOfferedQatar] = useState(() => {
+    const saved = localStorage.getItem("offeredQatar");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [offeredPitts, setOfferedPitts] = useState(() => {
+    const saved = localStorage.getItem("offeredPitts");
+    return saved !== null ? JSON.parse(saved) : null;
+  });
+
   // "No Prerequisites" flag: when true, fetch courses with no prerequisites
-  const [noPrereqs, setNoPrereqs] = useState(null);
+  const [noPrereqs, setNoPrereqs] = useState(() => {
+    const saved = localStorage.getItem("noPrereqs");
+    return saved !== null ? JSON.parse(saved) : null;
+  });
+
   // Requirement filters (for BA, BS, CS, IS)
-  const [selectedFilters, setSelectedFilters] = useState({ BA: [], BS: [], CS: [], IS: [] });
+  const [selectedFilters, setSelectedFilters] = useState(() => {
+    const saved = localStorage.getItem("selectedFilters");
+    return saved ? JSON.parse(saved) : { BA: [], BS: [], CS: [], IS: [] };
+  });
+
   // Offered semester filter (selected via a dropdown in the table header)
-  const [selectedOfferedSemesters, setSelectedOfferedSemesters] = useState([]);
-  // Courses and requirements from API
-  const [courses, setCourses] = useState([]);
-  const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
+  const [selectedOfferedSemesters, setSelectedOfferedSemesters] = useState(() => {
+    const saved = localStorage.getItem("selectedOfferedSemesters");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   // All available offered semester options (fetched from the dedicated endpoint)
   const [offeredOptions, setOfferedOptions] = useState([]);
+
   // New state for requirement type filtering
-  const [coreOnly, setCoreOnly] = useState(true);
-  const [genedOnly, setGenedOnly] = useState(true);
+  const [coreOnly, setCoreOnly] = useState(() => {
+    const saved = localStorage.getItem("coreOnly");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const [genedOnly, setGenedOnly] = useState(() => {
+    const saved = localStorage.getItem("genedOnly");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
   // For pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage, setCoursesPerPage] = useState(25);
+
+  // Courses and requirements from API
+  const [courses, setCourses] = useState([]);
+  const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
+
+  const [compactViewMode, setCompactViewMode] = useState(() => {
+    return localStorage.getItem("compactViewMode") || "full";
+  });
+
+  // Save states to localStorage
+  useEffect(() => {
+    localStorage.setItem("selectedDepartments", JSON.stringify(selectedDepartments));
+    localStorage.setItem("searchQuery", searchQuery);
+    localStorage.setItem("offeredQatar", JSON.stringify(offeredQatar));
+    localStorage.setItem("offeredPitts", JSON.stringify(offeredPitts));
+    localStorage.setItem("noPrereqs", JSON.stringify(noPrereqs));
+    localStorage.setItem("selectedFilters", JSON.stringify(selectedFilters));
+    localStorage.setItem("selectedOfferedSemesters", JSON.stringify(selectedOfferedSemesters));
+    localStorage.setItem("coreOnly", JSON.stringify(coreOnly));
+    localStorage.setItem("genedOnly", JSON.stringify(genedOnly));
+    localStorage.setItem("compactViewMode", compactViewMode);
+  }, [
+    selectedDepartments,
+    searchQuery,
+    offeredQatar,
+    offeredPitts,
+    noPrereqs,
+    selectedFilters,
+    selectedOfferedSemesters,
+    coreOnly,
+    genedOnly,
+    compactViewMode
+  ]);
+
   // Pagination logic
   const totalPages = Math.ceil(courses.length / coursesPerPage);
   const indexOfLastCourse = currentPage * coursesPerPage;
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
   const currentCourses = courses.slice(indexOfFirstCourse, indexOfLastCourse);
-
-  const [compactViewMode, setCompactViewMode] = useState("full");
 
   // Scroll to top when switching pages
   const handlePageChange = (page) => {

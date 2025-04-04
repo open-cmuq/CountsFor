@@ -8,8 +8,19 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const PlanCourseTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [addedCourses, setAddedCourses] = useState([]);
+
+  // Use localStorage to persist added courses
+  const [addedCourses, setAddedCourses] = useState(() => {
+    const savedCourses = localStorage.getItem("plannedCourses");
+    return savedCourses ? JSON.parse(savedCourses) : [];
+  });
+
   const [requirements, setRequirements] = useState({ BA: [], BS: [], CS: [], IS: [] });
+
+  // Save added courses to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("plannedCourses", JSON.stringify(addedCourses));
+  }, [addedCourses]);
 
   useEffect(() => {
     const fetchRequirements = async () => {
@@ -62,6 +73,12 @@ const PlanCourseTab = () => {
     setAddedCourses((prev) => prev.filter((c) => c.course_code !== code));
   };
 
+  const clearAllCourses = () => {
+    if (window.confirm("Are you sure you want to clear all planned courses?")) {
+      setAddedCourses([]);
+    }
+  };
+
   return (
     <div className="plan-tab">
       <h1 className="title">Plan Courses</h1>
@@ -96,6 +113,13 @@ const PlanCourseTab = () => {
         </div>
       )}
 
+      {addedCourses.length > 0 && (
+        <div className="planned-courses-header">
+          <h3>Selected Courses ({addedCourses.length})</h3>
+          <button className="clear-all-btn" onClick={clearAllCourses}>Clear All</button>
+        </div>
+      )}
+
       <CourseTable
         courses={addedCourses}
         allRequirements={requirements}
@@ -108,7 +132,7 @@ const PlanCourseTab = () => {
         coreOnly={false}
         genedOnly={false}
         allowRemove={true}
-        onRemoveCourse={removeCourse}
+        handleRemoveCourse={removeCourse}
       />
     </div>
   );

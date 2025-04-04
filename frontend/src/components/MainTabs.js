@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CourseTablePage from "./CourseTablePage";
 import PlanCourseTab from "./PlanCourseTab";
 import AnalyticsPage from "./Analytics";
 
 const MainTabs = () => {
-  const [activeTab, setActiveTab] = useState("general");
+  // Use localStorage to persist the active tab
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem("activeTab");
+    return savedTab || "general";
+  });
+
+  // Update localStorage when activeTab changes
+  useEffect(() => {
+    localStorage.setItem("activeTab", activeTab);
+  }, [activeTab]);
 
   return (
     <div>
@@ -32,9 +41,9 @@ const MainTabs = () => {
 
       {/* Tab Content */}
       <div className="tab-content">
-        {activeTab === "general" && <CourseTablePage />}
-        {activeTab === "plan" && <PlanCourseTab />}
-        {activeTab === "analytics" && <AnalyticsPage />}
+        {activeTab === "general" && <CourseTablePage key="general" />}
+        {activeTab === "plan" && <PlanCourseTab key="plan" />}
+        {activeTab === "analytics" && <AnalyticsPage key="analytics" />}
       </div>
     </div>
   );

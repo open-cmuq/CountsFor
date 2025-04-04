@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CategoryCoverage from './CategoryCoverage';
 import EnrollmentAnalytics from './EnrollmentAnalytics';
 import "../styles.css";
@@ -12,7 +12,14 @@ const majors = {
 };
 
 const AnalyticsPage = () => {
-  const [selectedMajor, setSelectedMajor] = useState("bio");
+  const [selectedMajor, setSelectedMajor] = useState(() => {
+    return localStorage.getItem("analyticsMajor") || "bio";
+  });
+
+  // Save selected major to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("analyticsMajor", selectedMajor);
+  }, [selectedMajor]);
 
   return (
     <div className="table-container">
