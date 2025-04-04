@@ -9,9 +9,17 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
     const rawReq = typeof req === "object" ? req.requirement : req;
     const isGenEd = typeof req === "object" && req.type === true;
 
-    // For GenEd requirements, remove everything up to "General Education"
-    if (isGenEd && rawReq && rawReq.includes("General Education")) {
-      return rawReq.replace(/^.*General Education\s*---/, "").replace(/---/g, " → ");
+    // Handle different GenEd formats
+    if (isGenEd) {
+      if (rawReq && rawReq.includes("General Education")) {
+        return rawReq.replace(/^.*General Education\s*---/, "").replace(/---/g, " → ");
+      } else if (rawReq && rawReq.includes("University Core Requirements")) {
+        // BA format using "University Core Requirements"
+        const parts = rawReq.split("University Core Requirements");
+        if (parts.length > 1) {
+          return parts[1].replace(/^---/, "").replace(/---/g, " → ");
+        }
+      }
     }
 
     // For other requirements, just apply the standard formatting

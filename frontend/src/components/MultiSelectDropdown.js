@@ -57,11 +57,25 @@ const MultiSelectDropdown = ({
 
     const isGenEd = typeof req === 'object' && req.type === true;
 
-    // For GenEd requirements, remove everything up to "General Education"
-    if (isGenEd && rawReq.includes("General Education")) {
-      rawReq = rawReq.replace(/^.*General Education\s*---/, "");
+    // For GenEd requirements, handle different formats
+    if (isGenEd) {
+      if (rawReq.includes("General Education")) {
+        // Traditional format with "General Education"
+        rawReq = rawReq.replace(/^.*General Education\s*---/, "");
+      } else if (rawReq.includes("University Core Requirements")) {
+        // BA format using "University Core Requirements"
+        // Extract everything after the first occurrence of "University Core Requirements"
+        const parts = rawReq.split("University Core Requirements");
+        if (parts.length > 1) {
+          // Remove the leading "---" if present
+          rawReq = parts[1].replace(/^---/, "");
+        }
+      } else {
+        // For any other GenEd format, just remove the initial prefix
+        rawReq = rawReq.replace(/^[^-]+---/, "");
+      }
     } else {
-      // For other requirements, just remove the initial prefix
+      // For Core requirements, just remove the initial prefix
       rawReq = rawReq.replace(/^[^-]+---/, "");
     }
 

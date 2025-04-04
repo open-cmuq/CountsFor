@@ -214,11 +214,22 @@ const CourseTable = ({
               const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
                 let formattedText = reqObj.requirement;
 
-                // If it's a GenEd requirement (type === true), do a more aggressive replacement
-                // to remove extra prefix like "EY2022 - Qatar Biological Sciences - General Education"
+                // Format the requirement text based on its type
                 if (reqObj.type) { // GenEd type
-                  // Remove everything up to and including "General Education"
-                  formattedText = formattedText.replace(/^.*General Education\s*---/, "");
+                  // Handle different GenEd formats
+                  if (formattedText.includes("General Education")) {
+                    // Traditional format with "General Education"
+                    formattedText = formattedText.replace(/^.*General Education\s*---/, "");
+                  } else if (formattedText.includes("University Core Requirements")) {
+                    // BA format using "University Core Requirements"
+                    const parts = formattedText.split("University Core Requirements");
+                    if (parts.length > 1) {
+                      formattedText = parts[1].replace(/^---/, "");
+                    }
+                  } else {
+                    // For any other GenEd format, just remove the initial prefix
+                    formattedText = formattedText.replace(/^[^-]+---/, "");
+                  }
                 } else { // Core type
                   // Just remove the initial part as before
                   formattedText = formattedText.replace(/^[^-]+---/, "");
