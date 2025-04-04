@@ -133,6 +133,7 @@ const PlanCourseTab = () => {
         genedOnly={false}
         allowRemove={true}
         handleRemoveCourse={removeCourse}
+        hideDropdowns={true}
       />
     </div>
   );

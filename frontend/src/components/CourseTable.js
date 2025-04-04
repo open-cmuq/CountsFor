@@ -15,12 +15,13 @@ const CourseTable = ({
   offeredOptions,
   selectedOfferedSemesters,
   setSelectedOfferedSemesters,
-  coreOnly,    
-  genedOnly,   
+  coreOnly,
+  genedOnly,
   handleRemoveCourse,
-  noPrereqs, 
+  noPrereqs,
   setNoPrereqs,
-  compactViewMode
+  compactViewMode,
+  hideDropdowns
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -76,7 +77,7 @@ const CourseTable = ({
   const PrereqCell = ({ text }) => {
     const [expanded, setExpanded] = useState(false);
     const previewText = text.length > 40 ? text.slice(0, 40) + "..." : text;
-  
+
     return (
       <td className="prereq-expandable">
         {expanded ? text : previewText}
@@ -94,7 +95,7 @@ const CourseTable = ({
       </td>
     );
   };
-  
+
 
 
   return (
@@ -105,63 +106,72 @@ const CourseTable = ({
             <th></th>
             <th>COURSES</th>
             {Object.keys(allRequirements).map((major) => {
-            // Filter the requirement objects for this major based on active type filters.
-            const optionsForMajor = allRequirements[major].filter((reqObj) => {
-              if (coreOnly && !genedOnly) return reqObj.type === false;
-              if (genedOnly && !coreOnly) return reqObj.type === true;
-              return true;
-            });
-            console.log(`[${major}] optionsForMajor`, optionsForMajor); // ✅ LOG HERE
+              // Filter the requirement objects for this major based on active type filters.
+              const optionsForMajor = allRequirements[major].filter((reqObj) => {
+                if (coreOnly && !genedOnly) return reqObj.type === false;
+                if (genedOnly && !coreOnly) return reqObj.type === true;
+                return true;
+              });
 
-            return (
-              <th key={major} className={`header-${major.toLowerCase()}`}>
-                {major}
-                <br />
-                <MultiSelectDropdown
-                  major={major}
-                  // Pass the filtered options (as objects) to the dropdown.
-                  allRequirements={optionsForMajor}
-                  selectedFilters={selectedFilters}
-                  handleFilterChange={handleFilterChange}
-                  clearFilters={clearFilters}
-                  // (If your dropdown logic still extracts the raw string from each object, it will work.)
-                />
-              </th>
-            );
-          })}
+              return (
+                <th key={major} className={`header-${major.toLowerCase()}`}>
+                  {major}
+                  {!hideDropdowns && (
+                    <>
+                      <br />
+                      <MultiSelectDropdown
+                        major={major}
+                        allRequirements={optionsForMajor}
+                        selectedFilters={selectedFilters}
+                        handleFilterChange={handleFilterChange}
+                        clearFilters={clearFilters}
+                      />
+                    </>
+                  )}
+                </th>
+              );
+            })}
             <th>
               OFFERED
-              <br />
-              <MultiSelectDropdown
-                major="offered"
-                allRequirements={offeredOptions}
-                selectedFilters={{ offered: selectedOfferedSemesters }}
-                handleFilterChange={(major, newSelection) =>
-                  setSelectedOfferedSemesters(newSelection)
-                }
-                clearFilters={() => setSelectedOfferedSemesters([])}
-              />
+              {!hideDropdowns && (
+                <>
+                  <br />
+                  <MultiSelectDropdown
+                    major="offered"
+                    allRequirements={offeredOptions}
+                    selectedFilters={{ offered: selectedOfferedSemesters }}
+                    handleFilterChange={(major, newSelection) =>
+                      setSelectedOfferedSemesters(newSelection)
+                    }
+                    clearFilters={() => setSelectedOfferedSemesters([])}
+                  />
+                </>
+              )}
             </th>
             <th>
-            PRE-REQ
-            <br />
-            <SingleSelectDropdown
-              major="prereq"
-              options={["all", "with", "without"]}
-              selected={
-                noPrereqs === null
-                  ? "all"
-                  : noPrereqs === false
-                  ? "without"
-                  : "with"
-              }
-              onChange={(value) => {
-                if (value === "all") setNoPrereqs(null);
-                else if (value === "without") setNoPrereqs(false);
-                else if (value === "with") setNoPrereqs(true);
-              }}
-            />
-          </th>
+              PRE-REQ
+              {!hideDropdowns && (
+                <>
+                  <br />
+                  <SingleSelectDropdown
+                    major="prereq"
+                    options={["all", "with", "without"]}
+                    selected={
+                      noPrereqs === null
+                        ? "all"
+                        : noPrereqs === false
+                        ? "without"
+                        : "with"
+                    }
+                    onChange={(value) => {
+                      if (value === "all") setNoPrereqs(null);
+                      else if (value === "without") setNoPrereqs(false);
+                      else if (value === "with") setNoPrereqs(true);
+                    }}
+                  />
+                </>
+              )}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -205,7 +215,7 @@ const CourseTable = ({
                 let formattedText = reqObj.requirement
                   .replace(/^[^-]+---/, "")
                   .replace(/---/g, " → ");
-                
+
                 if (compactViewMode === "last2") {
                   const parts = formattedText.split("→").map(s => s.trim());
                   formattedText = parts.slice(-2).join(" → ");
@@ -213,8 +223,8 @@ const CourseTable = ({
                   const parts = formattedText.split("→").map(s => s.trim());
                   formattedText = parts[parts.length - 1];
                 }
-                
-                  
+
+
 
                 return reqObj.type
                   ? <i key={index}>{formattedText}</i>   // GenEd
