@@ -212,9 +212,20 @@ const CourseTable = ({
 
               // Otherwise, build the list items using the *filtered* objects
               const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
-                let formattedText = reqObj.requirement
-                  .replace(/^[^-]+---/, "")
-                  .replace(/---/g, " → ");
+                let formattedText = reqObj.requirement;
+
+                // If it's a GenEd requirement (type === true), do a more aggressive replacement
+                // to remove extra prefix like "EY2022 - Qatar Biological Sciences - General Education"
+                if (reqObj.type) { // GenEd type
+                  // Remove everything up to and including "General Education"
+                  formattedText = formattedText.replace(/^.*General Education\s*---/, "");
+                } else { // Core type
+                  // Just remove the initial part as before
+                  formattedText = formattedText.replace(/^[^-]+---/, "");
+                }
+
+                // Replace all --- with arrows for both types
+                formattedText = formattedText.replace(/---/g, " → ");
 
                 if (compactViewMode === "last2") {
                   const parts = formattedText.split("→").map(s => s.trim());
@@ -223,8 +234,6 @@ const CourseTable = ({
                   const parts = formattedText.split("→").map(s => s.trim());
                   formattedText = parts[parts.length - 1];
                 }
-
-
 
                 return reqObj.type
                   ? <i key={index}>{formattedText}</i>   // GenEd

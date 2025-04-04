@@ -7,6 +7,14 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
   const formatRequirement = (req) => {
     // If req is an object, extract its 'requirement' property.
     const rawReq = typeof req === "object" ? req.requirement : req;
+    const isGenEd = typeof req === "object" && req.type === true;
+
+    // For GenEd requirements, remove everything up to "General Education"
+    if (isGenEd && rawReq && rawReq.includes("General Education")) {
+      return rawReq.replace(/^.*General Education\s*---/, "").replace(/---/g, " → ");
+    }
+
+    // For other requirements, just apply the standard formatting
     return (rawReq || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
   };
 

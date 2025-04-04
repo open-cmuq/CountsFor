@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const MultiSelectDropdown = ({ 
-  major, 
-  allRequirements, 
-  selectedFilters, 
-  handleFilterChange, 
-  clearFilters, 
+const MultiSelectDropdown = ({
+  major,
+  allRequirements,
+  selectedFilters,
+  handleFilterChange,
+  clearFilters,
   showSelectedInButton = false,
   hideSelectButtons = false,
   wrapperClassName = ""
@@ -21,7 +21,7 @@ const MultiSelectDropdown = ({
     with: "Has Pre-reqs",
     without: "No Pre-reqs",
   };
-  
+
   // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen(!isOpen);
 
@@ -41,37 +41,106 @@ const MultiSelectDropdown = ({
 
   // Filter out any undefined/null options first.
   const safeOptions = (allRequirements || []).filter(opt => opt != null);
-  
+
+  // Function to format the requirement string the same way as in the table
+  const formatRequirementForDisplay = (req) => {
+    // Early return for non-requirement formats (e.g., departments, location)
+    if (major === 'department' || major === 'location' || major === 'courseType' || major === 'offered' || major === 'prereq') {
+      return typeof req === 'object' ? (req.label || '') : req || '';
+    }
+
+    // Handle requirement formatting
+    let rawReq = typeof req === 'object' ? req.requirement : req;
+
+    // Guard against undefined or null values
+    if (!rawReq) return '';
+
+    const isGenEd = typeof req === 'object' && req.type === true;
+
+    // For GenEd requirements, remove everything up to "General Education"
+    if (isGenEd && rawReq.includes("General Education")) {
+      rawReq = rawReq.replace(/^.*General Education\s*---/, "");
+    } else {
+      // For other requirements, just remove the initial prefix
+      rawReq = rawReq.replace(/^[^-]+---/, "");
+    }
+
+    // Replace all --- with arrows
+    return rawReq.replace(/---/g, " → ");
+  };
+
   const buildNestedGroups = (options) => {
-    const tree = {};
-  
+    // For non-major requirement dropdowns, return empty tree
+    // These are handled separately in the render function
+    if (major === 'department' || major === 'location' || major === 'courseType' ||
+        major === 'offered' || major === 'prereq') {
+      return {};
+    }
+
+    // First, separate options into Core and GenEd categories
+    const tree = {
+      "Core Requirements": {},
+      "GenEd Requirements": {}
+    };
+
     options.forEach((opt) => {
+      // Skip invalid options
+      if (!opt) return;
+
       const raw = opt.value || opt.requirement || opt;
-      const parts = raw.split("---").slice(1); // remove major
-  
-      // If it's flat (no nesting or only 1 level), put into a fake group
+
+      // Skip if raw is undefined/null
+      if (!raw) return;
+
+      const isGenEd = typeof opt === 'object' && opt.type === true;
+
+      // Get the formatted text that matches what's shown in the table
+      const formattedText = formatRequirementForDisplay(opt);
+
+      // Skip if no formatted text
+      if (!formattedText) return;
+
+      // Split by arrows to get the hierarchical parts
+      const parts = formattedText.split(" → ");
+
+      // Determine the top-level category based on the requirement type
+      const topLevelCategory = isGenEd ? "GenEd Requirements" : "Core Requirements";
+
+      // If there's only one part (no hierarchy), put directly under Core/GenEd
       if (parts.length <= 1) {
-        if (!tree._ungrouped) tree._ungrouped = { _items: [] };
-        tree._ungrouped._items.push({ label: parts[0] || raw, rawValue: raw });
+        if (!tree[topLevelCategory]._items) tree[topLevelCategory]._items = [];
+        tree[topLevelCategory]._items.push({ label: parts[0], rawValue: raw });
         return;
       }
-  
-      // Nested case
-      let node = tree;
+
+      // For hierarchical requirements, build nested structure under Core or GenEd
+      let node = tree[topLevelCategory];
       for (let i = 0; i < parts.length - 1; i++) {
         const key = parts[i];
         if (!node[key]) node[key] = {};
         node = node[key];
       }
-  
+
+      // The last part is the leaf item
       const label = parts[parts.length - 1];
       if (!node._items) node._items = [];
       node._items.push({ label, rawValue: raw });
     });
-  
+
+    // Remove empty categories
+    if (Object.keys(tree["Core Requirements"]).length === 0 &&
+        (!tree["Core Requirements"]._items || tree["Core Requirements"]._items.length === 0)) {
+      delete tree["Core Requirements"];
+    }
+
+    if (Object.keys(tree["GenEd Requirements"]).length === 0 &&
+        (!tree["GenEd Requirements"]._items || tree["GenEd Requirements"]._items.length === 0)) {
+      delete tree["GenEd Requirements"];
+    }
+
     return tree;
   };
- 
+
   const renderGroupTree = (node, path = "") => {
     return (
       <>
@@ -94,8 +163,6 @@ const MultiSelectDropdown = ({
         </div>
       ))}
 
-
-  
         {/* Then render nested groups */}
         {Object.entries(node)
           .filter(([key]) => key !== "_items")
@@ -106,14 +173,19 @@ const MultiSelectDropdown = ({
                 ...prev,
                 [path + group]: !isExpanded,
               }));
-  
+
+            // Skip rendering if the group has no items or subgroups
+            const hasItems = child._items && child._items.length > 0;
+            const hasSubgroups = Object.keys(child).filter(k => k !== "_items").length > 0;
+            if (!hasItems && !hasSubgroups) return null;
+
             return (
               <div key={path + group} className="dropdown-group">
                 <div className="dropdown-group-label" onClick={toggle}>
-                <span>{group === "_ungrouped" ? "Ungrouped Requirements" : group}</span>
+                <span>{group}</span>
                 <span>{isExpanded ? "▼" : "▶"}</span>
                 </div>
-  
+
                 {isExpanded && (
                   <div className="dropdown-subgroup">
                     {/* Select all in group */}
@@ -132,10 +204,10 @@ const MultiSelectDropdown = ({
                             handleFilterChange(major, newSelection);
                           }}
                         />
-                      <strong>Select All in {group === "_ungrouped" ? "Other Requirements" : group}</strong>
+                      <strong>Select All in {group}</strong>
                       </label>
                     )}
-  
+
                     {/* Recursively render children */}
                     {renderGroupTree(child, path + group + " > ")}
                   </div>
@@ -144,9 +216,7 @@ const MultiSelectDropdown = ({
             );
           })}
       </>
-      
     );
-    
   };
 
   // Build an array of raw strings (if options are objects, we extract their requirement property)
@@ -178,41 +248,57 @@ const MultiSelectDropdown = ({
 
 
       {isOpen && (
-                <div className="dropdown-content">
-                  {!hideSelectButtons && (
-  <>
-            <label className="select-all-label">
-            <button
-        className="select-all-btn"
-        onClick={() => handleSelectAll()}
-        >
-        {isAllSelected ? "DeSelect All" : "Select All"}
-        </button>
-        </label>
+        <div className="dropdown-content">
+          {!hideSelectButtons && (
+            <>
+              <label className="select-all-label">
+                <button
+                  className="select-all-btn"
+                  onClick={() => handleSelectAll()}
+                >
+                  {isAllSelected ? "DeSelect All" : "Select All"}
+                </button>
+              </label>
 
-          {/* Clear Selection Button */}
-          <label className="select-all-label">
-            <button
-              className="select-all-btn"
-              onClick={() => {
-                clearFilters(major);
-                setIsOpen(false);
-              }}
-            >
-              Clear All
-            </button>
-          </label>
-          </>
-)}
+              {/* Clear Selection Button */}
+              <label className="select-all-label">
+                <button
+                  className="select-all-btn"
+                  onClick={() => {
+                    clearFilters(major);
+                    setIsOpen(false);
+                  }}
+                >
+                  Clear All
+                </button>
+              </label>
+            </>
+          )}
 
           {/* Individual Options */}
           {safeOptions.length === 0 ? (
             <p className="dropdown-item">No options available</p>
-            ) : safeOptions.every(opt => !(typeof opt === 'string' ? opt.includes('---') : (opt.requirement || '').includes('---'))) ? (
+          ) : (
+            /* For non-requirement dropdowns, render a simple list */
+            major === 'department' || major === 'location' || major === 'courseType' ||
+            major === 'offered' || major === 'prereq' ? (
               safeOptions.map((opt, index) => {
-                const raw = typeof opt === "object" ? (opt.value || opt.requirement) : opt;
-                const label = typeof opt === "object" ? (opt.label || raw) : opt;
-              
+                const raw = typeof opt === "object" ? (opt.value || opt.requirement || opt.dep_code) : opt;
+                let label;
+
+                if (typeof opt === "object") {
+                  // Handle different object formats
+                  if (major === 'department' && opt.label) {
+                    label = opt.label;
+                  } else if (major === 'department' && opt.dep_code) {
+                    label = `${opt.dep_code} - ${opt.name || ''}`;
+                  } else {
+                    label = opt.label || raw;
+                  }
+                } else {
+                  label = opt;
+                }
+
                 return (
                   <label key={index} className="dropdown-item">
                     <input
@@ -229,10 +315,11 @@ const MultiSelectDropdown = ({
                   </label>
                 );
               })
-              
             ) : (
-            renderGroupTree(buildNestedGroups(safeOptions))
-            )}
+              /* For major requirements - use the nested Core/GenEd structure */
+              renderGroupTree(buildNestedGroups(safeOptions))
+            )
+          )}
         </div>
       )}
     </div>

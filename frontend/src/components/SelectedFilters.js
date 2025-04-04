@@ -13,6 +13,21 @@ const SelectedFilters = ({
     IS: "#FEB204",
   };
 
+  // Helper function to format requirement text
+  const formatRequirement = (filter, major) => {
+    // For GenEd requirements, remove everything up to "General Education"
+    if (filter && filter.includes("General Education")) {
+      return filter.replace(/^.*General Education\s*---/, "").replace(/---/g, " → ");
+    }
+
+    // For other requirements, just remove the prefix
+    const formattedFilter = (filter || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
+
+    // Split by `→` and get the last two parts for display
+    const filterParts = formattedFilter.split(" → ");
+    return filterParts.slice(-2).join(" → ");
+  };
+
   // Check if there are any filters (offered semesters or requirement filters)
   const hasAnyFilters =
     (selectedOfferedSemesters && selectedOfferedSemesters.length > 0) ||
@@ -29,14 +44,11 @@ const SelectedFilters = ({
              {semester}
          </div>
       ))}
+
       {/* Then render the other selected filters */}
       {Object.entries(selectedFilters).map(([major, filters]) =>
         filters.map((filter) => {
-            // Guard against undefined
-            const formattedFilter = (filter || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
-            // Split by `→` and get the last two parts
-            const filterParts = formattedFilter.split(" → ");
-            const displayedFilter = filterParts.slice(-2).join(" → "); 
+            const displayedFilter = formatRequirement(filter, major);
 
             return (
             <div

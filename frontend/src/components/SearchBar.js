@@ -22,6 +22,20 @@ const SearchBar = ({
 }) => {
   const [departments, setDepartments] = useState([]);
 
+  // Set default values on component mount if not already set
+  useEffect(() => {
+    // Default location to Qatar if not already set
+    if (offeredQatar === null) {
+      setOfferedQatar(true);
+    }
+
+    // Default course type to both Core and GenEd if not already set
+    if (coreOnly === null && genedOnly === null) {
+      setCoreOnly(true);
+      setGenedOnly(true);
+    }
+  }, []);
+
   // Fetch departments from API
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -43,10 +57,11 @@ const SearchBar = ({
     setSearchQuery("");
     setSelectedDepartments([]);
     setNoPrereqs(null);
-    setOfferedQatar(null);
+    // Set default values when clearing search
+    setOfferedQatar(true);
     setOfferedPitts(null);
-    setCoreOnly(null);
-    setGenedOnly(null);
+    setCoreOnly(true);
+    setGenedOnly(true);
   };
 
   // Function to get department name based on selected dep_code
