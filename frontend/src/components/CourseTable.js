@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 import SingleSelectDropdown from "./SingleSelectDropdown";
 import Popup from "./PopUp";
+import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -27,7 +28,8 @@ const CourseTable = ({
 
   const fetchCourseDetails = async (course_code) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses/${course_code}`);
+      const formattedCode = formatCourseCode(course_code);
+      const response = await fetch(`${API_BASE_URL}/courses/${formattedCode}`);
       if (!response.ok) throw new Error("Failed to fetch course details");
       const data = await response.json();
       return data;
@@ -183,17 +185,17 @@ const CourseTable = ({
                     color: "black",
                   }}
                 >
-                  {course.course_code}
+                  {formatCourseCode(course.course_code)}
                 </b>
                 <br />
                 {course.course_name}
               </td>
               {Object.keys(allRequirements).map((major) => {
               const reqObjects = course.requirements?.[major] || [];
-              // Filter out the ones that don’t match the active (Core/GenEd) filter
+              // Filter out the ones that don't match the active (Core/GenEd) filter
               const filteredReqObjects = filterRequirementObjects(reqObjects);
 
-              // If, after filtering, there’s nothing left, return an empty cell
+              // If, after filtering, there's nothing left, return an empty cell
               if (filteredReqObjects.length === 0) {
                 return <td key={major}></td>;
               }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
+import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -54,6 +55,12 @@ const SearchBar = ({
     return dept ? `${dept.dep_code} - ${dept.name}` : depCode;
   };
 
+  // Modify the search input handler
+  const handleSearchChange = (e) => {
+    const formattedCode = formatCourseCode(e.target.value);
+    setSearchQuery(formattedCode);
+  };
+
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
@@ -63,7 +70,7 @@ const SearchBar = ({
           type="text"
           placeholder="Search for a specific course number"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="text-input"
         />
 
@@ -77,7 +84,7 @@ const SearchBar = ({
           allRequirements={departments.map((d) => ({
             value: d.dep_code,
             label: `${d.dep_code} - ${d.name}`,
-          }))}          
+          }))}
           selectedFilters={{ department: selectedDepartments }}
           handleFilterChange={(major, selected) => setSelectedDepartments(selected)}
           clearFilters={() => setSelectedDepartments([])}
@@ -89,8 +96,8 @@ const SearchBar = ({
         <MultiSelectDropdown
           major="location"
           wrapperClassName="location-dropdown-wrapper"
-          showSelectedInButton={true} 
-          hideSelectButtons={true} 
+          showSelectedInButton={true}
+          hideSelectButtons={true}
           allRequirements={["qatar", "pitts"]}
           selectedFilters={{ location: [
             ...(offeredQatar ? ["qatar"] : []),
@@ -112,8 +119,8 @@ const SearchBar = ({
         <MultiSelectDropdown
           major="courseType"
           wrapperClassName="course-type-dropdown-wrapper"
-          showSelectedInButton={true} 
-          hideSelectButtons={true} 
+          showSelectedInButton={true}
+          hideSelectButtons={true}
           allRequirements={["core", "gened"]}
           selectedFilters={{ courseType: [
             ...(coreOnly ? ["core"] : []),

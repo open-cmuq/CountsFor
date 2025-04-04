@@ -28,3 +28,11 @@ def init_db():
     """Creates all database tables based on SQLAlchemy models."""
     Base.metadata.create_all(engine)
     print("✅ Database tables created successfully.")
+
+def reset_db():
+    """Drops all tables and recreates them."""
+    Base.metadata.drop_all(engine)
+    print("🗑️  All tables dropped.")
+
+    Base.metadata.create_all(engine)
+    print("✅ Database reset and tables recreated.")

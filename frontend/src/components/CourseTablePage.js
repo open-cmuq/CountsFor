@@ -3,6 +3,8 @@ import "../styles.css";
 import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
 import SelectedFilters from "./SelectedFilters";
+import { formatCourseCode } from './utils/courseCodeFormatter';
+import { sortSemesters } from './utils/semesterUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -58,7 +60,7 @@ const CourseTablePage = () => {
     }
     return buttons;
   };
-  
+
   // Fetch departments from API
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -132,17 +134,17 @@ const CourseTablePage = () => {
     const fetchCourses = async () => {
       try {
         // for multi-select
-        const departmentsToFetch = selectedDepartments; 
-  
+        const departmentsToFetch = selectedDepartments;
+
         // If no departments are selected, send one request without the department param
         const queries = departmentsToFetch.length > 0 ? departmentsToFetch : [null];
-  
+
         const results = await Promise.all(
           queries.map(async (dep) => {
             const params = new URLSearchParams();
-  
+
             if (dep) params.append("department", dep);
-            if (searchQuery) params.append("searchQuery", searchQuery);
+            if (searchQuery) params.append("searchQuery", formatCourseCode(searchQuery));
             if (selectedOfferedSemesters.length > 0)
               params.append("semester", selectedOfferedSemesters.join(","));
             if (noPrereqs === false) params.append("has_prereqs", false);
@@ -157,30 +159,30 @@ const CourseTablePage = () => {
               params.append("ba_requirement", selectedFilters.BA.join(","));
             if (selectedFilters.BS.length > 0)
               params.append("bs_requirement", selectedFilters.BS.join(","));
-  
+
             const url = `${API_BASE_URL}/courses/search?${params.toString()}`;
             console.log("Fetching:", url);
             const response = await fetch(url);
             if (!response.ok) return [];
-  
+
             const data = await response.json();
             return data.courses || [];
           })
         );
-  
+
         // Flatten and deduplicate
         const allCourses = results.flat();
         const uniqueCourses = Array.from(
           new Map(allCourses.map((c) => [c.course_code, c])).values()
         );
-  
+
         const filteredCourses = uniqueCourses.filter(courseMatchesRequirementFilter);
         setCourses(filteredCourses);
       } catch (error) {
         console.error("Error fetching courses:", error);
       }
     };
-  
+
     fetchCourses();
   }, [
     selectedDepartments,
@@ -205,9 +207,12 @@ const CourseTablePage = () => {
         const response = await fetch(`${API_BASE_URL}/courses/semesters`);
         if (!response.ok) throw new Error("Failed to fetch semesters");
         const data = await response.json();
-        setOfferedOptions(data.semesters);
+        // Sort semesters by most recent first
+        const sortedSemesters = sortSemesters(data.semesters);
+        setOfferedOptions(sortedSemesters);
       } catch (error) {
         console.error("Error fetching semesters:", error);
+        setOfferedOptions([]);
       }
     };
     fetchSemesters();

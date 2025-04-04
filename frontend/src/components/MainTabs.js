@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import CourseTablePage from "./CourseTablePage";
-import PlanCourseTab from "./PlanCourseTab"; 
+import PlanCourseTab from "./PlanCourseTab";
+import AnalyticsPage from "./Analytics";
 
 const MainTabs = () => {
   const [activeTab, setActiveTab] = useState("general");
@@ -33,6 +34,7 @@ const MainTabs = () => {
       <div className="tab-content">
         {activeTab === "general" && <CourseTablePage />}
         {activeTab === "plan" && <PlanCourseTab />}
+        {activeTab === "analytics" && <AnalyticsPage />}
       </div>
     </div>
   );

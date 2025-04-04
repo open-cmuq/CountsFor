@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CourseTable from "./CourseTable";
+import { formatCourseCode } from './utils/courseCodeFormatter';
 import "../styles.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -16,14 +17,14 @@ const PlanCourseTab = () => {
         const response = await fetch(`${API_BASE_URL}/requirements`);
         const data = await response.json();
         const grouped = { BA: [], BS: [], CS: [], IS: [] };
-        data.requirements.forEach(({ requirement, major }) => {
+        data.requirements.forEach(({ requirement, type, major }) => {
           const majorKey = {
             cs: "CS",
             is: "IS",
             ba: "BA",
             bio: "BS",
           }[major];
-          if (majorKey) grouped[majorKey].push({ requirement });
+          if (majorKey) grouped[majorKey].push({ requirement, type: !!type, major: majorKey });
         });
         setRequirements(grouped);
       } catch (err) {
@@ -35,7 +36,8 @@ const PlanCourseTab = () => {
 
   const handleSearch = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses/search?searchQuery=${searchQuery}`);
+      const formattedQuery = formatCourseCode(searchQuery);
+      const response = await fetch(`${API_BASE_URL}/courses/search?searchQuery=${formattedQuery}`);
       const data = await response.json();
       setSearchResults(data.courses || []);
     } catch (err) {
@@ -68,7 +70,7 @@ const PlanCourseTab = () => {
         <input
           className="search-input"
           type="text"
-          placeholder="Search by course code"
+          placeholder="Search by course code (e.g. 15122 or 15-122)"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -77,20 +79,20 @@ const PlanCourseTab = () => {
 
       {searchResults.length > 0 && (
         <div className="search-results">
-        <ul className="search-result-list">
-        {searchResults.map((course) => (
-            <li key={course.course_code} className="search-result-item">
-            <span
-                className="course-link"
-                onClick={() => addCourse(course)}
-                title="Click to add"
-            >
-                {course.course_code} – {course.course_name}
-            </span>
-            <button className="add-btn" onClick={() => addCourse(course)}>Add</button>
-            </li>
-        ))}
-        </ul>
+          <ul className="search-result-list">
+            {searchResults.map((course) => (
+              <li key={course.course_code} className="search-result-item">
+                <span
+                  className="course-link"
+                  onClick={() => addCourse(course)}
+                  title="Click to add"
+                >
+                  {course.course_code} – {course.course_name}
+                </span>
+                <button className="add-btn" onClick={() => addCourse(course)}>Add</button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

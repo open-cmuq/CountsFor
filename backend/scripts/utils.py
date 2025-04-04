@@ -6,6 +6,7 @@ import json
 from typing import *
 from pandas.io.excel._openpyxl import OpenpyxlReader
 from pandas._typing import Scalar
+import os
 
 
 def formatCourseNumber (n: int) -> str:

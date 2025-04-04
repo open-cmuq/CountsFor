@@ -58,6 +58,17 @@ class DepartmentListResponse(BaseModel):
     """Represents a list of departments."""
     departments: List[DepartmentResponse]
 
+class CourseCoverageItem(BaseModel):
+    """Schema for individual requirement coverage."""
+    requirement: str
+    num_courses: int
+
+class CourseCoverageResponse(BaseModel):
+    """Schema for course coverage response."""
+    major: str
+    semester: Optional[str] = None
+    coverage: List[CourseCoverageItem]
+
 class CombinedCourseFilter(BaseModel):
     """Represents the query parameters for filtering courses."""
     searchQuery: Optional[str] = Field(None, description="Search course code")
@@ -72,3 +83,13 @@ class CombinedCourseFilter(BaseModel):
     offered_qatar: Optional[bool] = Field(None, description="Filter by courses offered in Qatar")
     offered_pitts: Optional[bool] = Field(None, description="Filter by courses offered in "
     "Pittsburgh")
+
+class EnrollmentDataItem(BaseModel):
+    """Schema for individual enrollment data."""
+    semester: str
+    enrollment_count: int
+    class_: int
+
+class EnrollmentDataResponse(BaseModel):
+    """Schema for enrollment data response."""
+    enrollment_data: List[EnrollmentDataItem]
