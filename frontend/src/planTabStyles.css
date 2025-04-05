@@ -129,12 +129,12 @@
 
   .add-btn:hover,
     .add-btn:focus {
-    background-color: #ca8a84; /* slightly lighter red on hover */
+    background-color: #ca8a84;
     outline: none;
     }
 
     .add-btn:active {
-    background-color: #7a0000; /* deeper red when clicked */
+    background-color: #7a0000;
     }
   
   .add-btn.animated-fade {
@@ -181,7 +181,6 @@
 
   .planned-courses-header {
     display: flex;
-    /* justify-content: space-between; */
     align-items: center;
     margin-top: 10px;
     margin-bottom: 10px;
@@ -195,7 +194,6 @@
     display: inline-block;
     font-weight: 600;
     font-size: 0.9rem;
-    /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
     color: #1a237e;
   }
 

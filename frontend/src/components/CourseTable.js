@@ -17,6 +17,7 @@ const CourseTable = ({
   setSelectedOfferedSemesters,
   coreOnly,
   genedOnly,
+  allowRemove,
   handleRemoveCourse,
   noPrereqs,
   setNoPrereqs,
@@ -74,27 +75,28 @@ const CourseTable = ({
   };
 
   // For expandable Pre-Req cells
-  const PrereqCell = ({ text }) => {
-    const [expanded, setExpanded] = useState(false);
-    const previewText = text.length > 40 ? text.slice(0, 40) + "..." : text;
-
-    return (
-      <td className="prereq-expandable">
-        {expanded ? text : previewText}
-        {text.length > 40 && (
-          <span
-            className="expand-toggle"
-            onClick={(e) => {
-              e.stopPropagation(); // prevent table row clicks if needed
-              setExpanded(!expanded);
-            }}
-          >
-            {expanded ? " Show less" : " Show more"}
-          </span>
-        )}
-      </td>
-    );
-  };
+    const PrereqCell = ({ text }) => {
+      const [expanded, setExpanded] = useState(false);
+      const previewText = text.length > 40 ? text.slice(0, 40) + "..." : text;
+    
+      return (
+        <>
+          {expanded ? text : previewText}
+          {text.length > 40 && (
+            <span
+              className="expand-toggle"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(!expanded);
+              }}
+            >
+              {expanded ? " Show less" : " Show more"}
+            </span>
+          )}
+        </>
+      );
+    };
+  
 
 
 
@@ -103,8 +105,8 @@ const CourseTable = ({
       <table>
         <thead>
           <tr>
-            <th></th>
-            <th>COURSES</th>
+          {allowRemove && <th className="remove-col"> </th>}
+          <th className="course-info-col">COURSES</th>
             {Object.keys(allRequirements).map((major) => {
               // Filter the requirement objects for this major based on active type filters.
               const optionsForMajor = allRequirements[major].filter((reqObj) => {
@@ -131,7 +133,7 @@ const CourseTable = ({
                 </th>
               );
             })}
-            <th>
+            <th className="header-offered">
               OFFERED
               {!hideDropdowns && (
                 <>
@@ -148,7 +150,7 @@ const CourseTable = ({
                 </>
               )}
             </th>
-            <th>
+            <th className="header-prereq">
               PRE-REQ
               {!hideDropdowns && (
                 <>
@@ -177,14 +179,14 @@ const CourseTable = ({
         <tbody>
           {courses.map((course) => (
             <tr key={course.course_code}>
-              <td>
-                <button
-                  className="remove-btn"
-                  onClick={() => handleRemoveCourse(course.course_code)}
-                >
+            {allowRemove && (
+              <td className="remove-col">
+                <button className="remove-btn" onClick={() => handleRemoveCourse(course.course_code)}>
                   ✖
                 </button>
               </td>
+            )}
+
               <td>
                 <b
                   className="clickable"
@@ -284,8 +286,10 @@ const CourseTable = ({
               );
             })}
 
-              <td>{course.offered.join(", ")}</td>
+              <td className="cell-offered">{course.offered.join(", ")}</td>
+              <td className="cell-prereq">
               <PrereqCell text={course.prerequisites} />
+              </td>              
               </tr>
           ))}
         </tbody>

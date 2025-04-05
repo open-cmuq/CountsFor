@@ -7,13 +7,6 @@
     border-collapse: collapse;
   }
 
-  th, td {
-    border: 0.5px solid #ddd;
-    padding: 10px;
-    text-align: center;
-    border-radius: 4px;
-  }
-
   th {
     background-color: #f4f4f4;
     font-weight: bold;
@@ -28,43 +21,49 @@
   .header-ba {
     background-color: #4A68FB; /* Blue */
     color: white;
+    width: 17%;
   }
 
   .header-bs {
     background-color: #22AA0A; /* Green */
     color: white;
+    width: 17%;
   }
 
   .header-cs {
     background-color: #CF1314; /* Red */
-    color: white;
+    width: 17%;
   }
 
   .header-is {
     background-color: #FFC033; /* Yellow */
     color: white;
+    width: 17%;
   }
 
   .cell-ba {
     background-color: #B3BBFD; /* Blue */
     color: white;
+    width: 17%;
   }
 
   .cell-bs {
     background-color: #A3D799; /* Green */
     color: white;
+    width: 17%;
   }
 
   .cell-cs {
     background-color: #EB989D; /* Red */
     color: white;
+    width: 17%;
   }
 
   .cell-is {
     background-color: #FFDB99; /* Yellow */
     color: white;
+    width: 17%;
   }
-
 
   .remove-btn {
     background: none;
@@ -133,7 +132,7 @@
     height: 100%;
   }
   .cell {
-    color: black !important; /* Override other styles */
+    color: black !important; 
   }
 
   .dropdown-item {
@@ -143,7 +142,6 @@
     font-size: 14px;
     cursor: pointer;
   }
-
 
   .grayed-out {
     background-color: #f0f0f0;
@@ -162,47 +160,6 @@
     border: none;
     cursor: pointer;
     font-size: 16px;
-  }
-
-/* Ensure table uses fixed layout */
-table {
-    table-layout: fixed;
-    width: 100%;
-  }
-
-  /* Fix column widths */
-  th:first-child, td:first-child {
-    width: 3%; /* Smallest column for delete (X) */
-  }
-
-  th:nth-child(2), td:nth-child(2) {
-    width: 13%; /* Course Code & Name */
-  }
-
-  /* Ensuring equal width for BA, BS, CS, IS */
-  th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
-  td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
-    width: 17%; /* Adjusted for better spacing */
-  }
-
-  /* Making Pre-Req and Offer columns smaller */
-  th:nth-child(7), th:nth-child(8),
-  td:nth-child(7), td:nth-child(8) {
-    width: 8%;
-  }
-
-  /* Ensure text wraps instead of overflowing */
-  td {
-    word-wrap: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
-  }
-
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 6px;
   }
 
 /* Gray out N/A cells */
@@ -275,7 +232,6 @@ table {
     background: transparent;
     color: white;
     border: none;
-    /* background: none; */
     border: none;
     color: white;
     margin-left: 0px;
@@ -316,7 +272,6 @@ table {
     background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
-
 
   .header-ba {
     background-color: #4A68FB; /* Blue */
@@ -412,35 +367,32 @@ table {
     font-size: 16px;
   }
 
-
-/* Ensure table uses fixed layout */
 table {
     table-layout: fixed;
     width: 100%;
   }
 
-  /* Fix column widths */
-  th:first-child, td:first-child {
-    width: 3%; /* Smallest column for delete (X) */
+  .remove-col {
+    width: 40px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  
+  .course-info-col {
+    width: 200px;
+    min-width: 200px;
+    max-width: 300px;
   }
 
-  th:nth-child(2), td:nth-child(2) {
-    width: 13%; /* Course Code & Name */
+  .header-offered, .cell-offered {
+    width: 8%;
+    text-align: center;
   }
-
-  /* Ensuring equal width for BA, BS, CS, IS */
-  th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
-  td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
-    width: 17%; /* Adjusted for better spacing */
-  }
-
-  /* Making Pre-Req and Offer columns smaller */
-  th:nth-child(7), th:nth-child(8),
-  td:nth-child(7), td:nth-child(8) {
+  
+  .header-prereq, .cell-prereq {
     width: 8%;
   }
 
-  /* Ensure text wraps instead of overflowing */
   td {
     word-wrap: break-word;
     overflow: hidden;
@@ -803,7 +755,6 @@ table {
     transform: scale(1.01);
     }
   
-
   .tab-bar {
     display: flex;
     background-color: #f2f2f2;

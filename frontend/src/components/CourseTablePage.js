@@ -461,6 +461,7 @@ const CourseTablePage = () => {
         noPrereqs={noPrereqs}
         setNoPrereqs={setNoPrereqs}
         compactViewMode={compactViewMode}
+        allowRemove={false}
         />
       )}
 
