@@ -13,6 +13,7 @@ const PlanCourseTab = () => {
   const [toast, setToast] = useState({ show: false, message: "" });
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchRef = useRef(null);
+  const [compactViewMode, setCompactViewMode] = useState("full");
 
   // Use localStorage to persist added courses
   const [addedCourses, setAddedCourses] = useState(() => {
@@ -164,11 +165,24 @@ const PlanCourseTab = () => {
 
       </div>
 
+
       {addedCourses.length > 0 && (
         <div className="planned-courses-header">
           <div className="selected-title-wrapper">
-            Selected Courses ({addedCourses.length})
+            Total Courses in Plan: {addedCourses.length}
           </div>
+
+          <select
+            className="view-toggle"
+            value={compactViewMode}
+            onChange={(e) => setCompactViewMode(e.target.value)}
+            style={{ margin: "6px", padding: "5px" }}
+          >
+            <option value="full">Full View</option>
+            <option value="last2">Compact (Last 2)</option>
+            <option value="last1">Most Compact (Last 1)</option>
+          </select>
+
           <button className="clear-all-btn" onClick={clearAllCourses}>Clear All</button>
         </div>
       )}
@@ -194,6 +208,7 @@ const PlanCourseTab = () => {
         allowRemove={true}
         handleRemoveCourse={removeCourse}
         hideDropdowns={true}
+        compactViewMode={compactViewMode}  
       />
     </div>
 

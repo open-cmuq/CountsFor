@@ -181,22 +181,32 @@
 
   .planned-courses-header {
     display: flex;
-    justify-content: space-between;
+    /* justify-content: space-between; */
     align-items: center;
-    margin-top: 20px;
+    margin-top: 10px;
     margin-bottom: 10px;
+    gap: 12px;
   }
 
   .selected-title-wrapper {
     background-color: #f0f4ff;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-radius: 10px;
     display: inline-block;
     font-weight: 600;
     font-size: 0.9rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
     color: #1a237e;
   }
+
+  .compact-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  
   
   
   
