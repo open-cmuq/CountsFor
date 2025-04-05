@@ -8,7 +8,7 @@
     margin-bottom: 20px;
     padding: 16px;
     border-radius: 12px;
-    background: #f4f4f4;
+    background: #f2f2f2;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
   
@@ -65,7 +65,7 @@
   }
   
   .results-header {
-    margin: 0 0 10px 0;
+    margin: 10px 0 10px 0;
     font-weight: normal;
     font-size: 14px;
     color: #555;
@@ -117,6 +117,74 @@
   .close-btn:hover {
     color: #333;
   }
+
+  .add-btn {
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+  
+  .add-btn.animated-fade {
+    background-color: #aaa !important;
+    color: white;
+    cursor: not-allowed;
+  }
+  
+  @keyframes fadeAndScale {
+    0% {
+      background-color: #4a68fb;
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      background-color: #aaa;
+      transform: scale(1);
+    }
+  }
+  
+  .add-btn.animated-fade {
+    animation: fadeAndScale 0.3s ease-in;
+  }
+  
+  .clear-all-btn {
+    background-color: #f44336; 
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .clear-all-btn:hover {
+    background-color: #d32f2f;
+  }
+
+  .planned-courses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .selected-title-wrapper {
+    background-color: #f0f4ff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    display: inline-block;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    color: #1a237e;
+  }
+  
+  
+  
+  
   
   
   

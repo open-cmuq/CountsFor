@@ -62,7 +62,6 @@ const PlanCourseTab = () => {
     }
   };
   
-
   const addCourse = async (course) => {
     if (addedCourses.some((c) => c.course_code === course.course_code)) {
       setToast({ show: true, message: "Course already added! 😅" });
@@ -75,9 +74,6 @@ const PlanCourseTab = () => {
       const fullCourse = await res.json();
   
       setAddedCourses((prev) => [...prev, fullCourse]);
-      setSearchResults((prevResults) =>
-        prevResults.filter((c) => c.course_code !== course.course_code)
-      );
   
       setToast({ show: true, message: "Course added! 🎉" });
       setTimeout(() => setToast({ show: false, message: "" }), 3000);
@@ -108,6 +104,7 @@ const PlanCourseTab = () => {
     };
   }, []);  
 
+
   return (
     <div className="plan-tab">
       <h1 className="title">Plan Courses</h1>
@@ -127,45 +124,51 @@ const PlanCourseTab = () => {
           <button className="search-btn" onClick={handleSearch}>🔍</button>
         </div>
 
-        {showSearchResults && searchResults.length > 0 && (
+        {showSearchResults && (
           <div className="scrollable-results" ref={searchRef}>
             <div className="results-header-row">
-              <h3 className="results-header">{searchResults.length} result(s)</h3>
+              <h3 className="results-header">
+                {searchResults.length > 0
+                  ? `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`
+                  : "No courses found for this search!"}
+              </h3>
               <button className="close-btn" onClick={() => setShowSearchResults(false)}>✖</button>
             </div>
 
-            {searchResults.map((course) => (
+          {searchResults.map((course) => {
+            const isAlreadyAdded = addedCourses.some((c) => c.course_code === course.course_code);
+            return (
               <div key={course.course_code} className="course-result-item">
                 <div>
                   <b>{course.course_code}</b> – {course.course_name}
                 </div>
-                {addedCourses.some((c) => c.course_code === course.course_code) ? (
-                  <button
-                    className="add-btn disabled"
-                    onClick={() => {
+                <button
+                  className={`add-btn ${isAlreadyAdded ? "disabled animated-fade" : ""}`}
+                  onClick={() => {
+                    if (isAlreadyAdded) {
                       setToast({ show: true, message: "Course already added! 😅" });
-                      setTimeout(() => setToast({ show: false, message: "" }), 2000);
-                    }}
-                    title="Already added"
-                  >
-                    Added
-                  </button>
-                ) : (
-                  <button className="add-btn" onClick={() => addCourse(course)}>
-                    + Add
-                  </button>
-                )}
+                    } else {
+                      addCourse(course);
+                    }
+                    setTimeout(() => setToast({ show: false, message: "" }), 2000);
+                  }}
+                  title={isAlreadyAdded ? "Already added" : "Click to add"}
+                >
+                  {isAlreadyAdded ? "Added" : "+ Add"}
+                </button>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
 
       </div>
 
-
       {addedCourses.length > 0 && (
         <div className="planned-courses-header">
-          <h3>Selected Courses ({addedCourses.length})</h3>
+          <div className="selected-title-wrapper">
+            Selected Courses ({addedCourses.length})
+          </div>
           <button className="clear-all-btn" onClick={clearAllCourses}>Clear All</button>
         </div>
       )}

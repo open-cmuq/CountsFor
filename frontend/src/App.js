@@ -3,7 +3,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainTabs from "./components/MainTabs";
-import CourseTablePage from './components/CourseTablePage';
+// import CourseTablePage from './components/CourseTablePage';
 import DataUpload from './components/DataUpload';
 import AnalyticsPage from './components/Analytics';
 import "./styles.css";
