@@ -365,9 +365,13 @@ const CourseTablePage = () => {
       />
 
       {/* Top-left pagination and compact view button*/}
-      <div className="pagination-top">
-      <span>Showing {indexOfFirstCourse + 1} - {Math.min(indexOfLastCourse, courses.length)} of {courses.length}</span>
+      <div className="view-toolbar">
+        <span className="view-count">
+          Showing {indexOfFirstCourse + 1} - {Math.min(indexOfLastCourse, courses.length)} of {courses.length}
+        </span>
+
       <select
+        className="view-toggle"
         value={compactViewMode}
         onChange={(e) => setCompactViewMode(e.target.value)}
         style={{ margin: "6px", padding: "5px" }}
@@ -389,7 +393,7 @@ const CourseTablePage = () => {
               }
             }}
           >
-            {allAlreadyAdded ? "All Already in Plan" : "Add All to Plan"}
+            {allAlreadyAdded ? "All Courses Already in Plan" : "Add All to Plan"}
         </button>
       )}
       </div>
@@ -418,7 +422,7 @@ const CourseTablePage = () => {
       )}
 
       {showConfirmPopup && (
-        <div className="popup-overlay">
+        <div className="popup-overlay-2">
           <div className="popup-box">
             <p>
               Are you sure you want to add <strong>{courses.length}</strong> courses to your plan?
