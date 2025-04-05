@@ -95,22 +95,51 @@ class AuditDataExtractor(DataExtractor):
         """
         courses = []
         try:
-            if begin[:2] != end[:2] or begin[:2] == 'XX':
-                logging.warning("Not including course range: %s to %s", begin, end)
+            # Special handling for wildcard ranges like XX-001 to XX-999
+            if begin.startswith('XX-') or end.startswith('XX-'):
+                logging.info("Processing wildcard range: %s to %s", begin, end)
+                # This is a wildcard range that applies to any department code
+                # We'll just add the range as a special type
+                range_description = f"{begin} to {end}"
+                courses.append((range_description, req_chain, 'Inclusion', 'Range',
+                                 parent_min_units))
+                return courses
+
+            # Normal department-specific range
+            if begin[:2] != end[:2]:
+                logging.warning("Course range spans different departments: %s to %s", begin, end)
                 return courses
 
             code = begin[:2]
-            begin_num = int(begin[3:])
-            end_num = int(end[3:])
 
-            if begin_num == 1 and end_num == 999:
-                courses = [(code, req_chain, 'Inclusion', 'Code', parent_min_units)]
-            else:
-                for n in range(begin_num, end_num + 1):
-                    course_num = f"{code}-{str(n).zfill(3)}"
-                    courses.append((course_num, req_chain, 'Inclusion', 'Course', parent_min_units))
+            # If the range is the full range of a department (e.g., 03-001 to 03-999)
+            if begin.endswith('-001') and end.endswith('-999'):
+                # Add the entire department code
+                courses.append((code, req_chain, 'Inclusion', 'Code', parent_min_units))
+                return courses
+
+            # Handle specific numeric ranges
+            try:
+                begin_num = int(begin[3:])
+                end_num = int(end[3:])
+
+                if end_num - begin_num > 100:
+                    # If range is too large, just add the range as a description
+                    range_description = f"{begin} to {end}"
+                    courses.append((range_description, req_chain, 'Inclusion', 'Range',
+                                     parent_min_units))
+                else:
+                    # Otherwise, enumerate each course in the range
+                    for n in range(begin_num, end_num + 1):
+                        course_num = f"{code}-{str(n).zfill(3)}"
+                        courses.append((course_num, req_chain, 'Inclusion', 'Course',
+                                         parent_min_units))
+            except ValueError:
+                logging.error("Invalid course numbers in range: %s to %s", begin, end)
+
         except (ValueError, IndexError) as error:
             logging.error("Invalid course range format: %s to %s, error: %s", begin, end, error)
+
         return courses
 
     def get_courses_from_constraint(self, constraint, req_chain,
@@ -135,46 +164,67 @@ class AuditDataExtractor(DataExtractor):
                     courses.append(extracted_course)
                 else:
                     logging.error("Missing expected course information in constraint")
+
             elif constraint_type == "xfromcourseset":
+                # Process course sets that define ranges of courses
                 course_sets = constraint_data.get("conditional_course_sets", [])
                 for cs in course_sets:
-                    if "courses" in cs:
+                    # Process explicit courses list
+                    if "courses" in cs and cs["courses"]:
                         for course in cs["courses"]:
                             extracted_course = (course, req_chain, "Inclusion", "Course", min_units)
                             courses.append(extracted_course)
-                    else:
-                        logging.error("Missing expected key in constraint: 'courses'")
-            elif constraint_type == "xfromdepts":
-                depts = constraint_data.get("depts", [])
-                for dept in depts:
-                    dept_code = dept.get("code", "")
-                    if dept_code:
-                        possible_courses = [f"{dept_code}-{str(i).zfill(3)}" for i
-                                            in range(1, 1000)]
-                        valid_courses = [c for c in possible_courses if c in course_codes]
-                        for course in valid_courses:
-                            extracted_course = (course, req_chain, "Inclusion", "Course", min_units)
-                            courses.append(extracted_course)
-                    else:
-                        logging.warning("Skipping department with missing code")
-                code_ranges = constraint_data.get("code_ranges", [])
-                for range_pair in code_ranges:
-                    if len(range_pair) == 2:
-                        begin, end = range_pair
-                        range_courses = self.get_courses_from_range(begin, end,
-                                                                    req_chain, min_units)
-                        for course_tuple in range_courses:
-                            course_code = course_tuple[0]
-                            if course_code in course_codes:
-                                courses.append(course_tuple)
-                    else:
-                        logging.error("Invalid code range format in constraint: %s", range_pair)
-            elif constraint_type in ["anyxof", "minxunits", "notcountcourseset"]:
-                logging.info("Skipping non-course constraint: %s", constraint_type)
+
+                    # Process code ranges (like 03-001 to 03-999)
+                    if "code_ranges" in cs and cs["code_ranges"]:
+                        for range_pair in cs["code_ranges"]:
+                            if len(range_pair) == 2:
+                                begin, end = range_pair
+                                range_courses = self.get_courses_from_range(begin, end,
+                                                                          req_chain, min_units)
+                                courses.extend(range_courses)
+
+                    # Process code patterns (like 70-***)
+                    if "code_patterns" in cs and cs["code_patterns"]:
+                        for pattern in cs["code_patterns"]:
+                            # Convert pattern to regex
+                            pattern_regex = pattern.replace("*", ".")
+                            for code in course_codes:
+                                if re.match(pattern_regex, code):
+                                    extracted_course = (code, req_chain, "Inclusion", "Course",
+                                                        min_units)
+                                    courses.append(extracted_course)
+
+            elif constraint_type == "notcountcourseset":
+                # Process exclusion courses - we'll add them with "Exclusion" type
+                if "courses" in constraint_data and constraint_data["courses"]:
+                    for course in constraint_data["courses"]:
+                        extracted_course = (course, req_chain, "Exclusion", "Course", min_units)
+                        courses.append(extracted_course)
+
+                # Process excluded patterns
+                if "code_patterns" in constraint_data and constraint_data["code_patterns"]:
+                    for pattern in constraint_data["code_patterns"]:
+                        pattern_regex = pattern.replace("*", ".")
+                        # For patterns, we'll just add the pattern itself with a special type
+                        extracted_pattern = (pattern, req_chain, "Exclusion", "Pattern", min_units)
+                        courses.append(extracted_pattern)
+
+            elif constraint_type in ["anyxof", "minxunits", "xwithgrades", "dc"]:
+                # These constraint types don't directly specify courses, they're rules for counting
+                # We'll add them as special entries for completeness
+                constraint_text = constraint.get("type_string", "")
+                if constraint_text:
+                    extracted_rule = (constraint_text, req_chain, "Rule", constraint_type,
+                                      min_units)
+                    courses.append(extracted_rule)
+
             else:
                 logging.warning("Unknown constraint type: %s", constraint_type)
+
         except (KeyError, ValueError, IndexError) as e:
             logging.error("Exception while processing constraint: %s", str(e))
+
         return courses
 
     def get_courses(self, data, req_chain, course_codes, parent_min_units=None):
@@ -226,13 +276,48 @@ class AuditDataExtractor(DataExtractor):
             return []
 
         try:
+            # Get requirements from the main requirement tree
             req_major = self.get_courses(data['requirement'], '', course_codes)
             req_programs = []
-            if data.get('uni_req_tree'):
+
+            # Check if this is the BA GenEd format (published.json)
+            if (data.get('program', {}).get('name', '').startswith("EY") and
+                "Business Administration" in data.get('program', {}).get('name', '')
+                and "Core Requirements" in data.get('program', {}).get('name', '')):
+                # This is the BA GenEd format - handle main requirements
+                logging.info("Processing BA GenEd format for file: %s", json_path)
+                main_req_name = data.get('program', {}).get('name', '')
+
+                for choice in data['requirement'].get('choices', []):
+                    req_name = f"{main_req_name}---{choice.get('screen_name', '')}"
+                    for constraint in choice.get('constraints', []):
+                        courses = self.get_courses_from_constraint(constraint, req_name,
+                                                                   course_codes)
+                        req_programs.extend(courses)
+
+                    for subchoice in choice.get('choices', []):
+                        sub_req_name = f"{req_name}---{subchoice.get('screen_name', '')}"
+                        for constraint in subchoice.get('constraints', []):
+                            courses = self.get_courses_from_constraint(constraint,
+                                                                       sub_req_name,
+                                                                       course_codes)
+                            req_programs.extend(courses)
+
+                        for course_item in subchoice.get('choices', []):
+                            screen_name = course_item.get('screen_name', '')
+                            course_req_name = f"{sub_req_name}---{screen_name}"
+                            for constraint in course_item.get('constraints', []):
+                                courses = self.get_courses_from_constraint(constraint,
+                                                                           course_req_name,
+                                                                           course_codes)
+                                req_programs.extend(courses)
+
+            elif data.get('uni_req_tree'):
                 for program in data['uni_req_tree'].get('programs', []):
                     if ("Degree Check" not in program['screen_name'] and
                         "Total Units" not in program['screen_name']):
                         req_programs.extend(self.get_courses(program, '', course_codes))
+
             return req_major + req_programs
         except KeyError as error:
             logging.error("Missing expected key in audit data: %s", error)
@@ -273,74 +358,10 @@ class AuditDataExtractor(DataExtractor):
     def post_process_requirement(self, req):
         """
         Cleans and standardizes the requirement string.
-        This version replicates the original behavior by:
-        1. Splitting the requirement on '---'
-        2. Handling specific cases for Business Administration and Information Systems
-        3. Always filtering out tokens that match a course code pattern or contain 'choose'/'select'
+        This simplified version just returns the original requirement string without modification.
         """
-        try:
-            parts = req.split('---')
-            number_words = {"one", "two", "three", "four", "five", "six",
-                            "seven", "eight", "nine", "ten"}
-            new_req = req
-
-            # Case 1: BS in Business Administration with a "select" token in parts[1]
-            if req.startswith("BS in Business Administration") and "select" in parts[1].lower():
-                if len(parts) == 6:
-                    part0 = parts[0].strip()
-                    cleaned_part1 = re.sub(r'\s*-\s*select.*', '', parts[1],
-                                        flags=re.IGNORECASE).strip()
-                    tokens = [t for t in cleaned_part1.split() if t.lower() not in number_words]
-                    cleaned_part1 = " ".join(tokens)
-                    part2, part3 = parts[2].strip(), parts[3].strip()
-                    tokens_p4 = parts[4].split()
-                    if tokens_p4 and tokens_p4[0].lower() in number_words:
-                        processed_part4 = " ".join(tokens_p4[1:]).strip()
-                    else:
-                        processed_part4 = parts[4].strip()
-                    part5 = parts[5].strip()
-                    new_req = "---".join([part0, cleaned_part1, part2, part3,
-                                          processed_part4, part5])
-                elif len(parts) == 5:
-                    part0 = parts[0].strip()
-                    cleaned_part1 = re.sub(r'\s*-\s*select.*', '', parts[1],
-                                        flags=re.IGNORECASE).strip()
-                    tokens = [t for t in cleaned_part1.split() if t.lower() not in number_words]
-                    cleaned_part1 = " ".join(tokens)
-                    part2 = parts[2].strip()
-                    tokens_p4 = parts[4].split()
-                    if tokens_p4 and tokens_p4[0].lower() in number_words:
-                        processed_part4 = " ".join(tokens_p4[1:]).strip()
-                    else:
-                        processed_part4 = parts[4].strip()
-                    new_req = "---".join([part0, cleaned_part1, part2, processed_part4])
-
-            # Case 2: BS in Information Systems---Concentration
-            elif req.startswith("BS in Information Systems---Concentration") and len(parts) == 5:
-                (part0, part1, part2, part4) = (parts[0].strip(), parts[1].strip(),
-                parts[2].strip(), parts[4].strip())
-                if part4.startswith(part2):
-                    part4 = part4[len(part2):].strip()
-                    part4 = part4[1:].strip() if part4.startswith('-') else part4
-                new_req = "---".join([part0, part1, part2, part4])
-
-            # Always apply final filtering (Case 3) to remove tokens that look like course codes
-            # or contain 'choose'/'select'
-            course_code_pattern = r'\b(?:\d{5}|\d{2}-\d{3}|[a-zA-Z]{2}-\d{3})\b'
-            final_parts = []
-            for part in new_req.split('---'):
-                stripped = part.strip()
-                if not (re.search(course_code_pattern, stripped) or
-                        re.search(r'\bchoose\b', stripped, flags=re.IGNORECASE) or
-                        re.search(r'\bselect\b', stripped, flags=re.IGNORECASE)):
-                    final_parts.append(stripped)
-            new_req = "---".join(final_parts)
-            return new_req
-
-        except (IndexError, AttributeError, TypeError) as error:
-            logging.error("Error processing requirement string: %s", error)
-            return req
-
+        # Simply return the original requirement string
+        return req
 
     def make_data_frame(self, audit):
         """

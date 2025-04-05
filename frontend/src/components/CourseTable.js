@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import MultiSelectDropdown from "./MultiSelectDropdown";
+import SingleSelectDropdown from "./SingleSelectDropdown";
 import Popup from "./PopUp";
 import { formatCourseCode } from './utils/courseCodeFormatter';
 
@@ -14,8 +15,15 @@ const CourseTable = ({
   offeredOptions,
   selectedOfferedSemesters,
   setSelectedOfferedSemesters,
-  coreOnly,    // new prop
-  genedOnly,   // new prop
+  coreOnly,
+  genedOnly,
+  allowRemove,
+  handleRemoveCourse,
+  noPrereqs,
+  setNoPrereqs,
+  compactViewMode,
+  hideDropdowns,
+  isPlanTab = false,
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -67,63 +75,134 @@ const CourseTable = ({
     });
   };
 
+  // For expandable Pre-Req cells
+    const PrereqCell = ({ text }) => {
+      const [expanded, setExpanded] = useState(false);
+
+      // Remove square brackets from the text
+      const cleanedText = text ? text.replace(/[\[\]]/g, '') : text;
+      const previewText = cleanedText.length > 40 ? cleanedText.slice(0, 40) + "..." : cleanedText;
+
+      return (
+        <>
+          {expanded ? cleanedText : previewText}
+          {cleanedText.length > 40 && (
+            <span
+              className="expand-toggle"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(!expanded);
+              }}
+            >
+              {expanded ? " Show less" : " Show more"}
+            </span>
+          )}
+        </>
+      );
+    };
+
+  const totalColumns =
+  1 + // Course column
+  Object.keys(allRequirements).length +
+  2 + // Offered + Prereq
+  (allowRemove ? 1 : 0);
+
   return (
     <div>
       <table>
         <thead>
           <tr>
-            <th></th>
-            <th>COURSES</th>
+          {allowRemove && <th className="remove-col"> </th>}
+          <th className="course-info-col">COURSES</th>
             {Object.keys(allRequirements).map((major) => {
-            // Filter the requirement objects for this major based on active type filters.
-            const optionsForMajor = allRequirements[major].filter((reqObj) => {
-              if (coreOnly && !genedOnly) return reqObj.type === false;
-              if (genedOnly && !coreOnly) return reqObj.type === true;
-              return true;
-            });
-            return (
-              <th key={major} className={`header-${major.toLowerCase()}`}>
-                {major}
-                <br />
-                <MultiSelectDropdown
-                  major={major}
-                  // Pass the filtered options (as objects) to the dropdown.
-                  allRequirements={optionsForMajor}
-                  selectedFilters={selectedFilters}
-                  handleFilterChange={handleFilterChange}
-                  clearFilters={clearFilters}
-                  // (If your dropdown logic still extracts the raw string from each object, it will work.)
-                />
-              </th>
-            );
-          })}
-            <th>
+              // Filter the requirement objects for this major based on active type filters.
+              const optionsForMajor = allRequirements[major].filter((reqObj) => {
+                if (coreOnly && !genedOnly) return reqObj.type === false;
+                if (genedOnly && !coreOnly) return reqObj.type === true;
+                return true;
+              });
+
+              return (
+                <th key={major} className={`header-${major.toLowerCase()}`}>
+                  {major}
+                  {!hideDropdowns && (
+                    <>
+                      <br />
+                      <MultiSelectDropdown
+                        major={major}
+                        allRequirements={optionsForMajor}
+                        selectedFilters={selectedFilters}
+                        handleFilterChange={handleFilterChange}
+                        clearFilters={clearFilters}
+                      />
+                    </>
+                  )}
+                </th>
+              );
+            })}
+            <th className="header-offered">
               OFFERED
-              <br />
-              <MultiSelectDropdown
-                major="offered"
-                allRequirements={offeredOptions}
-                selectedFilters={{ offered: selectedOfferedSemesters }}
-                handleFilterChange={(major, newSelection) =>
-                  setSelectedOfferedSemesters(newSelection)
-                }
-                clearFilters={() => setSelectedOfferedSemesters([])}
-              />
+              {!hideDropdowns && (
+                <>
+                  <br />
+                  <MultiSelectDropdown
+                    major="offered"
+                    allRequirements={offeredOptions}
+                    selectedFilters={{ offered: selectedOfferedSemesters }}
+                    handleFilterChange={(major, newSelection) =>
+                      setSelectedOfferedSemesters(newSelection)
+                    }
+                    clearFilters={() => setSelectedOfferedSemesters([])}
+                  />
+                </>
+              )}
             </th>
-            <th>PRE-REQ</th>
+            <th className="header-prereq">
+              PRE-REQ
+              {!hideDropdowns && (
+                <>
+                  <br />
+                  <SingleSelectDropdown
+                    major="prereq"
+                    options={["all", "with", "without"]}
+                    selected={
+                      noPrereqs === null
+                        ? "all"
+                        : noPrereqs === false
+                        ? "without"
+                        : "with"
+                    }
+                    onChange={(value) => {
+                      if (value === "all") setNoPrereqs(null);
+                      else if (value === "without") setNoPrereqs(false);
+                      else if (value === "with") setNoPrereqs(true);
+                    }}
+                  />
+                </>
+              )}
+            </th>
           </tr>
         </thead>
         <tbody>
-          {courses.map((course) => (
-            <tr key={course.course_code}>
-              <td>
-                <button
-                  className="remove-btn"
-                  onClick={() => console.log("Remove", course.course_code)}
-                >
+        {courses.length === 0 ? (
+          <tr>
+            <td colSpan={totalColumns} className="no-results-msg">
+              {isPlanTab
+                ? "No planned courses yet. Search and add courses above to get started! 📋"
+                : "No courses found. Try adjusting your filters or search criteria."}
+            </td>
+        </tr>
+    ) :(
+          courses.map((course) => (
+              <tr key={course.course_code}>
+            {allowRemove && (
+              <td className="remove-col">
+                <button className="remove-btn" onClick={() => handleRemoveCourse(course.course_code)}>
                   ✖
                 </button>
               </td>
+            )}
+
               <td>
                 <b
                   className="clickable"
@@ -151,9 +230,40 @@ const CourseTable = ({
 
               // Otherwise, build the list items using the *filtered* objects
               const formattedRequirements = filteredReqObjects.map((reqObj, index) => {
-                const formattedText = reqObj.requirement
-                  .replace(/^[^-]+---/, "")
-                  .replace(/---/g, " → ");
+                let formattedText = reqObj.requirement;
+
+                // Format the requirement text based on its type
+                if (reqObj.type) { // GenEd type
+                  // Handle different GenEd formats
+                  if (formattedText.includes("General Education")) {
+                    // Traditional format with "General Education"
+                    formattedText = formattedText.replace(/^.*General Education\s*---/, "");
+                  } else if (formattedText.includes("University Core Requirements")) {
+                    // BA format using "University Core Requirements"
+                    const parts = formattedText.split("University Core Requirements");
+                    if (parts.length > 1) {
+                      formattedText = parts[1].replace(/^---/, "");
+                    }
+                  } else {
+                    // For any other GenEd format, just remove the initial prefix
+                    formattedText = formattedText.replace(/^[^-]+---/, "");
+                  }
+                } else { // Core type
+                  // Just remove the initial part as before
+                  formattedText = formattedText.replace(/^[^-]+---/, "");
+                }
+
+                // Replace all --- with arrows for both types
+                formattedText = formattedText.replace(/---/g, " → ");
+
+                if (compactViewMode === "last2") {
+                  const parts = formattedText.split("→").map(s => s.trim());
+                  formattedText = parts.slice(-2).join(" → ");
+                } else if (compactViewMode === "last1") {
+                  const parts = formattedText.split("→").map(s => s.trim());
+                  formattedText = parts[parts.length - 1];
+                }
+
                 return reqObj.type
                   ? <i key={index}>{formattedText}</i>   // GenEd
                   : <b key={index}>{formattedText}</b>;  // Core
@@ -192,10 +302,12 @@ const CourseTable = ({
               );
             })}
 
-              <td>{course.offered.join(", ")}</td>
-              <td>{course.prerequisites || "NONE"}</td>
-            </tr>
-          ))}
+              <td className="cell-offered">{course.offered.join(", ")}</td>
+              <td className="cell-prereq">
+              <PrereqCell text={course.prerequisites} />
+              </td>
+              </tr>
+          )))}
         </tbody>
       </table>
 

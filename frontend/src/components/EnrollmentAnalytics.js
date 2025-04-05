@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import { sortSemestersChronologically } from './utils/semesterUtils';
 import "../styles.css";
@@ -27,6 +27,15 @@ const formatCourseCode = (code) => {
 const AggregatedEnrollmentAnalytics = () => {
   const [courseInput, setCourseInput] = useState('');
   const [courses, setCourses] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Set initial loading to false after a short delay to simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const removeCourse = (courseCodeToRemove) => {
     setCourses(prev => prev.filter(course => course.courseCode !== courseCodeToRemove));
@@ -126,13 +135,15 @@ const AggregatedEnrollmentAnalytics = () => {
         />
         <button
           onClick={addCourse}
-          className="search-btn"
+          className="add-all-btn"
           style={{
-            backgroundColor: "white",
-            border: "1px solid #ccc",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer"
+            backgroundColor: "black",
+            color: "white",
+            padding: "9px 16px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            transition: "all 0.3s ease, color 0.3s ease"
           }}
         >
           Add Course
@@ -159,24 +170,36 @@ const AggregatedEnrollmentAnalytics = () => {
       </div>
 
       <div style={{ backgroundColor: "white", padding: "10px", borderRadius: "5px", marginTop: "10px" }}>
-        <Plot
-          data={buildTraces()}
-          layout={{
-            title: "Aggregated Enrollment Over Semesters",
-            xaxis: { title: "Semester" },
-            yaxis: { title: "Enrollment Count" },
-            paper_bgcolor: 'white',
-            plot_bgcolor: 'white',
-            font: { family: 'Arial, sans-serif' },
-            width: null,
-            height: 400,
-            autosize: true,
-            margin: { l: 35, r: 15, t: 40, b: 40 }
-          }}
-          style={{ width: "100%", height: "400px", marginBottom: "0" }}
-          useResizeHandler={true}
-          config={{ responsive: true, displayModeBar: true }}
-        />
+        {initialLoading ? (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '400px',
+            width: '100%'
+          }}>
+            <div className="loading-spinner"></div>
+          </div>
+        ) : (
+          <Plot
+            data={buildTraces()}
+            layout={{
+              title: "Aggregated Enrollment Over Semesters",
+              xaxis: { title: "Semester" },
+              yaxis: { title: "Enrollment Count" },
+              paper_bgcolor: 'white',
+              plot_bgcolor: 'white',
+              font: { family: 'Arial, sans-serif' },
+              width: null,
+              height: 400,
+              autosize: true,
+              margin: { l: 35, r: 15, t: 40, b: 40 }
+            }}
+            style={{ width: "100%", height: "400px", marginBottom: "0" }}
+            useResizeHandler={true}
+            config={{ responsive: true, displayModeBar: true }}
+          />
+        )}
       </div>
     </div>
   );
@@ -189,6 +212,15 @@ const ClassEnrollmentAnalytics = () => {
   const [courseCode, setCourseCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Set initial loading to false after a short delay to simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const loadCourse = () => {
     const code = formatCourseCode(courseInput.trim());
@@ -286,13 +318,15 @@ const ClassEnrollmentAnalytics = () => {
         />
         <button
           onClick={loadCourse}
-          className="search-btn"
+          className="add-all-btn"
           style={{
-            backgroundColor: "white",
-            border: "1px solid #ccc",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer"
+            backgroundColor: "black",
+            color: "white",
+            padding: "9px 16px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            transition: "all 0.3s ease, color 0.3s ease"
           }}
         >
           Load Course
@@ -317,24 +351,36 @@ const ClassEnrollmentAnalytics = () => {
       </div>
 
       <div style={{ backgroundColor: "white", padding: "10px", borderRadius: "5px", marginTop: "10px" }}>
-        <Plot
-          data={buildTraces()}
-          layout={{
-            title: courseCode ? `Enrollment for ${courseCode}` : "Enrollment Over Semesters",
-            xaxis: { title: "Semester" },
-            yaxis: { title: "Enrollment Count" },
-            paper_bgcolor: 'white',
-            plot_bgcolor: 'white',
-            font: { family: 'Arial, sans-serif' },
-            width: null,
-            height: 400,
-            autosize: true,
-            margin: { l: 35, r: 15, t: 40, b: 40 }
-          }}
-          style={{ width: "100%", height: "400px", marginBottom: "0" }}
-          useResizeHandler={true}
-          config={{ responsive: true, displayModeBar: true }}
-        />
+        {initialLoading || loading ? (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '400px',
+            width: '100%'
+          }}>
+            <div className="loading-spinner"></div>
+          </div>
+        ) : (
+          <Plot
+            data={buildTraces()}
+            layout={{
+              title: courseCode ? `Enrollment for ${courseCode}` : "Enrollment Over Semesters",
+              xaxis: { title: "Semester" },
+              yaxis: { title: "Enrollment Count" },
+              paper_bgcolor: 'white',
+              plot_bgcolor: 'white',
+              font: { family: 'Arial, sans-serif' },
+              width: null,
+              height: 400,
+              autosize: true,
+              margin: { l: 35, r: 15, t: 40, b: 40 }
+            }}
+            style={{ width: "100%", height: "400px", marginBottom: "0" }}
+            useResizeHandler={true}
+            config={{ responsive: true, displayModeBar: true }}
+          />
+        )}
       </div>
     </div>
   );

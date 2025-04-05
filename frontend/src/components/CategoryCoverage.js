@@ -146,10 +146,14 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         </div>
 
         {loading ? (
-          <div className="selected-filters">
-            <div className="filter-tag" style={{ backgroundColor: '#4A68FB' }}>
-              Loading analytics data...
-            </div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '400px',
+            width: '100%'
+          }}>
+            <div className="loading-spinner"></div>
           </div>
         ) : chartData && chartData.coverage ? (
           <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "5px", marginTop: "20px" }}>

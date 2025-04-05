@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+import MultiSelectDropdown from "./MultiSelectDropdown";
 import { formatCourseCode } from './utils/courseCodeFormatter';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const SearchBar = ({
-  selectedDepartment,
-  setSelectedDepartment,
+  selectedDepartments,
+  setSelectedDepartments,
   searchQuery,
   setSearchQuery,
   noPrereqs,
@@ -20,6 +21,20 @@ const SearchBar = ({
   setGenedOnly    // setter for GenEd checkbox
 }) => {
   const [departments, setDepartments] = useState([]);
+
+  // Set default values on component mount if not already set
+  useEffect(() => {
+    // Default location to Qatar if not already set
+    if (offeredQatar === null) {
+      setOfferedQatar(true);
+    }
+
+    // Default course type to both Core and GenEd if not already set
+    if (coreOnly === null && genedOnly === null) {
+      setCoreOnly(true);
+      setGenedOnly(true);
+    }
+  }, [offeredQatar, coreOnly, genedOnly, setOfferedQatar, setCoreOnly, setGenedOnly]);
 
   // Fetch departments from API
   useEffect(() => {
@@ -38,16 +53,6 @@ const SearchBar = ({
     fetchDepartments();
   }, []);
 
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setSelectedDepartment("");
-    setNoPrereqs(null);
-    setOfferedQatar(null);
-    setOfferedPitts(null);
-    setCoreOnly(null);
-    setGenedOnly(null);
-  };
-
   // Function to get department name based on selected dep_code
   const getDepartmentName = (depCode) => {
     const dept = departments.find((dept) => dept.dep_code === depCode);
@@ -63,111 +68,114 @@ const SearchBar = ({
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
-      <div className="search-inputs">
-        {/* Department Dropdown */}
-        <select
-          value={selectedDepartment}
-          onChange={(e) => {
-            console.log("Selected department:", e.target.value);
-            setSelectedDepartment(e.target.value);
-          }}
-          className="search-dropdown"
-        >
-          <option value="">Choose a department</option>
-          {departments.map((dept, index) => (
-            <option key={dept.dep_code || index} value={dept.dep_code}>
-              {dept.dep_code} - {dept.name}
-            </option>
-          ))}
-        </select>
-
+      <div className="search-bar-row">
         {/* Course Search Input */}
         <input
           type="text"
-          placeholder="Specific course number"
+          placeholder="Search for a specific course number"
           value={searchQuery}
           onChange={handleSearchChange}
           className="text-input"
         />
 
-        <div className="checkbox-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={noPrereqs === false}
-              onChange={(e) =>
-                setNoPrereqs(e.target.checked ? false : null)
-              }
-            />
-            No Pre-reqs
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={offeredQatar === true}
-              onChange={(e) =>
-                setOfferedQatar(e.target.checked ? true : null)
-              }
-            />
-            Qatar
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={offeredPitts === true}
-              onChange={(e) =>
-                setOfferedPitts(e.target.checked ? true : null)
-              }
-            />
-            Pitts
-          </label>
-          {/* New checkboxes for requirement type filtering */}
-          <label>
-            <input
-              type="checkbox"
-              checked={coreOnly === true}
-              onChange={(e) =>
-                setCoreOnly(e.target.checked ? true : null)
-              }
-            />
-            Core
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={genedOnly === true}
-              onChange={(e) =>
-                setGenedOnly(e.target.checked ? true : null)
-              }
-            />
-            GenEd
-          </label>
-        </div>
-
-        {/* Search & Clear Buttons */}
-        <button className="search-btn">🔍</button>
-        <button onClick={handleClearSearch} className="search-clear-btn">
-          CLEAR SEARCH
-        </button>
+      {/* Department Dropdown */}
+      <div className="filter-group">
+        <label className="filter-label">Departments</label>
+        <MultiSelectDropdown
+          major="department"
+          showSelectedInButton={false}
+          wrapperClassName="department-dropdown-wrapper"
+          allRequirements={departments.map((d) => ({
+            value: d.dep_code,
+            label: `${d.dep_code} - ${d.name}`,
+          }))}
+          selectedFilters={{ department: selectedDepartments }}
+          handleFilterChange={(major, selected) => setSelectedDepartments(selected)}
+          clearFilters={() => setSelectedDepartments([])}
+        />
       </div>
 
-      {/* Display Selected Filters */}
-      {(selectedDepartment || searchQuery) && (
-        <div className="selected-filters">
-          {selectedDepartment && (
-            <span className="filter-tag">
-              {getDepartmentName(selectedDepartment)}
-              <button onClick={() => setSelectedDepartment("")}>×</button>
-            </span>
-          )}
-          {searchQuery && (
-            <span className="filter-tag">
-              {searchQuery}
-              <button onClick={() => setSearchQuery("")}>×</button>
-            </span>
-          )}
-        </div>
-      )}
+      <div className="filter-group">
+        <label className="filter-label">Location</label>
+        <MultiSelectDropdown
+          major="location"
+          wrapperClassName="location-dropdown-wrapper"
+          showSelectedInButton={true}
+          hideSelectButtons={true}
+          allRequirements={["qatar", "pitts"]}
+          selectedFilters={{ location: [
+            ...(offeredQatar ? ["qatar"] : []),
+            ...(offeredPitts ? ["pitts"] : [])
+          ] }}
+          handleFilterChange={(major, selected) => {
+            setOfferedQatar(selected.includes("qatar") ? true : null);
+            setOfferedPitts(selected.includes("pitts") ? true : null);
+          }}
+          clearFilters={() => {
+            setOfferedQatar(null);
+            setOfferedPitts(null);
+          }}
+        />
+      </div>
+
+      <div className="filter-group">
+        <label className="filter-label">Course Type</label>
+        <MultiSelectDropdown
+          major="courseType"
+          wrapperClassName="course-type-dropdown-wrapper"
+          showSelectedInButton={true}
+          hideSelectButtons={true}
+          allRequirements={["core", "gened"]}
+          selectedFilters={{ courseType: [
+            ...(coreOnly ? ["core"] : []),
+            ...(genedOnly ? ["gened"] : [])
+          ] }}
+          handleFilterChange={(major, selected) => {
+            setCoreOnly(selected.includes("core") ? true : null);
+            setGenedOnly(selected.includes("gened") ? true : null);
+          }}
+          clearFilters={() => {
+            setCoreOnly(null);
+            setGenedOnly(null);
+          }}
+        />
+    </div>
+
+
+      {/* Search & Clear Buttons */}
+      <button className="search-btn">🔍</button>
+    </div>
+
+      {/*Display Selected Filters*/}
+      {(selectedDepartments.length > 0 || searchQuery) && (
+  <div className="selected-filters">
+    {selectedDepartments.map((depCode) => (
+      <span key={depCode} className="filter-tag">
+        <button
+          onClick={() =>
+            setSelectedDepartments((prev) =>
+              prev.filter((code) => code !== depCode)
+            )
+          }
+        >
+          <span style={{ fontWeight: "bold", marginRight: "4px" }}>×</span>
+        </button>
+        {getDepartmentName(depCode)}
+      </span>
+    ))}
+
+    {searchQuery && (
+      <span className="filter-tag">
+        <button onClick={() => setSearchQuery("")}>
+          <span style={{ fontWeight: "bold", marginRight: "4px" }}>×</span>
+        </button>
+        {searchQuery}
+      </span>
+    )}
+  </div>
+)}
+
+
     </div>
   );
 };
