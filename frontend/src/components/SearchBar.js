@@ -53,17 +53,6 @@ const SearchBar = ({
     fetchDepartments();
   }, []);
 
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setSelectedDepartments([]);
-    setNoPrereqs(null);
-    // Set default values when clearing search
-    setOfferedQatar(true);
-    setOfferedPitts(null);
-    setCoreOnly(true);
-    setGenedOnly(true);
-  };
-
   // Function to get department name based on selected dep_code
   const getDepartmentName = (depCode) => {
     const dept = departments.find((dept) => dept.dep_code === depCode);
@@ -155,9 +144,6 @@ const SearchBar = ({
 
       {/* Search & Clear Buttons */}
       <button className="search-btn">🔍</button>
-      <button onClick={handleClearSearch} className="search-clear-btn">
-        CLEAR SEARCH
-      </button>
     </div>
 
       {/*Display Selected Filters*/}

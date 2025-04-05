@@ -74,6 +74,7 @@ const CourseTablePage = () => {
     return localStorage.getItem("compactViewMode") || "full";
   });
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [showClearPopup, setShowClearPopup] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "" }); 
   
   // Save states to localStorage
@@ -107,6 +108,14 @@ const CourseTablePage = () => {
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
   const currentCourses = courses.slice(indexOfFirstCourse, indexOfLastCourse);
 
+  // Update current page to the last valid page if the number of courses changes
+  useEffect(() => {
+    const totalPages = Math.ceil(courses.length / coursesPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages); 
+    }
+  }, [courses, coursesPerPage, currentPage]);
+  
   // Scroll to top when switching pages
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -335,7 +344,29 @@ const CourseTablePage = () => {
       (p) => p.course_code === c.course_code
     )
   );  
-  
+
+  const clearAllFilters = () => {
+    setSelectedDepartments([]);
+    setSelectedFilters({ BA: [], BS: [], CS: [], IS: [] });
+    setSelectedOfferedSemesters([]);
+    setSearchQuery("");
+    setOfferedQatar(true); 
+    setOfferedPitts(null);
+    setNoPrereqs(null);
+    setCoreOnly(true);
+    setGenedOnly(true);
+  }
+
+  const hasActiveFilters =
+  selectedDepartments.length > 0 ||
+  searchQuery.trim() !== "" ||
+  selectedFilters.BA.length > 0 ||
+  selectedFilters.BS.length > 0 ||
+  selectedFilters.CS.length > 0 ||
+  selectedFilters.IS.length > 0 ||
+  selectedOfferedSemesters.length > 0;
+
+
   return (
     <div className="table-container">
       <h1 className="title">CMU-Q General Education</h1>
@@ -364,7 +395,7 @@ const CourseTablePage = () => {
         removeOfferedSemester={removeOfferedSemester}
       />
 
-      {/* Top-left pagination and compact view button*/}
+      {/* Top-left pagination, compact view, clear filter, add courses to plan button*/}
       <div className="view-toolbar">
         <span className="view-count">
           Showing {indexOfFirstCourse + 1} - {Math.min(indexOfLastCourse, courses.length)} of {courses.length}
@@ -381,10 +412,21 @@ const CourseTablePage = () => {
         <option value="last1">Most Compact (Last 1)</option>
       </select>
 
+      <button 
+        className={`clear-all-filters-btn ${!hasActiveFilters ? "disabled" : ""}`} 
+        onClick={() => hasActiveFilters && setShowClearPopup(true)}
+        disabled={!hasActiveFilters}
+        title={hasActiveFilters ? "Click to reset all filters" : "No filters to clear!"}
+      >
+        Clear All Filters
+      </button>
+
+
       {courses.length > 0 && (
         <button
             className={`add-all-btn ${allAlreadyAdded ? "disabled" : ""}`}
             disabled={allAlreadyAdded}
+            title={allAlreadyAdded ? "All courses listed already in plan" : "Click to add all courses to plan"}
             onClick={() => {
               if (courses.length > 20) {
                 setShowConfirmPopup(true); 
@@ -393,11 +435,17 @@ const CourseTablePage = () => {
               }
             }}
           >
-            {allAlreadyAdded ? "All Courses Already in Plan" : "Add All to Plan"}
+            {allAlreadyAdded ? "All Courses in Plan" : "Add All to Plan"}
         </button>
       )}
+      
       </div>
-
+      {courses.length === 0 ? (
+      <div className="no-results-msg">
+        <p>No courses found.</p>
+        <p>Try adjusting your filters or search terms.</p>
+      </div>
+    ) : (
       <CourseTable
         courses={currentCourses}
         allRequirements={requirements}
@@ -414,6 +462,7 @@ const CourseTablePage = () => {
         setNoPrereqs={setNoPrereqs}
         compactViewMode={compactViewMode}
         />
+      )}
 
       {toast.show && (
         <div className="toast-snackbar">
@@ -445,6 +494,30 @@ const CourseTablePage = () => {
         </div>
       )}
 
+      {showClearPopup && (
+        <div className="popup-overlay-2">
+          <div className="popup-box">
+            <p>
+              Are you sure you want to all filters? This will reset all your search and requirement filter selections.
+            </p>
+            <div className="popup-buttons">
+              <button
+                className="confirm-btn"
+                onClick={() => {
+                  clearAllFilters();
+                }}
+              >
+                Clear All Filters
+              </button>
+              <button className="cancel-btn" 
+              onClick={() => setShowClearPopup(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    
       {/* Bottom pagination */}
       <div className="pagination-container">
         <button onClick={() => handlePageChange(Math.max(currentPage - 1, 1))} disabled={currentPage === 1}>‹</button>

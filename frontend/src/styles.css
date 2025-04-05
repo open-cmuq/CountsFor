@@ -480,7 +480,7 @@ table {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    width: 1050px;
+    width: 920px;
     margin-bottom: 10px;
   }
 
@@ -696,7 +696,7 @@ table {
   .view-toolbar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     margin: 5px 0;
     flex-wrap: wrap;
   }
@@ -1019,6 +1019,43 @@ table {
     border-radius: 8px;
     cursor: pointer;
   }
+
+  .no-results-msg {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    border: 1px dashed #ccc;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .clear-all-filters-btn {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease, color 0.3s ease;
+    background-color: black;
+    color: white;
+  }
+  
+  .clear-all-filters-btn:hover {
+    background-color: darkred;
+    transform: scale(1.03);
+  }
+
+  .clear-all-filters-btn.disabled,
+  .clear-all-filters-btn:disabled {
+  background-color: #ccc;
+  color: #777;
+  cursor: not-allowed;
+}
+
   
   
   
