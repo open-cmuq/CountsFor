@@ -101,7 +101,8 @@ class AuditDataExtractor(DataExtractor):
                 # This is a wildcard range that applies to any department code
                 # We'll just add the range as a special type
                 range_description = f"{begin} to {end}"
-                courses.append((range_description, req_chain, 'Inclusion', 'Range', parent_min_units))
+                courses.append((range_description, req_chain, 'Inclusion', 'Range',
+                                 parent_min_units))
                 return courses
 
             # Normal department-specific range
@@ -125,12 +126,14 @@ class AuditDataExtractor(DataExtractor):
                 if end_num - begin_num > 100:
                     # If range is too large, just add the range as a description
                     range_description = f"{begin} to {end}"
-                    courses.append((range_description, req_chain, 'Inclusion', 'Range', parent_min_units))
+                    courses.append((range_description, req_chain, 'Inclusion', 'Range',
+                                     parent_min_units))
                 else:
                     # Otherwise, enumerate each course in the range
                     for n in range(begin_num, end_num + 1):
                         course_num = f"{code}-{str(n).zfill(3)}"
-                        courses.append((course_num, req_chain, 'Inclusion', 'Course', parent_min_units))
+                        courses.append((course_num, req_chain, 'Inclusion', 'Course',
+                                         parent_min_units))
             except ValueError:
                 logging.error("Invalid course numbers in range: %s to %s", begin, end)
 
@@ -188,7 +191,8 @@ class AuditDataExtractor(DataExtractor):
                             pattern_regex = pattern.replace("*", ".")
                             for code in course_codes:
                                 if re.match(pattern_regex, code):
-                                    extracted_course = (code, req_chain, "Inclusion", "Course", min_units)
+                                    extracted_course = (code, req_chain, "Inclusion", "Course",
+                                                        min_units)
                                     courses.append(extracted_course)
 
             elif constraint_type == "notcountcourseset":
@@ -211,7 +215,8 @@ class AuditDataExtractor(DataExtractor):
                 # We'll add them as special entries for completeness
                 constraint_text = constraint.get("type_string", "")
                 if constraint_text:
-                    extracted_rule = (constraint_text, req_chain, "Rule", constraint_type, min_units)
+                    extracted_rule = (constraint_text, req_chain, "Rule", constraint_type,
+                                      min_units)
                     courses.append(extracted_rule)
 
             else:
@@ -276,33 +281,37 @@ class AuditDataExtractor(DataExtractor):
             req_programs = []
 
             # Check if this is the BA GenEd format (published.json)
-            if data.get('program', {}).get('name', '').startswith("EY") and "Business Administration" in data.get('program', {}).get('name', '') and "Core Requirements" in data.get('program', {}).get('name', ''):
+            if (data.get('program', {}).get('name', '').startswith("EY") and
+                "Business Administration" in data.get('program', {}).get('name', '')
+                and "Core Requirements" in data.get('program', {}).get('name', '')):
                 # This is the BA GenEd format - handle main requirements
                 logging.info("Processing BA GenEd format for file: %s", json_path)
                 main_req_name = data.get('program', {}).get('name', '')
 
                 for choice in data['requirement'].get('choices', []):
                     req_name = f"{main_req_name}---{choice.get('screen_name', '')}"
-                    # Process each main category like "CMU First Year Writing", "Scientific Reasoning", etc.
                     for constraint in choice.get('constraints', []):
-                        courses = self.get_courses_from_constraint(constraint, req_name, course_codes)
+                        courses = self.get_courses_from_constraint(constraint, req_name,
+                                                                   course_codes)
                         req_programs.extend(courses)
 
-                    # Process subchoices (like "Semester Long Writing Course" under "CMU First Year Writing")
                     for subchoice in choice.get('choices', []):
                         sub_req_name = f"{req_name}---{subchoice.get('screen_name', '')}"
                         for constraint in subchoice.get('constraints', []):
-                            courses = self.get_courses_from_constraint(constraint, sub_req_name, course_codes)
+                            courses = self.get_courses_from_constraint(constraint,
+                                                                       sub_req_name,
+                                                                       course_codes)
                             req_programs.extend(courses)
 
-                        # Process individual courses under subchoices
                         for course_item in subchoice.get('choices', []):
-                            course_req_name = f"{sub_req_name}---{course_item.get('screen_name', '')}"
+                            screen_name = course_item.get('screen_name', '')
+                            course_req_name = f"{sub_req_name}---{screen_name}"
                             for constraint in course_item.get('constraints', []):
-                                courses = self.get_courses_from_constraint(constraint, course_req_name, course_codes)
+                                courses = self.get_courses_from_constraint(constraint,
+                                                                           course_req_name,
+                                                                           course_codes)
                                 req_programs.extend(courses)
 
-            # Get requirements from university requirement tree (for non-BA GenEd formats)
             elif data.get('uni_req_tree'):
                 for program in data['uni_req_tree'].get('programs', []):
                     if ("Degree Check" not in program['screen_name'] and
