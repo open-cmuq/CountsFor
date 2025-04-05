@@ -438,7 +438,7 @@ const CourseTablePage = () => {
             {allAlreadyAdded ? "All Courses in Plan" : "Add All to Plan"}
         </button>
       )}
-      
+
       </div>
       {courses.length === 0 ? (
       <div className="no-results-msg">
@@ -505,6 +505,7 @@ const CourseTablePage = () => {
                 className="confirm-btn"
                 onClick={() => {
                   clearAllFilters();
+                  setShowClearPopup(false);
                 }}
               >
                 Clear All Filters

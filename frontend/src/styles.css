@@ -124,6 +124,7 @@
     border-radius: 4px;
     text-overflow: ellipsis;
     margin-top: 7px;
+    transition: all 0.3s ease;
   }
   
   .cell-container {
@@ -713,11 +714,16 @@ table {
     font-size: 0.9rem;
     background-color: white;
     min-width: 150px;
+    transition: all 0.4s ease;
   }
   
   .view-toggle:focus {
     outline: none;
     border-color: #4a68fb;
+  }
+
+  .view-toggle:hover {
+    transform: scale(1.01);
   }
 
   .prereq-expandable {
@@ -784,7 +790,7 @@ table {
     border-radius: 6px;
     padding: 7px 10px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.4s ease;
     margin-bottom: 3px;
     font-weight: bold;
     font-size: 15px;
@@ -794,7 +800,9 @@ table {
   
   .select-all-btn:hover {
     background-color: darkred;
-  }
+    transform: scale(1.01);
+    }
+  
 
   .tab-bar {
     display: flex;
