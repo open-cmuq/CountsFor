@@ -22,7 +22,8 @@ const CourseTable = ({
   noPrereqs,
   setNoPrereqs,
   compactViewMode,
-  hideDropdowns
+  hideDropdowns,
+  isPlanTab = false,
 }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState("");
@@ -96,9 +97,12 @@ const CourseTable = ({
         </>
       );
     };
-  
 
-
+  const totalColumns =
+  1 + // Course column
+  Object.keys(allRequirements).length +
+  2 + // Offered + Prereq
+  (allowRemove ? 1 : 0);
 
   return (
     <div>
@@ -177,8 +181,17 @@ const CourseTable = ({
           </tr>
         </thead>
         <tbody>
-          {courses.map((course) => (
-            <tr key={course.course_code}>
+        {courses.length === 0 ? (
+          <tr>
+            <td colSpan={totalColumns} className="no-results-msg">
+              {isPlanTab
+                ? "No planned courses yet. Search and add courses above to get started! 📋"
+                : "No courses found. Try adjusting your filters or search criteria."}
+            </td>
+        </tr>
+    ) :(
+          courses.map((course) => (
+              <tr key={course.course_code}>
             {allowRemove && (
               <td className="remove-col">
                 <button className="remove-btn" onClick={() => handleRemoveCourse(course.course_code)}>
@@ -291,10 +304,10 @@ const CourseTable = ({
               <PrereqCell text={course.prerequisites} />
               </td>              
               </tr>
-          ))}
+          )))}
         </tbody>
       </table>
-
+        
       <Popup
         isOpen={isPopupOpen}
         onClose={closePopup}

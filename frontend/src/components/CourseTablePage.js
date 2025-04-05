@@ -440,12 +440,6 @@ const CourseTablePage = () => {
       )}
 
       </div>
-      {courses.length === 0 ? (
-      <div className="no-results-msg">
-        <p>No courses found.</p>
-        <p>Try adjusting your filters or search terms.</p>
-      </div>
-    ) : (
       <CourseTable
         courses={currentCourses}
         allRequirements={requirements}
@@ -463,7 +457,6 @@ const CourseTablePage = () => {
         compactViewMode={compactViewMode}
         allowRemove={false}
         />
-      )}
 
       {toast.show && (
         <div className="toast-snackbar">

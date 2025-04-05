@@ -208,7 +208,8 @@ const PlanCourseTab = () => {
         allowRemove={true}
         handleRemoveCourse={removeCourse}
         hideDropdowns={true}
-        compactViewMode={compactViewMode}  
+        compactViewMode={compactViewMode}
+        isPlanTab={true}
         />
     </div>
 
