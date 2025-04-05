@@ -126,13 +126,15 @@ const AggregatedEnrollmentAnalytics = () => {
         />
         <button
           onClick={addCourse}
-          className="search-btn"
+          className="add-all-btn"
           style={{
-            backgroundColor: "white",
-            border: "1px solid #ccc",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer"
+            backgroundColor: "black",
+            color: "white",
+            padding: "9px 16px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            transition: "all 0.3s ease, color 0.3s ease"
           }}
         >
           Add Course
@@ -286,13 +288,15 @@ const ClassEnrollmentAnalytics = () => {
         />
         <button
           onClick={loadCourse}
-          className="search-btn"
+          className="add-all-btn"
           style={{
-            backgroundColor: "white",
-            border: "1px solid #ccc",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer"
+            backgroundColor: "black",
+            color: "white",
+            padding: "9px 16px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            transition: "all 0.3s ease, color 0.3s ease"
           }}
         >
           Load Course

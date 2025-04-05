@@ -79,7 +79,7 @@ const CourseTable = ({
     const PrereqCell = ({ text }) => {
       const [expanded, setExpanded] = useState(false);
       const previewText = text.length > 40 ? text.slice(0, 40) + "..." : text;
-    
+
       return (
         <>
           {expanded ? text : previewText}
@@ -302,12 +302,12 @@ const CourseTable = ({
               <td className="cell-offered">{course.offered.join(", ")}</td>
               <td className="cell-prereq">
               <PrereqCell text={course.prerequisites} />
-              </td>              
+              </td>
               </tr>
           )))}
         </tbody>
       </table>
-        
+
       <Popup
         isOpen={isPopupOpen}
         onClose={closePopup}

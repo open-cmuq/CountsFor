@@ -34,7 +34,7 @@ const SearchBar = ({
       setCoreOnly(true);
       setGenedOnly(true);
     }
-  }, []);
+  }, [offeredQatar, coreOnly, genedOnly, setOfferedQatar, setCoreOnly, setGenedOnly]);
 
   // Fetch departments from API
   useEffect(() => {
