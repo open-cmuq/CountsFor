@@ -73,7 +73,9 @@ const CourseTablePage = () => {
   const [compactViewMode, setCompactViewMode] = useState(() => {
     return localStorage.getItem("compactViewMode") || "full";
   });
-
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "" }); 
+  
   // Save states to localStorage
   useEffect(() => {
     localStorage.setItem("selectedDepartments", JSON.stringify(selectedDepartments));
@@ -304,9 +306,40 @@ const CourseTablePage = () => {
     setCourses((prev) => prev.filter((c) => c.course_code !== courseCode));
   };
 
+  const getPlannedCourses = () => {
+    const saved = localStorage.getItem("plannedCourses");
+    return saved ? JSON.parse(saved) : [];
+  };
+  
+  const addCoursesToPlan = (newCourses) => {
+    const existing = getPlannedCourses();
+  
+    // Avoid duplicates 
+    const uniqueCourses = newCourses.filter(
+      (c) => !existing.some((e) => e.course_code === c.course_code)
+    );
+  
+    const updated = [...existing, ...uniqueCourses];
+    localStorage.setItem("plannedCourses", JSON.stringify(updated));
+  
+    setToast({
+      show: true,
+      message: `${uniqueCourses.length} course${uniqueCourses.length !== 1 ? "s" : ""} added to Plan! 🎯`,
+    });
+  
+    setTimeout(() => setToast({ show: false, message: "" }), 2000);
+  };
+
+  const allAlreadyAdded = courses.length > 0 && courses.every((c) =>
+    (JSON.parse(localStorage.getItem("plannedCourses")) || []).some(
+      (p) => p.course_code === c.course_code
+    )
+  );  
+  
   return (
     <div className="table-container">
       <h1 className="title">CMU-Q General Education</h1>
+
       <SearchBar
         selectedDepartments={selectedDepartments}
         setSelectedDepartments={setSelectedDepartments}
@@ -343,6 +376,22 @@ const CourseTablePage = () => {
         <option value="last2">Compact (Last 2)</option>
         <option value="last1">Most Compact (Last 1)</option>
       </select>
+
+      {courses.length > 0 && (
+        <button
+            className={`add-all-btn ${allAlreadyAdded ? "disabled" : ""}`}
+            disabled={allAlreadyAdded}
+            onClick={() => {
+              if (courses.length > 20) {
+                setShowConfirmPopup(true); 
+              } else {
+                addCoursesToPlan(courses); 
+              }
+            }}
+          >
+            {allAlreadyAdded ? "All Already in Plan" : "Add All to Plan"}
+        </button>
+      )}
       </div>
 
       <CourseTable
@@ -361,6 +410,36 @@ const CourseTablePage = () => {
         setNoPrereqs={setNoPrereqs}
         compactViewMode={compactViewMode}
         />
+
+      {toast.show && (
+        <div className="toast-snackbar">
+          {toast.message}
+        </div>
+      )}
+
+      {showConfirmPopup && (
+        <div className="popup-overlay">
+          <div className="popup-box">
+            <p>
+              Are you sure you want to add <strong>{courses.length}</strong> courses to your plan?
+            </p>
+            <div className="popup-buttons">
+              <button
+                className="confirm-btn"
+                onClick={() => {
+                  addCoursesToPlan(courses);
+                  setShowConfirmPopup(false);
+                }}
+              >
+                Yes, Add All
+              </button>
+              <button className="cancel-btn" onClick={() => setShowConfirmPopup(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom pagination */}
       <div className="pagination-container">

@@ -56,7 +56,7 @@
   }
   
   .add-btn {
-    background-color: #22aa0a;
+    background-color: darkred;
     color: white;
     border: none;
     border-radius: 6px;
@@ -76,7 +76,7 @@
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #684afb;
+    background-color: darkred;
     color: white;
     padding: 12px 20px;
     border-radius: 10px;
@@ -121,6 +121,16 @@
   .add-btn {
     transition: background-color 0.4s ease, color 0.4s ease;
   }
+
+  .add-btn:hover,
+    .add-btn:focus {
+    background-color: #ca8a84; /* slightly lighter red on hover */
+    outline: none;
+    }
+
+    .add-btn:active {
+    background-color: #7a0000; /* deeper red when clicked */
+    }
   
   .add-btn.animated-fade {
     background-color: #aaa !important;
@@ -130,7 +140,7 @@
   
   @keyframes fadeAndScale {
     0% {
-      background-color: #4a68fb;
+      background-color: #ca8a84;
       transform: scale(1);
     }
     50% {
@@ -147,7 +157,7 @@
   }
   
   .clear-all-btn {
-    background-color: #f44336; 
+    background-color: black; 
     color: white;
     padding: 8px 16px;
     border: none;
@@ -160,7 +170,7 @@
   }
   
   .clear-all-btn:hover {
-    background-color: #d32f2f;
+    background-color: darkred;
   }
 
   .planned-courses-header {
