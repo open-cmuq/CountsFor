@@ -110,7 +110,7 @@
   }
 
   .dropdown-btn {
-    width: 110px; 
+    width: 110px;
     height: 90%;
     padding: 3px;
     border: 1px solid #ccc;
@@ -125,14 +125,14 @@
     margin-top: 7px;
     transition: all 0.3s ease;
   }
-  
+
   .cell-container {
     padding: 0;
     width: 100%;
     height: 100%;
   }
   .cell {
-    color: black !important; 
+    color: black !important;
   }
 
   .dropdown-item {
@@ -242,10 +242,10 @@
 
   .title {
     font-size: 45px;
-    margin-top: 20px;    
-    margin-bottom: 15px;  
+    margin-top: 20px;
+    margin-bottom: 15px;
   }
-  
+
 
   .table-container {
     padding: 10px;
@@ -332,16 +332,16 @@
   border: 1px solid #ccc;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  top: 100%; 
+  top: 100%;
   left: 0;
-  width: 275px; 
+  width: 275px;
   padding: 10px;
   display: flex;
   flex-direction: column;
   border-radius: 5px;
   margin-top: 0px;
   text-align: left;
-  font-weight: normal; 
+  font-weight: normal;
 
   }
 
@@ -377,7 +377,7 @@ table {
     text-align: center;
     white-space: nowrap;
   }
-  
+
   .course-info-col {
     width: 200px;
     min-width: 200px;
@@ -388,7 +388,7 @@ table {
     width: 8%;
     text-align: center;
   }
-  
+
   .header-prereq, .cell-prereq {
     width: 8%;
   }
@@ -607,8 +607,8 @@ table {
   .checkbox-group {
     display: flex;
     flex-direction: column;
-    gap: 5px; 
-    margin-top: 5px; 
+    gap: 5px;
+    margin-top: 5px;
   }
 
   .pagination-container {
@@ -618,7 +618,7 @@ table {
     justify-content: center;
     margin-top: 20px;
   }
-  
+
   .pagination-container button {
     padding: 8px 12px;
     border: 1px solid #ccc;
@@ -626,26 +626,26 @@ table {
     cursor: pointer;
     border-radius: 5px;
   }
-  
+
   .pagination-container button.active {
     background: #4A90E2;
     color: white;
     font-weight: bold;
     border-color: #4A90E2;
   }
-  
+
   .pagination-container button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   .pagination-container select {
     padding: 6px;
     border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
   }
-  
+
   .view-toolbar {
     display: flex;
     align-items: center;
@@ -653,12 +653,12 @@ table {
     margin: 5px 0;
     flex-wrap: wrap;
   }
-  
+
   .view-count {
     font-size: 0.9rem;
     color: #333;
   }
-  
+
   .view-toggle {
     padding: 8px 12px;
     border-radius: 8px;
@@ -668,7 +668,7 @@ table {
     min-width: 150px;
     transition: all 0.4s ease;
   }
-  
+
   .view-toggle:focus {
     outline: none;
     border-color: #4a68fb;
@@ -685,7 +685,7 @@ table {
     white-space: pre-wrap;
     word-wrap: break-word;
   }
-  
+
   .expand-toggle {
     display: inline-block;
     color: darkblue;
@@ -694,11 +694,11 @@ table {
     font-weight: bold;
     font-size: smaller;
   }
-  
+
   .dropdown-group {
     padding-left: 1px;
   }
-  
+
   .dropdown-group-label {
     background-color: #f0f0f0;
     color: #222;
@@ -716,17 +716,17 @@ table {
     cursor: pointer;
     transition: background-color 0.2s ease;
   }
-  
+
   .dropdown-group-label:hover {
     background-color: #e0e0e0;
   }
-  
+
   .dropdown-subgroup {
     padding-left: 10px;
     padding-top: 1px;
     padding-bottom: 1px;
   }
-  
+
   .dropdown-item.nested {
     font-size: 13px;
     margin-bottom: 4px;
@@ -734,7 +734,7 @@ table {
     align-items: center;
     gap: 2px;
   }
-  
+
   .select-all-btn {
     background-color: #bbbbbb;
     color: white;
@@ -749,18 +749,18 @@ table {
     width: 100%;
     align-self: center;
   }
-  
+
   .select-all-btn:hover {
     background-color: darkred;
     transform: scale(1.01);
     }
-  
+
   .tab-bar {
     display: flex;
     background-color: #f2f2f2;
     border-bottom: 2px solid #ccc;
   }
-  
+
   .tab {
     padding: 10px 20px;
     border: none;
@@ -771,11 +771,11 @@ table {
     border-bottom: 3px solid transparent;
     transition: all 0.2s ease;
   }
-  
+
   .tab:hover {
     background-color: #eaeaea;
   }
-  
+
   .tab.active {
     border-bottom: 3px solid #000;
     background-color: white;
@@ -790,12 +790,12 @@ table {
     border-radius: 8px;
     max-width: 600px;
   }
-  
+
   .search-result-list {
     list-style: none;
     padding-left: 0;
   }
-  
+
   .search-result-item {
     display: flex;
     justify-content: space-between;
@@ -803,11 +803,11 @@ table {
     padding: 0.6rem 0.4rem;
     border-bottom: 1px solid #e2e2e2;
   }
-  
+
   .search-result-item:last-child {
     border-bottom: none;
   }
-  
+
   .course-link {
     color: #0074cc;
     text-decoration: underline;
@@ -819,7 +819,7 @@ table {
     min-width: 100px;
     max-width: 100px;
   }
-  
+
   .dropdown-offered .drop-clear-btn {
     width: 95%;
   }
@@ -835,19 +835,19 @@ table {
     align-items: flex-start;
     margin-top: 10px;
   }
-  
+
   .filter-group {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .filter-label {
     font-weight: bold;
     font-size: 18px;
     margin-bottom: 0px;
   }
-  
+
   .search-bar-row {
     display: flex;
     flex-wrap: wrap;
@@ -860,7 +860,7 @@ table {
     margin-top: 3px;
     width: 150px;
   }
-  
+
   .course-type-dropdown-wrapper .dropdown-btn {
     margin-top: 3px;
     width: 150px;
@@ -879,12 +879,12 @@ table {
   .dropdown-content::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   .dropdown-content::-webkit-scrollbar-thumb {
     background-color: #aaa;
     border-radius: 10px;
   }
-  
+
   .dropdown-content::-webkit-scrollbar-track {
     background-color: #f0f0f0;
   }
@@ -898,13 +898,13 @@ table {
     background-color: #f8f8f8;
     margin: 4px 0;
   }
-  
+
   .item-text {
     text-align: left;
     flex: 1;
     padding-right: 10px;
   }
-  
+
   .dropdown-item.checkbox-right input[type="checkbox"] {
     margin-left: 12px;
     transform: scale(1.1);
@@ -919,18 +919,18 @@ table {
     background-color: black;
     color: white;
   }
-  
+
   .add-all-btn:hover {
     background-color: darkred;
     transform: scale(1.03);
   }
-  
+
   /* Disabled state — gray + no hover */
   .add-all-btn.disabled {
     background-color: #aaa;
     cursor: not-allowed;
     color: #eee;
-  }  
+  }
 
   .popup-overlay-2 {
     position: fixed;
@@ -944,7 +944,7 @@ table {
     align-items: center;
     z-index: 999;
   }
-  
+
   .popup-box {
     background: white;
     padding: 20px 30px;
@@ -953,14 +953,14 @@ table {
     text-align: center;
     max-width: 90%;
   }
-  
+
   .popup-buttons {
     margin-top: 20px;
     display: flex;
     justify-content: center;
     gap: 16px;
   }
-  
+
   .confirm-btn {
     background-color: darkred;
     color: white;
@@ -969,7 +969,7 @@ table {
     border-radius: 8px;
     cursor: pointer;
   }
-  
+
   .cancel-btn {
     background-color: #aaa;
     color: white;
@@ -1002,7 +1002,7 @@ table {
     background-color: black;
     color: white;
   }
-  
+
   .clear-all-filters-btn:hover {
     background-color: darkred;
     transform: scale(1.03);
@@ -1015,25 +1015,37 @@ table {
   cursor: not-allowed;
 }
 
-  
-  
-  
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left: 4px solid black;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
 
 
-  
-  
-  
-  
 
-  
-  
-  
-  
 
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

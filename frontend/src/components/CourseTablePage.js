@@ -75,8 +75,11 @@ const CourseTablePage = () => {
   });
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   const [showClearPopup, setShowClearPopup] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: "" }); 
-  
+  const [toast, setToast] = useState({ show: false, message: "" });
+
+  // Loading state for the CourseTable
+  const [loading, setLoading] = useState(true);
+
   // Save states to localStorage
   useEffect(() => {
     localStorage.setItem("selectedDepartments", JSON.stringify(selectedDepartments));
@@ -112,10 +115,10 @@ const CourseTablePage = () => {
   useEffect(() => {
     const totalPages = Math.ceil(courses.length / coursesPerPage);
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages); 
+      setCurrentPage(totalPages);
     }
   }, [courses, coursesPerPage, currentPage]);
-  
+
   // Scroll to top when switching pages
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -208,6 +211,7 @@ const CourseTablePage = () => {
   // Fetch courses using combined filters from backend
   useEffect(() => {
     const fetchCourses = async () => {
+      setLoading(true);
       try {
         // for multi-select
         const departmentsToFetch = selectedDepartments;
@@ -256,6 +260,8 @@ const CourseTablePage = () => {
         setCourses(filteredCourses);
       } catch (error) {
         console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -319,23 +325,23 @@ const CourseTablePage = () => {
     const saved = localStorage.getItem("plannedCourses");
     return saved ? JSON.parse(saved) : [];
   };
-  
+
   const addCoursesToPlan = (newCourses) => {
     const existing = getPlannedCourses();
-  
-    // Avoid duplicates 
+
+    // Avoid duplicates
     const uniqueCourses = newCourses.filter(
       (c) => !existing.some((e) => e.course_code === c.course_code)
     );
-  
+
     const updated = [...existing, ...uniqueCourses];
     localStorage.setItem("plannedCourses", JSON.stringify(updated));
-  
+
     setToast({
       show: true,
       message: `${uniqueCourses.length} course${uniqueCourses.length !== 1 ? "s" : ""} added to Plan! 🎯`,
     });
-  
+
     setTimeout(() => setToast({ show: false, message: "" }), 2000);
   };
 
@@ -343,14 +349,14 @@ const CourseTablePage = () => {
     (JSON.parse(localStorage.getItem("plannedCourses")) || []).some(
       (p) => p.course_code === c.course_code
     )
-  );  
+  );
 
   const clearAllFilters = () => {
     setSelectedDepartments([]);
     setSelectedFilters({ BA: [], BS: [], CS: [], IS: [] });
     setSelectedOfferedSemesters([]);
     setSearchQuery("");
-    setOfferedQatar(true); 
+    setOfferedQatar(true);
     setOfferedPitts(null);
     setNoPrereqs(null);
     setCoreOnly(true);
@@ -412,8 +418,8 @@ const CourseTablePage = () => {
         <option value="last1">Most Compact (Last 1)</option>
       </select>
 
-      <button 
-        className={`clear-all-filters-btn ${!hasActiveFilters ? "disabled" : ""}`} 
+      <button
+        className={`clear-all-filters-btn ${!hasActiveFilters ? "disabled" : ""}`}
         onClick={() => hasActiveFilters && setShowClearPopup(true)}
         disabled={!hasActiveFilters}
         title={hasActiveFilters ? "Click to reset all filters" : "No filters to clear!"}
@@ -429,9 +435,9 @@ const CourseTablePage = () => {
             title={allAlreadyAdded ? "All courses listed already in plan" : "Click to add all courses to plan"}
             onClick={() => {
               if (courses.length > 20) {
-                setShowConfirmPopup(true); 
+                setShowConfirmPopup(true);
               } else {
-                addCoursesToPlan(courses); 
+                addCoursesToPlan(courses);
               }
             }}
           >
@@ -440,23 +446,37 @@ const CourseTablePage = () => {
       )}
 
       </div>
-      <CourseTable
-        courses={currentCourses}
-        allRequirements={requirements}
-        selectedFilters={selectedFilters}
-        handleFilterChange={handleFilterChange}
-        clearFilters={clearFilters}
-        offeredOptions={offeredOptions}
-        selectedOfferedSemesters={selectedOfferedSemesters}
-        setSelectedOfferedSemesters={setSelectedOfferedSemesters}
-        coreOnly={coreOnly}
-        genedOnly={genedOnly}
-        handleRemoveCourse={handleRemoveCourse}
-        noPrereqs={noPrereqs}
-        setNoPrereqs={setNoPrereqs}
-        compactViewMode={compactViewMode}
-        allowRemove={false}
+
+      {loading ? (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '400px',
+          width: '100%',
+          marginTop: '20px'
+        }}>
+          <div className="loading-spinner"></div>
+        </div>
+      ) : (
+        <CourseTable
+          courses={currentCourses}
+          allRequirements={requirements}
+          selectedFilters={selectedFilters}
+          handleFilterChange={handleFilterChange}
+          clearFilters={clearFilters}
+          offeredOptions={offeredOptions}
+          selectedOfferedSemesters={selectedOfferedSemesters}
+          setSelectedOfferedSemesters={setSelectedOfferedSemesters}
+          coreOnly={coreOnly}
+          genedOnly={genedOnly}
+          handleRemoveCourse={handleRemoveCourse}
+          noPrereqs={noPrereqs}
+          setNoPrereqs={setNoPrereqs}
+          compactViewMode={compactViewMode}
+          allowRemove={false}
         />
+      )}
 
       {toast.show && (
         <div className="toast-snackbar">
@@ -504,7 +524,7 @@ const CourseTablePage = () => {
               >
                 Clear All Filters
               </button>
-              <button className="cancel-btn" 
+              <button className="cancel-btn"
               onClick={() => setShowClearPopup(false)}>
                 Cancel
               </button>
@@ -512,7 +532,7 @@ const CourseTablePage = () => {
           </div>
         </div>
       )}
-    
+
       {/* Bottom pagination */}
       <div className="pagination-container">
         <button onClick={() => handlePageChange(Math.max(currentPage - 1, 1))} disabled={currentPage === 1}>‹</button>

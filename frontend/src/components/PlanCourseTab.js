@@ -14,6 +14,7 @@ const PlanCourseTab = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchRef = useRef(null);
   const [compactViewMode, setCompactViewMode] = useState("full");
+  const [loading, setLoading] = useState(true);
 
   // Use localStorage to persist added courses
   const [addedCourses, setAddedCourses] = useState(() => {
@@ -30,6 +31,7 @@ const PlanCourseTab = () => {
 
   useEffect(() => {
     const fetchRequirements = async () => {
+      setLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/requirements`);
         const data = await response.json();
@@ -46,6 +48,8 @@ const PlanCourseTab = () => {
         setRequirements(grouped);
       } catch (err) {
         console.error("Failed to fetch requirements:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchRequirements();
@@ -62,27 +66,27 @@ const PlanCourseTab = () => {
       console.error("Search error:", err);
     }
   };
-  
+
   const addCourse = async (course) => {
     if (addedCourses.some((c) => c.course_code === course.course_code)) {
       setToast({ show: true, message: "Course already added! 😅" });
       setTimeout(() => setToast({ show: false, message: "" }), 3000);
       return;
     }
-  
+
     try {
       const res = await fetch(`${API_BASE_URL}/courses/${course.course_code}`);
       const fullCourse = await res.json();
-  
+
       setAddedCourses((prev) => [...prev, fullCourse]);
-  
+
       setToast({ show: true, message: "Course added! 🎉" });
       setTimeout(() => setToast({ show: false, message: "" }), 3000);
     } catch (err) {
       console.error("Error adding course:", err);
     }
   };
-  
+
   const removeCourse = (code) => {
     setAddedCourses((prev) => prev.filter((c) => c.course_code !== code));
   };
@@ -103,7 +107,7 @@ const PlanCourseTab = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);  
+  }, []);
 
 
   return (
@@ -194,23 +198,36 @@ const PlanCourseTab = () => {
       )}
 
 
-      <CourseTable
-        courses={addedCourses}
-        allRequirements={requirements}
-        selectedFilters={{ BA: [], BS: [], CS: [], IS: [] }}
-        handleFilterChange={() => {}}
-        clearFilters={() => {}}
-        offeredOptions={[]}
-        selectedOfferedSemesters={[]}
-        setSelectedOfferedSemesters={() => {}}
-        coreOnly={false}
-        genedOnly={false}
-        allowRemove={true}
-        handleRemoveCourse={removeCourse}
-        hideDropdowns={true}
-        compactViewMode={compactViewMode}
-        isPlanTab={true}
-        />
+      {loading ? (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '400px',
+          width: '100%',
+          marginTop: '20px'
+        }}>
+          <div className="loading-spinner"></div>
+        </div>
+      ) : (
+        <CourseTable
+          courses={addedCourses}
+          allRequirements={requirements}
+          selectedFilters={{ BA: [], BS: [], CS: [], IS: [] }}
+          handleFilterChange={() => {}}
+          clearFilters={() => {}}
+          offeredOptions={[]}
+          selectedOfferedSemesters={[]}
+          setSelectedOfferedSemesters={() => {}}
+          coreOnly={false}
+          genedOnly={false}
+          allowRemove={true}
+          handleRemoveCourse={removeCourse}
+          hideDropdowns={true}
+          compactViewMode={compactViewMode}
+          isPlanTab={true}
+          />
+      )}
     </div>
 
 
