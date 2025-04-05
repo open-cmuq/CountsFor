@@ -78,12 +78,15 @@ const CourseTable = ({
   // For expandable Pre-Req cells
     const PrereqCell = ({ text }) => {
       const [expanded, setExpanded] = useState(false);
-      const previewText = text.length > 40 ? text.slice(0, 40) + "..." : text;
+
+      // Remove square brackets from the text
+      const cleanedText = text ? text.replace(/[\[\]]/g, '') : text;
+      const previewText = cleanedText.length > 40 ? cleanedText.slice(0, 40) + "..." : cleanedText;
 
       return (
         <>
-          {expanded ? text : previewText}
-          {text.length > 40 && (
+          {expanded ? cleanedText : previewText}
+          {cleanedText.length > 40 && (
             <span
               className="expand-toggle"
               onClick={(e) => {
