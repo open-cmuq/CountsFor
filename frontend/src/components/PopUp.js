@@ -8,24 +8,28 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
     // If req is an object, extract its 'requirement' property.
     const rawReq = typeof req === "object" ? req.requirement : req;
     const isGenEd = typeof req === "object" && req.type === true;
-
+    
     // Handle different GenEd formats
+    if (!rawReq) return "";
+
+    // If it's GenEd
     if (isGenEd) {
-      if (rawReq && rawReq.includes("General Education")) {
-        return rawReq.replace(/^.*General Education\s*---/, "").replace(/---/g, " → ");
-      } else if (rawReq && rawReq.includes("University Core Requirements")) {
-        // BA format using "University Core Requirements"
-        const parts = rawReq.split("University Core Requirements");
-        if (parts.length > 1) {
-          return parts[1].replace(/^---/, "").replace(/---/g, " → ");
-        }
+      if (rawReq.includes("General Education")) {
+        // Ex: "General Education --- Foundations --- Scientific Reasoning"
+        return rawReq.replace(/^.*General Education\s*---/, "General Education → ").replace(/---/g, " → ");
+      } 
+      // BA format using "University Core Requirements"
+      if (rawReq.includes("University Core Requirements")) {
+        
+        // Ex: "University Core Requirements --- Global Histories"
+        return rawReq.replace(/^.*University Core Requirements\s*---/, "University Core Requirements → ").replace(/---/g, " → ");
       }
     }
-
-    // For other requirements, just apply the standard formatting
-    return (rawReq || "").replace(/^[^-]+---/, "").replace(/---/g, " → ");
+  
+    // Default: just remove prefix and replace arrows
+    return rawReq.replace(/^[^-]+---/, "").replace(/---/g, " → ");
   };
-
+  
   return (
     <div className="popup-overlay">
       <div className="popup-panel">
@@ -65,18 +69,14 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
           </>
         ) : (
           <>
-            {content.requirement.map((req, index) => {
-              const formattedReq = formatRequirement(req);
-              const fulfillingCourses = content.courses.filter((c) =>
-                Object.values(c.requirements).some((reqList) =>
-                  reqList.some((originalReq) => {
-                    const rawOriginal =
-                      typeof originalReq === "object"
-                        ? originalReq.requirement
-                        : originalReq;
-                    return rawOriginal.replace(/^[^-]+---/, "").replace(/---/g, " → ") === formattedReq ||
-                           rawOriginal === formattedReq;
-                  })
+        {content.requirement.map((req, index) => {
+          const formattedReq = formatRequirement(req);
+
+          const fulfillingCourses = content.courses.filter((c) =>
+            Object.values(c.requirements || {}).some((reqList) =>
+                  reqList.some((r) =>
+                    formatRequirement(r) === formattedReq
+                  )
                 )
               );
 
