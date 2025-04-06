@@ -207,7 +207,8 @@ async def initialize_database(
                 results["message"] = f"Warning: Only {len(json_files)} course JSON files found,\
                       expected more."
 
-        course_extractor = CourseDataExtractor(folder_path=course_dir, base_dir=UPLOAD_DIR)
+        course_extractor = CourseDataExtractor(folder_path=os.path.join(course_dir, "course-details"), base_dir=UPLOAD_DIR)
+        course_extractor.process_all_courses()
         load_data_from_dicts(course_extractor.get_results())
         results["loaded_data"].append("courses")
 
