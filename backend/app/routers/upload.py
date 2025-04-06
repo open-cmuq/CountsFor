@@ -201,13 +201,13 @@ async def initialize_database(
 
             # Check for JSON files in the course directory and its subdirectories
             json_files = find_json_files(course_dir)
-            if len(json_files) < 1600:  # Replace with the actual expected count
-                logging.warning("Warning: Only %d course JSON files found, expected more.",
-                                len(json_files))
-                results["message"] = f"Warning: Only {len(json_files)} course JSON files found,\
-                      expected more."
+            logging.info("Found %d course JSON files", len(json_files))
+            if len(json_files) == 0:
+                raise HTTPException(status_code=400,
+                                   detail=f"No course JSON files found in {zip_file.filename}.")
 
-        course_extractor = CourseDataExtractor(folder_path=os.path.join(course_dir, "course-details"), base_dir=UPLOAD_DIR)
+        # Use the main course directory instead of looking for a specific subfolder
+        course_extractor = CourseDataExtractor(folder_path=course_dir, base_dir=UPLOAD_DIR)
         course_extractor.process_all_courses()
         load_data_from_dicts(course_extractor.get_results())
         results["loaded_data"].append("courses")
