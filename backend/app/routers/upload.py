@@ -116,14 +116,14 @@ def clear_existing_data():
     response_description="Returns a list of successfully loaded data types"
 )
 async def initialize_database(
-    course_zips: Optional[List[UploadFile]] = File(None,
-                description="ZIP files containing course JSON data"),
-    audit_zips: Optional[List[UploadFile]] = File(None,
-                description="ZIP files containing audit JSON data"),
-    enrollment_file: Optional[UploadFile] = File(None,
-                description="Excel file containing enrollment data"),
-    department_csv: Optional[UploadFile] = File(None,
-                description="CSV file containing department data (columns: dep_code, name)")
+    course_zips: Optional[List[UploadFile]] = File(default=None,
+    description="ZIP files containing course JSON data"),
+    audit_zips: Optional[List[UploadFile]] = File(default=None,
+    description="ZIP files containing audit JSON data"),
+    enrollment_file: Optional[UploadFile] = File(default=None,
+    description="Excel file containing enrollment data"),
+    department_csv: Optional[UploadFile] = File(default=None,
+    description="CSV file containing department data (columns: dep_code, name)")
 ):
     """Initialize or update the database with uploaded files."""
     logging.info("=== Starting Database Initialization ===")
