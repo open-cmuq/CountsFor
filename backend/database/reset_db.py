@@ -5,12 +5,11 @@ Use this script to reinitialize the database with empty tables for testing data 
 
 import os
 import sys
+from backend.database.db import reset_db
 
 # Add parent directory to Python path to allow imports
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(parent_dir)
-
-from backend.database.db import reset_db
 
 if __name__ == "__main__":
     print("Starting database reset...")

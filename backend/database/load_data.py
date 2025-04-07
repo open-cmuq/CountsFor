@@ -89,7 +89,8 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                     if offering:
                         record["offering_id"] = offering.offering_id
 
-                    # Remove 'course_code' and 'semester' from record as they're not columns in the Enrollment model
+                    # Remove 'course_code' and 'semester' from record as they're
+                    # not columns in the Enrollment model
                     if "course_code" in record:
                         del record["course_code"]
                     if "semester" in record:
@@ -100,7 +101,8 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                         section = record.get("section", "")
                         class_ = record.get("class_", "")
                         department = record.get("department", "")
-                        record["enrollment_id"] = f"{record['offering_id']}_{class_}_{section}_{department}"
+                        record["enrollment_id"] = (
+                            f"{record['offering_id']}_{class_}_{section}_{department}")
 
             try:
                 keys = primary_keys.get(table_name, [])
@@ -119,11 +121,13 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                         if has_all_keys:
                             # For requirements, which are causing unique constraint issues,
                             # we need special handling to update connections to audits
-                            if table_name == "requirement" and len(keys) == 1 and keys[0] == "requirement":
+                            if (table_name == "requirement" and len(keys) == 1
+                                and keys[0] == "requirement"):
                                 existing = db.query(model).filter(*filter_conditions).first()
                                 if existing:
-                                    # If requirement exists but with different audit_id, keep the existing one
-                                    # We don't update the audit_id here, that relationship is managed through Countsfor
+                                    # If requirement exists but with different audit_id, keep the
+                                    # existing one We don't update the audit_id here,
+                                    # that relationship is managed through Countsfor
                                     continue
                                 else:
                                     new_record = model(**record)
@@ -159,7 +163,7 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                                 new_record = Requirement(**record)
                                 db.add(new_record)
                                 db.commit()
-                        except Exception as inner_error:
+                        except (IntegrityError, SQLAlchemyError) as inner_error:
                             db.rollback()
                             logging.error("Error processing requirement record: %s", inner_error)
                             continue
@@ -175,7 +179,7 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                                 new_record = CountsFor(**record)
                                 db.add(new_record)
                                 db.commit()
-                        except Exception as inner_error:
+                        except (IntegrityError, SQLAlchemyError) as inner_error:
                             db.rollback()
                             logging.error("Error processing countsfor record: %s", inner_error)
                             continue

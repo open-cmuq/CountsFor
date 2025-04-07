@@ -242,25 +242,28 @@ async def initialize_database(
                                       detail=f"No audit JSON files found in {zip_file.filename}.")
 
                 # Ensure only allowed major folders exist
-                ALLOWED_MAJORS = {'ba', 'cs', 'is', 'bio'}
+                allowed_majors = {'ba', 'cs', 'is', 'bio'}
                 found_dirs = set()
 
-                for root, dirs, _ in os.walk(audit_root):
+                for _, dirs, _ in os.walk(audit_root):
                     for dir_name in dirs:
                         dir_lower = dir_name.lower()
                         found_dirs.add(dir_lower)
 
-                non_main_majors = found_dirs - ALLOWED_MAJORS
+                non_main_majors = found_dirs - allowed_majors
                 if non_main_majors:
                     logging.warning("Found non-main major directories: %s. These will be ignored.",
                                    ", ".join(non_main_majors))
-                    results["message"] = f"Note: Found directories for non-main majors ({', '.join(non_main_majors)}). " \
+                    results["message"] = f"Note: Found directories for non-main majors\
+                                            ({', '.join(non_main_majors)}). " \
                                         f"Only BA, CS, IS, and BIO majors will be processed."
 
-                main_majors = found_dirs & ALLOWED_MAJORS
+                main_majors = found_dirs & allowed_majors
                 if not main_majors:
                     raise HTTPException(status_code=400,
-                                       detail=f"Audit ZIP must contain at least one of the required major folders: BA, CS, IS, or BIO.")
+                                       detail="Audit ZIP must contain at least\
+                                               one of the required major \
+                                               folders: BA, CS, IS, or BIO.")
 
 
             except Exception as e:

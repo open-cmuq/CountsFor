@@ -55,7 +55,8 @@ class AuditDataExtractor(DataExtractor):
 
         # If only one JSON file found, use it for both core and gened
         if len(json_files) == 1:
-            logging.info("Only one JSON file found in %s, using it for both core and gened", folder_path)
+            logging.info("Only one JSON file found in %s, using it for both core and gened",
+                         folder_path)
             return {
                 "core": json_files[0],
                 "gened": json_files[0]
@@ -67,7 +68,9 @@ class AuditDataExtractor(DataExtractor):
 
         for f in json_files:
             filename = os.path.basename(f).lower()
-            if 'gened' in filename or 'general' in filename or 'gen_ed' in filename or 'gen-ed' in filename:
+            if ('gened' in filename or 'general' in
+                filename or 'gen_ed' in filename or
+                'gen-ed' in filename):
                 gened_candidates.append(f)
             elif 'core' in filename or 'major' in filename or 'program' in filename:
                 core_candidates.append(f)
@@ -92,20 +95,20 @@ class AuditDataExtractor(DataExtractor):
 
                 # Verify by content - look for General Education in the smaller file
                 try:
-                    with open(gened_file, 'r') as f:
+                    with open(gened_file, 'r', encoding='utf-8') as f:
                         content = f.read().lower()
                         if 'general education' in content or 'gened' in content:
                             # Correctly identified
                             pass
                         else:
                             # Reverse if not found - the larger file might be gened
-                            with open(core_file, 'r') as f2:
+                            with open(core_file, 'r', encoding='utf-8') as f2:
                                 content2 = f2.read().lower()
                                 if 'general education' in content2 or 'gened' in content2:
                                     core_file, gened_file = gened_file, core_file
-                except:
+                except (IOError, FileNotFoundError, UnicodeDecodeError) as error:
                     # If we can't read the file, just go with size heuristic
-                    pass
+                    logging.warning("Could not read file to verify content: %s", error)
 
                 return {
                     "core": core_file,
@@ -539,10 +542,10 @@ class AuditDataExtractor(DataExtractor):
         processed_files = 0
 
         # Define the allowed majors (only these will be processed)
-        ALLOWED_MAJORS = {'ba', 'cs', 'is', 'bio'}
+        allowed_majors = {'ba', 'cs', 'is', 'bio'}
 
         # Define specific requirements to exclude for IS major
-        IS_EXCLUDED_REQUIREMENTS = {
+        is_excluded_requirements = {
             "BS in Information Systems",
             "Qatar Information Systems - General Education - 2024+",
             "Qatar Information Systems - General Education - 2024+---General Education"
@@ -560,14 +563,15 @@ class AuditDataExtractor(DataExtractor):
                     normalized_dir = parent_dir.lower()
 
                     # Only include files from allowed major directories
-                    if normalized_dir in ALLOWED_MAJORS:
+                    if normalized_dir in allowed_majors:
                         all_json_files.append((parent_dir, json_path))
                     else:
                         logging.info("Skipping non-main major directory: %s", parent_dir)
 
         # If no JSON files found, return empty results
         if not all_json_files:
-            logging.warning("No JSON files found for main majors in audit directory: %s", self.audit_base_path)
+            logging.warning("No JSON files found for main majors in audit directory: %s",
+                            self.audit_base_path)
             return {
                 "audit": [],
                 "requirement": [],
@@ -598,8 +602,8 @@ class AuditDataExtractor(DataExtractor):
                 core_data = self.extract_audit_data(audit_files["core"], course_codes)
                 for d in core_data:
                     # Skip excluded requirements for IS major
-                    if major.lower() == 'is' and d["requirement"] in IS_EXCLUDED_REQUIREMENTS:
-                        logging.info(f"Skipping excluded IS requirement: {d['requirement']}")
+                    if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                        logging.info("Skipping excluded IS requirement: %s", d["requirement"])
                         continue
 
                     d.update({
@@ -613,8 +617,8 @@ class AuditDataExtractor(DataExtractor):
                 gened_data = self.extract_audit_data(audit_files["gened"], course_codes)
                 for d in gened_data:
                     # Skip excluded requirements for IS major
-                    if major.lower() == 'is' and d["requirement"] in IS_EXCLUDED_REQUIREMENTS:
-                        logging.info(f"Skipping excluded IS requirement: {d['requirement']}")
+                    if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                        logging.info("Skipping excluded IS requirement: %s", d["requirement"])
                         continue
 
                     d.update({
@@ -626,7 +630,7 @@ class AuditDataExtractor(DataExtractor):
 
                 processed_files += 2
 
-            except Exception as e:
+            except (IOError, OSError, json.JSONDecodeError, KeyError, ValueError) as e: # pylint: disable=broad-exception-caught
                 logging.error("Error processing files in %s: %s", parent_dir, e)
                 # Fall back to the old approach for this directory
                 if len(files_in_dir) == 1:
@@ -637,8 +641,8 @@ class AuditDataExtractor(DataExtractor):
                     # Add as core data
                     for d in audit_data:
                         # Skip excluded requirements for IS major
-                        if major.lower() == 'is' and d["requirement"] in IS_EXCLUDED_REQUIREMENTS:
-                            logging.info(f"Skipping excluded IS requirement: {d['requirement']}")
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
                             continue
 
                         d.update({
@@ -651,8 +655,8 @@ class AuditDataExtractor(DataExtractor):
                     # Also add as gened data
                     for d in audit_data:
                         # Skip excluded requirements for IS major
-                        if major.lower() == 'is' and d["requirement"] in IS_EXCLUDED_REQUIREMENTS:
-                            logging.info(f"Skipping excluded IS requirement: {d['requirement']}")
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
                             continue
 
                         d.update({
@@ -675,8 +679,8 @@ class AuditDataExtractor(DataExtractor):
                     core_data = self.extract_audit_data(core_file, course_codes)
                     for d in core_data:
                         # Skip excluded requirements for IS major
-                        if major.lower() == 'is' and d["requirement"] in IS_EXCLUDED_REQUIREMENTS:
-                            logging.info(f"Skipping excluded IS requirement: {d['requirement']}")
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
                             continue
 
                         d.update({
@@ -690,8 +694,8 @@ class AuditDataExtractor(DataExtractor):
                     gened_data = self.extract_audit_data(gened_file, course_codes)
                     for d in gened_data:
                         # Skip excluded requirements for IS major
-                        if major.lower() == 'is' and d["requirement"] in IS_EXCLUDED_REQUIREMENTS:
-                            logging.info(f"Skipping excluded IS requirement: {d['requirement']}")
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
                             continue
 
                         d.update({
@@ -709,9 +713,11 @@ class AuditDataExtractor(DataExtractor):
 
         # Ensure the DataFrame is created with the correct columns
         if combined_data:
-            # Add additional filtering for combined data to make sure we exclude the specified requirements
+            # Add additional filtering for combined data to make sure we exclude the specified
+            # requirements
             combined_data = [d for d in combined_data if not (d["major"].lower() == "is" and
-                                                              d["requirement"] in IS_EXCLUDED_REQUIREMENTS)]
+                                                              d["requirement"]
+                                                              in is_excluded_requirements)]
 
             # Create audit table data (filter to only include valid columns)
             audit_df = pd.DataFrame(combined_data)
@@ -729,7 +735,8 @@ class AuditDataExtractor(DataExtractor):
             counts_df = counts_df.rename(columns={"course": "course_code"}).drop_duplicates()
 
             # Create requirement table data
-            req_df = pd.DataFrame(combined_data)[["requirement", "major", "audit_type"]].drop_duplicates()
+            req_df = pd.DataFrame(combined_data)[["requirement", "major",
+                                                   "audit_type"]].drop_duplicates()
             req_df = req_df.rename(columns={"audit_type": "type"})
             req_df = req_df.merge(
                 audit_df[["audit_id", "major", "type"]],
