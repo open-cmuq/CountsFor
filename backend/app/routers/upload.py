@@ -201,13 +201,14 @@ async def initialize_database(
 
             # Check for JSON files in the course directory and its subdirectories
             json_files = find_json_files(course_dir)
-            if len(json_files) < 1600:  # Replace with the actual expected count
-                logging.warning("Warning: Only %d course JSON files found, expected more.",
-                                len(json_files))
-                results["message"] = f"Warning: Only {len(json_files)} course JSON files found,\
-                      expected more."
+            logging.info("Found %d course JSON files", len(json_files))
+            if len(json_files) == 0:
+                raise HTTPException(status_code=400,
+                                   detail=f"No course JSON files found in {zip_file.filename}.")
 
+        # Use the main course directory instead of looking for a specific subfolder
         course_extractor = CourseDataExtractor(folder_path=course_dir, base_dir=UPLOAD_DIR)
+        course_extractor.process_all_courses()
         load_data_from_dicts(course_extractor.get_results())
         results["loaded_data"].append("courses")
 
@@ -233,25 +234,36 @@ async def initialize_database(
                 unzip_and_flatten(zip_path, audit_root)
                 os.remove(zip_path)
 
-                # Check for required major folders in the audit directory
-                required_subfolders = ["ba", "bio", "is", "cs"]
-                found_subfolders = set()
+                # Check for JSON files in the audit directory and its subdirectories
+                json_files = find_json_files(audit_root)
+                logging.info("Found %d audit JSON files", len(json_files))
+                if len(json_files) == 0:
+                    raise HTTPException(status_code=400,
+                                      detail=f"No audit JSON files found in {zip_file.filename}.")
 
-                # Walk through the extracted directory to find the required subfolders
+                # Ensure only allowed major folders exist
+                allowed_majors = {'ba', 'cs', 'is', 'bio'}
+                found_dirs = set()
+
                 for _, dirs, _ in os.walk(audit_root):
-                    for subfolder in required_subfolders:
-                        if subfolder in dirs:
-                            found_subfolders.add(subfolder)
+                    for dir_name in dirs:
+                        dir_lower = dir_name.lower()
+                        found_dirs.add(dir_lower)
 
-                # Check if all required subfolders are found
-                missing_subfolders = [subfolder for subfolder in required_subfolders
-                                      if subfolder not in found_subfolders]
-                if missing_subfolders:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Audit ZIP must contain the following subfolders: \
-                            {', '.join(missing_subfolders)}."
-                    )
+                non_main_majors = found_dirs - allowed_majors
+                if non_main_majors:
+                    logging.warning("Found non-main major directories: %s. These will be ignored.",
+                                   ", ".join(non_main_majors))
+                    results["message"] = f"Note: Found directories for non-main majors\
+                                            ({', '.join(non_main_majors)}). " \
+                                        f"Only BA, CS, IS, and BIO majors will be processed."
+
+                main_majors = found_dirs & allowed_majors
+                if not main_majors:
+                    raise HTTPException(status_code=400,
+                                       detail="Audit ZIP must contain at least\
+                                               one of the required major \
+                                               folders: BA, CS, IS, or BIO.")
 
 
             except Exception as e:

@@ -38,38 +38,91 @@ class AuditDataExtractor(DataExtractor):
 
     def get_audit_files(self, folder_path):
         """
-        Returns a dictionary with paths for the two audit JSON files in a folder,
-        determining which file is core and which is general education.
+        Returns a dictionary with paths for audit JSON files in a folder or its subfolders.
+        More flexible implementation that doesn't require specific folder structure.
         """
-        try:
-            json_files = [f for f in os.listdir(folder_path) if f.endswith(".json")]
-            if len(json_files) != 2:
-                logging.warning("Expected 2 JSON files in %s, found %d", folder_path,
-                                len(json_files))
-                return None
-        except OSError as error:
-            logging.error("Failed to list files in %s: %s", folder_path, error)
+        json_files = []
+
+        # Walk through the directory tree to find all JSON files
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                if file.endswith(".json") and not file.startswith("."):
+                    json_files.append(os.path.join(root, file))
+
+        if not json_files:
+            logging.warning("No JSON files found in %s or its subdirectories", folder_path)
             return None
 
-        core_file, gened_file = None, None
+        # If only one JSON file found, use it for both core and gened
+        if len(json_files) == 1:
+            logging.info("Only one JSON file found in %s, using it for both core and gened",
+                         folder_path)
+            return {
+                "core": json_files[0],
+                "gened": json_files[0]
+            }
+
+        # Check for core vs. gened words in filenames
+        core_candidates = []
+        gened_candidates = []
+
+        for f in json_files:
+            filename = os.path.basename(f).lower()
+            if ('gened' in filename or 'general' in
+                filename or 'gen_ed' in filename or
+                'gen-ed' in filename):
+                gened_candidates.append(f)
+            elif 'core' in filename or 'major' in filename or 'program' in filename:
+                core_candidates.append(f)
+
+        # If we have clear core and gened candidates
+        if core_candidates and gened_candidates:
+            return {
+                "core": core_candidates[0],
+                "gened": gened_candidates[0]
+            }
+
+        # Try to determine by looking at content (approximate)
         try:
-            for f in json_files:
-                if re.search(r"(19|20)\d{2}", f):
-                    core_file = f
-                else:
-                    gened_file = f
-            if not core_file or not gened_file:
-                file_sizes = {f: os.path.getsize(os.path.join(folder_path, f)) for f in json_files}
-                sorted_files = sorted(file_sizes.items(), key=lambda x: x[1], reverse=True)
-                core_file, gened_file = sorted_files[0][0], sorted_files[1][0]
+            file_sizes = {f: os.path.getsize(f) for f in json_files}
+            sorted_files = sorted(file_sizes.items(), key=lambda x: x[1], reverse=True)
+
+            # Larger file is usually the major/core file
+            if len(sorted_files) >= 2:
+                # Attempt to open and check content
+                core_file = sorted_files[0][0]
+                gened_file = sorted_files[1][0]
+
+                # Verify by content - look for General Education in the smaller file
+                try:
+                    with open(gened_file, 'r', encoding='utf-8') as f:
+                        content = f.read().lower()
+                        if 'general education' in content or 'gened' in content:
+                            # Correctly identified
+                            pass
+                        else:
+                            # Reverse if not found - the larger file might be gened
+                            with open(core_file, 'r', encoding='utf-8') as f2:
+                                content2 = f2.read().lower()
+                                if 'general education' in content2 or 'gened' in content2:
+                                    core_file, gened_file = gened_file, core_file
+                except (IOError, FileNotFoundError, UnicodeDecodeError) as error:
+                    # If we can't read the file, just go with size heuristic
+                    logging.warning("Could not read file to verify content: %s", error)
+
+                return {
+                    "core": core_file,
+                    "gened": gened_file
+                }
+            else:
+                # Fallback to using the same file for both
+                return {
+                    "core": sorted_files[0][0],
+                    "gened": sorted_files[0][0]
+                }
         except OSError as error:
             logging.error("Failed to determine file sizes in %s: %s", folder_path, error)
             return None
-
-        return {
-            "core": os.path.join(folder_path, core_file),
-            "gened": os.path.join(folder_path, gened_file)
-        }
 
     def get_course_codes(self):
         """
@@ -358,10 +411,25 @@ class AuditDataExtractor(DataExtractor):
     def post_process_requirement(self, req):
         """
         Cleans and standardizes the requirement string.
-        This simplified version just returns the original requirement string without modification.
+        Removes any course codes from the end of the requirement string.
         """
-        # Simply return the original requirement string
-        return req
+        # Remove any trailing course code (format: XX-XXX) from the requirement
+        req = re.sub(r'\s*→\s*\d{2}-\d{3}\s*$', '', req)
+        req = re.sub(r'\s*->\s*\d{2}-\d{3}\s*$', '', req)
+        req = re.sub(r'\s*--\s*\d{2}-\d{3}\s*$', '', req)
+        req = re.sub(r'\s*\d{2}-\d{3}\s*$', '', req)
+
+        # Remove any other trailing arrow indicators
+        req = re.sub(r'\s*→\s*$', '', req)
+        req = re.sub(r'\s*->\s*$', '', req)
+
+        # Remove any trailing dashes or hyphens
+        req = re.sub(r'\s*[-–—]\s*$', '', req)
+
+        # Trim any trailing whitespace, dashes, or separators
+        req = req.rstrip(' -–—→\t\n')
+
+        return req.strip()
 
     def make_data_frame(self, audit):
         """
@@ -465,59 +533,221 @@ class AuditDataExtractor(DataExtractor):
     def get_results(self) -> dict[str, list[dict]]:
         """
         Extracts audit data from JSON files and returns a dictionary of results.
+        More flexible implementation that doesn't require specific subfolder structure.
+        Only processes the four main majors: BA, CS, IS, and BIO.
         """
         course_codes = self.get_course_codes()
         combined_data = []
+        processed_dirs = set()
+        processed_files = 0
 
-        for major in os.listdir(self.audit_base_path):
-            major_path = os.path.join(self.audit_base_path, major)
-            if not os.path.isdir(major_path):
+        # Define the allowed majors (only these will be processed)
+        allowed_majors = {'ba', 'cs', 'is', 'bio'}
+
+        # Define specific requirements to exclude for IS major
+        is_excluded_requirements = {
+            "BS in Information Systems",
+            "Qatar Information Systems - General Education - 2024+",
+            "Qatar Information Systems - General Education - 2024+---General Education"
+        }
+
+        # First pass: collect all JSON files in the directory tree
+        all_json_files = []
+        for root, _, files in os.walk(self.audit_base_path):
+            for file in files:
+                if file.endswith('.json') and not file.startswith('.'):
+                    json_path = os.path.join(root, file)
+                    parent_dir = os.path.basename(os.path.dirname(json_path))
+
+                    # Normalize parent_dir name to lowercase for comparison
+                    normalized_dir = parent_dir.lower()
+
+                    # Only include files from allowed major directories
+                    if normalized_dir in allowed_majors:
+                        all_json_files.append((parent_dir, json_path))
+                    else:
+                        logging.info("Skipping non-main major directory: %s", parent_dir)
+
+        # If no JSON files found, return empty results
+        if not all_json_files:
+            logging.warning("No JSON files found for main majors in audit directory: %s",
+                            self.audit_base_path)
+            return {
+                "audit": [],
+                "requirement": [],
+                "countsfor": []
+            }
+
+        # Process files by parent directory to group related files
+        for parent_dir, files_in_dir in self._group_files_by_parent_dir(all_json_files):
+            # Skip already processed directories
+            if parent_dir in processed_dirs:
                 continue
 
-            audit_files = self.get_audit_files(major_path)
-            if not audit_files:
-                continue
+            processed_dirs.add(parent_dir)
 
-            # Extract audit data (core and gened)
-            core_data = self.extract_audit_data(audit_files["core"], course_codes)
-            for d in core_data:
-                d.update({"audit_type": 0, "major": major,
-                           "audit": d["requirement"].split('---')[0].strip()})
-                combined_data.append(d)
+            # Use parent directory name as major name
+            major = parent_dir
 
-            gened_data = self.extract_audit_data(audit_files["gened"], course_codes)
-            for d in gened_data:
-                d.update({"audit_type": 1, "major": major,
-                           "audit": d["requirement"].split('---')[0].strip()})
-                combined_data.append(d)
+            logging.info("Processing audit data for major: %s", major)
+
+            try:
+                # Get core and gened files for this directory
+                audit_files = self.get_audit_files(os.path.dirname(files_in_dir[0]))
+
+                if not audit_files:
+                    continue
+
+                # Extract core data with type 0 (core/major requirements)
+                core_data = self.extract_audit_data(audit_files["core"], course_codes)
+                for d in core_data:
+                    # Skip excluded requirements for IS major
+                    if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                        logging.info("Skipping excluded IS requirement: %s", d["requirement"])
+                        continue
+
+                    d.update({
+                        "audit_type": 0,  # 0 = core/major requirements
+                        "major": major,
+                        "audit": d["requirement"].split('---')[0].strip()
+                    })
+                    combined_data.append(d)
+
+                # Extract gened data with type 1 (gened requirements)
+                gened_data = self.extract_audit_data(audit_files["gened"], course_codes)
+                for d in gened_data:
+                    # Skip excluded requirements for IS major
+                    if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                        logging.info("Skipping excluded IS requirement: %s", d["requirement"])
+                        continue
+
+                    d.update({
+                        "audit_type": 1,  # 1 = gened requirements
+                        "major": major,
+                        "audit": d["requirement"].split('---')[0].strip()
+                    })
+                    combined_data.append(d)
+
+                processed_files += 2
+
+            except (IOError, OSError, json.JSONDecodeError, KeyError, ValueError) as e: # pylint: disable=broad-exception-caught
+                logging.error("Error processing files in %s: %s", parent_dir, e)
+                # Fall back to the old approach for this directory
+                if len(files_in_dir) == 1:
+                    # If only one file, use it for both core and gened
+                    json_path = files_in_dir[0]
+                    audit_data = self.extract_audit_data(json_path, course_codes)
+
+                    # Add as core data
+                    for d in audit_data:
+                        # Skip excluded requirements for IS major
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
+                            continue
+
+                        d.update({
+                            "audit_type": 0,
+                            "major": major,
+                            "audit": d["requirement"].split('---')[0].strip()
+                        })
+                        combined_data.append(d)
+
+                    # Also add as gened data
+                    for d in audit_data:
+                        # Skip excluded requirements for IS major
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
+                            continue
+
+                        d.update({
+                            "audit_type": 1,
+                            "major": major,
+                            "audit": d["requirement"].split('---')[0].strip()
+                        })
+                        combined_data.append(d)
+
+                    processed_files += 1
+                elif len(files_in_dir) >= 2:
+                    # With multiple files, determine largest (core) and second largest (gened)
+                    file_sizes = {f: os.path.getsize(f) for f in files_in_dir}
+                    sorted_files = sorted(file_sizes.items(), key=lambda x: x[1], reverse=True)
+
+                    core_file = sorted_files[0][0]
+                    gened_file = sorted_files[1][0]
+
+                    # Extract core data
+                    core_data = self.extract_audit_data(core_file, course_codes)
+                    for d in core_data:
+                        # Skip excluded requirements for IS major
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
+                            continue
+
+                        d.update({
+                            "audit_type": 0,
+                            "major": major,
+                            "audit": d["requirement"].split('---')[0].strip()
+                        })
+                        combined_data.append(d)
+
+                    # Extract gened data
+                    gened_data = self.extract_audit_data(gened_file, course_codes)
+                    for d in gened_data:
+                        # Skip excluded requirements for IS major
+                        if major.lower() == 'is' and d["requirement"] in is_excluded_requirements:
+                            logging.info("Skipping excluded IS requirement: %s", d["requirement"])
+                            continue
+
+                        d.update({
+                            "audit_type": 1,
+                            "major": major,
+                            "audit": d["requirement"].split('---')[0].strip()
+                        })
+                        combined_data.append(d)
+
+                    processed_files += 2
+
+        # When creating the audit DataFrame, also filter out requirements at this level
+        logging.info("Processed %d audit JSON files from %d directories",
+                    processed_files, len(processed_dirs))
 
         # Ensure the DataFrame is created with the correct columns
         if combined_data:
+            # Add additional filtering for combined data to make sure we exclude the specified
+            # requirements
+            combined_data = [d for d in combined_data if not (d["major"].lower() == "is" and
+                                                              d["requirement"]
+                                                              in is_excluded_requirements)]
+
+            # Create audit table data (filter to only include valid columns)
             audit_df = pd.DataFrame(combined_data)
             if not all(col in audit_df.columns for col in ["audit", "audit_type", "major"]):
                 logging.error("Expected columns are missing in the combined data.")
                 raise ValueError("Missing expected columns in the audit data.")
 
             audit_df["audit_id"] = audit_df["major"] + "_" + audit_df["audit_type"].astype(str)
+            audit_df = audit_df[["audit_id", "major", "audit", "audit_type"]]
             audit_df = audit_df.rename(columns={"audit": "name", "audit_type": "type"})
+            audit_df = audit_df.drop_duplicates()
 
-            # CountsFor table
+            # Create countsfor table data
             counts_df = pd.DataFrame(combined_data)[["requirement", "course"]]
             counts_df = counts_df.rename(columns={"course": "course_code"}).drop_duplicates()
 
-            # Requirement table
+            # Create requirement table data
             req_df = pd.DataFrame(combined_data)[["requirement", "major",
-                                                  "audit_type"]].drop_duplicates()
+                                                   "audit_type"]].drop_duplicates()
             req_df = req_df.rename(columns={"audit_type": "type"})
-            req_df = req_df.merge(audit_df[["audit_id", "major", "type"]],
-                                on=["major", "type"], how="left")
+            req_df = req_df.merge(
+                audit_df[["audit_id", "major", "type"]],
+                on=["major", "type"],
+                how="left"
+            )
             req_df = req_df[["requirement", "audit_id"]]
-            print (req_df.head())
 
             dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
             if not dupes.empty:
-                print("❌ DUPLICATE REQUIREMENTS ACROSS AUDITS FOUND!")
-                print(dupes.to_string(index=False))
+                logging.warning("Duplicate requirements across audits found")
 
             return {
                 "audit": audit_df.to_dict(orient="records"),
@@ -531,3 +761,15 @@ class AuditDataExtractor(DataExtractor):
                 "requirement": [],
                 "countsfor": []
             }
+
+    def _group_files_by_parent_dir(self, files):
+        """
+        Group files by their parent directory.
+        Returns a list of tuples (parent_dir, [file_paths]).
+        """
+        result = {}
+        for parent_dir, file_path in files:
+            if parent_dir not in result:
+                result[parent_dir] = []
+            result[parent_dir].append(file_path)
+        return result.items()

@@ -60,13 +60,19 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
     try:
         logging.info("Loading data from dictionaries...")
 
-        for table_name, records in data_dict.items():
+        # Process tables in a specific order to handle dependencies
+        table_order = ["department", "instructor", "course", "offering", "audit",
+                       "requirement", "prereqs", "countsfor", "course_instructor", "enrollment"]
+
+        for table_name in table_order:
+            records = data_dict.get(table_name, [])
+            if not records:
+                continue
+
             logging.info("Processing table: %s with %d records", table_name, len(records))
 
             model = tables.get(table_name)
             if not model:
-                continue
-            if not records:
                 continue
 
             df = pd.DataFrame(records).drop_duplicates()
@@ -83,6 +89,21 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                     if offering:
                         record["offering_id"] = offering.offering_id
 
+                    # Remove 'course_code' and 'semester' from record as they're
+                    # not columns in the Enrollment model
+                    if "course_code" in record:
+                        del record["course_code"]
+                    if "semester" in record:
+                        del record["semester"]
+
+                    # Ensure enrollment_id is set
+                    if "enrollment_id" not in record and "offering_id" in record:
+                        section = record.get("section", "")
+                        class_ = record.get("class_", "")
+                        department = record.get("department", "")
+                        record["enrollment_id"] = (
+                            f"{record['offering_id']}_{class_}_{section}_{department}")
+
             try:
                 keys = primary_keys.get(table_name, [])
 
@@ -98,15 +119,28 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                                 break
 
                         if has_all_keys:
-                            existing = db.query(model).filter(*filter_conditions).first()
-
-                            if existing:
-                                for key, value in record.items():
-                                    setattr(existing, key, value)
+                            # For requirements, which are causing unique constraint issues,
+                            # we need special handling to update connections to audits
+                            if (table_name == "requirement" and len(keys) == 1
+                                and keys[0] == "requirement"):
+                                existing = db.query(model).filter(*filter_conditions).first()
+                                if existing:
+                                    # If requirement exists but with different audit_id, keep the
+                                    # existing one We don't update the audit_id here,
+                                    # that relationship is managed through Countsfor
+                                    continue
+                                else:
+                                    new_record = model(**record)
+                                    db.add(new_record)
                             else:
-                                new_record = model(**record)
-                                db.add(new_record)
-
+                                # Regular record handling for other tables
+                                existing = db.query(model).filter(*filter_conditions).first()
+                                if existing:
+                                    for key, value in record.items():
+                                        setattr(existing, key, value)
+                                else:
+                                    new_record = model(**record)
+                                    db.add(new_record)
                 else:
                     db.bulk_insert_mappings(model, deduped_records)
 
@@ -115,7 +149,42 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
             except IntegrityError as error:
                 db.rollback()
                 logging.error("Integrity error processing %s: %s", table_name, error)
-                raise
+
+                # For requirement table, which often has unique constraint issues,
+                # try a different approach by processing records individually
+                if table_name == "requirement":
+                    logging.info("Retrying requirement records individually...")
+                    for record in deduped_records:
+                        try:
+                            # Check if requirement already exists
+                            existing = db.query(Requirement).filter(
+                                Requirement.requirement == record["requirement"]).first()
+                            if not existing:
+                                new_record = Requirement(**record)
+                                db.add(new_record)
+                                db.commit()
+                        except (IntegrityError, SQLAlchemyError) as inner_error:
+                            db.rollback()
+                            logging.error("Error processing requirement record: %s", inner_error)
+                            continue
+                elif table_name == "countsfor":
+                    logging.info("Processing countsfor records individually...")
+                    for record in deduped_records:
+                        try:
+                            # Check if relationship already exists
+                            existing = db.query(CountsFor).filter(
+                                CountsFor.course_code == record["course_code"],
+                                CountsFor.requirement == record["requirement"]).first()
+                            if not existing:
+                                new_record = CountsFor(**record)
+                                db.add(new_record)
+                                db.commit()
+                        except (IntegrityError, SQLAlchemyError) as inner_error:
+                            db.rollback()
+                            logging.error("Error processing countsfor record: %s", inner_error)
+                            continue
+                else:
+                    raise
             except SQLAlchemyError as error:
                 db.rollback()
                 logging.error("SQLAlchemy error processing %s: %s", table_name, error)
