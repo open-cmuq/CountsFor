@@ -89,6 +89,19 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                     if offering:
                         record["offering_id"] = offering.offering_id
 
+                    # Remove 'course_code' and 'semester' from record as they're not columns in the Enrollment model
+                    if "course_code" in record:
+                        del record["course_code"]
+                    if "semester" in record:
+                        del record["semester"]
+
+                    # Ensure enrollment_id is set
+                    if "enrollment_id" not in record and "offering_id" in record:
+                        section = record.get("section", "")
+                        class_ = record.get("class_", "")
+                        department = record.get("department", "")
+                        record["enrollment_id"] = f"{record['offering_id']}_{class_}_{section}_{department}"
+
             try:
                 keys = primary_keys.get(table_name, [])
 
