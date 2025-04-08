@@ -4,7 +4,7 @@ This script implements the data access layer for courses.
 
 from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import or_
 from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
 
 class CourseRepository:
@@ -122,34 +122,94 @@ class CourseRepository:
 
         return requirements
 
-
-
     def get_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
                                     ba_requirement=None, bs_requirement=None):
         """fetch courses that match all specified major requirements (AND filtering)."""
-        filters = []
-        if cs_requirement:
-            filters.append(and_(Requirement.audit_id.like("cs%"),
-                                CountsFor.requirement == cs_requirement))
-        if is_requirement:
-            filters.append(and_(Requirement.audit_id.like("is%"),
-                                CountsFor.requirement == is_requirement))
-        if ba_requirement:
-            filters.append(and_(Requirement.audit_id.like("ba%"),
-                                CountsFor.requirement == ba_requirement))
-        if bs_requirement:
-            filters.append(and_(Requirement.audit_id.like("bio%"),
-                                CountsFor.requirement == bs_requirement))
-
-        if not filters:
+        if not any([cs_requirement, is_requirement, ba_requirement, bs_requirement]):
             return []
 
+        # Get the course codes that match each requirement filter
+        matching_course_codes = set()
+        first_filter = True
+
+        if cs_requirement:
+            cs_courses = (
+                self.db.query(CountsFor.course_code)
+                .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                .filter(
+                    Requirement.audit_id.like("cs%"),
+                    CountsFor.requirement == cs_requirement
+                )
+                .all()
+            )
+            cs_codes = set(code[0] for code in cs_courses)
+            if first_filter:
+                matching_course_codes = cs_codes
+                first_filter = False
+            else:
+                matching_course_codes.intersection_update(cs_codes)
+
+        if is_requirement:
+            is_courses = (
+                self.db.query(CountsFor.course_code)
+                .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                .filter(
+                    Requirement.audit_id.like("is%"),
+                    CountsFor.requirement == is_requirement
+                )
+                .all()
+            )
+            is_codes = set(code[0] for code in is_courses)
+            if first_filter:
+                matching_course_codes = is_codes
+                first_filter = False
+            else:
+                matching_course_codes.intersection_update(is_codes)
+
+        if ba_requirement:
+            ba_courses = (
+                self.db.query(CountsFor.course_code)
+                .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                .filter(
+                    Requirement.audit_id.like("ba%"),
+                    CountsFor.requirement == ba_requirement
+                )
+                .all()
+            )
+            ba_codes = set(code[0] for code in ba_courses)
+            if first_filter:
+                matching_course_codes = ba_codes
+                first_filter = False
+            else:
+                matching_course_codes.intersection_update(ba_codes)
+
+        if bs_requirement:
+            bs_courses = (
+                self.db.query(CountsFor.course_code)
+                .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                .filter(
+                    Requirement.audit_id.like("bio%"),
+                    CountsFor.requirement == bs_requirement
+                )
+                .all()
+            )
+            bs_codes = set(code[0] for code in bs_courses)
+            if first_filter:
+                matching_course_codes = bs_codes
+                first_filter = False
+            else:
+                matching_course_codes.intersection_update(bs_codes)
+
+        if not matching_course_codes:
+            return []
+
+        # Get the full details for the matched courses
         query = (
             self.db.query(Course.course_code, Course.name, Course.dep_code,
                         Course.prereqs_text, CountsFor.requirement, Requirement.audit_id)
             .join(CountsFor, Course.course_code == CountsFor.course_code)
             .join(Requirement, CountsFor.requirement == Requirement.requirement)
-            .filter(or_(*filters))
+            .filter(Course.course_code.in_(matching_course_codes))
         )
 
         return query.all()
@@ -243,7 +303,6 @@ class CourseRepository:
         # Each row is a tuple (semester,), so extract the first element.
         return [semester[0] for semester in semesters]
 
-
     def get_courses_by_filters(self,
                             department: Optional[str] = None,
                             search_query: Optional[str] = None,
@@ -280,54 +339,117 @@ class CourseRepository:
                       | (Course.prereqs_text == "None")
                 )
 
+        # For requirement filtering, we need to get the course codes that match ALL requirements
+        # We'll collect them per major and then use the intersection
+        requirement_matching_course_codes = []
 
-        # Build requirement filters.
-        requirement_filters = []
-
+        # CS requirements
         if cs_requirement:
             cs_reqs = [r.strip() for r in cs_requirement.split(",") if r.strip()]
             if cs_reqs:
-                requirement_filters.append(
-                    and_(
-                        Requirement.audit_id.like("cs%"),
-                        CountsFor.requirement.in_(cs_reqs)
+                cs_matches = set()
+                for cs_req in cs_reqs:
+                    cs_subquery = (
+                        self.db.query(CountsFor.course_code)
+                        .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                        .filter(
+                            Requirement.audit_id.like("cs%"),
+                            CountsFor.requirement == cs_req
+                        )
                     )
-                )
+                    cs_courses = [code[0] for code in cs_subquery.all()]
+                    if not cs_matches:
+                        cs_matches = set(cs_courses)
+                    else:
+                        cs_matches.intersection_update(cs_courses)
 
+                if cs_matches:
+                    requirement_matching_course_codes.append(list(cs_matches))
+
+        # IS requirements
         if is_requirement:
             is_reqs = [r.strip() for r in is_requirement.split(",") if r.strip()]
             if is_reqs:
-                requirement_filters.append(
-                    and_(
-                        Requirement.audit_id.like("is%"),
-                        CountsFor.requirement.in_(is_reqs)
+                is_matches = set()
+                for is_req in is_reqs:
+                    is_subquery = (
+                        self.db.query(CountsFor.course_code)
+                        .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                        .filter(
+                            Requirement.audit_id.like("is%"),
+                            CountsFor.requirement == is_req
+                        )
                     )
-                )
+                    is_courses = [code[0] for code in is_subquery.all()]
+                    if not is_matches:
+                        is_matches = set(is_courses)
+                    else:
+                        is_matches.intersection_update(is_courses)
 
+                if is_matches:
+                    requirement_matching_course_codes.append(list(is_matches))
+
+        # BA requirements
         if ba_requirement:
             ba_reqs = [r.strip() for r in ba_requirement.split(",") if r.strip()]
             if ba_reqs:
-                requirement_filters.append(
-                    and_(
-                        Requirement.audit_id.like("ba%"),
-                        CountsFor.requirement.in_(ba_reqs)
+                ba_matches = set()
+                for ba_req in ba_reqs:
+                    ba_subquery = (
+                        self.db.query(CountsFor.course_code)
+                        .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                        .filter(
+                            Requirement.audit_id.like("ba%"),
+                            CountsFor.requirement == ba_req
+                        )
                     )
-                )
+                    ba_courses = [code[0] for code in ba_subquery.all()]
+                    if not ba_matches:
+                        ba_matches = set(ba_courses)
+                    else:
+                        ba_matches.intersection_update(ba_courses)
 
+                if ba_matches:
+                    requirement_matching_course_codes.append(list(ba_matches))
+
+        # BS requirements
         if bs_requirement:
             bs_reqs = [r.strip() for r in bs_requirement.split(",") if r.strip()]
             if bs_reqs:
-                requirement_filters.append(
-                    and_(
-                        Requirement.audit_id.like("bio%"),
-                        CountsFor.requirement.in_(bs_reqs)
+                bs_matches = set()
+                for bs_req in bs_reqs:
+                    bs_subquery = (
+                        self.db.query(CountsFor.course_code)
+                        .join(Requirement, CountsFor.requirement == Requirement.requirement)
+                        .filter(
+                            Requirement.audit_id.like("bio%"),
+                            CountsFor.requirement == bs_req
+                        )
                     )
-                )
+                    bs_courses = [code[0] for code in bs_subquery.all()]
+                    if not bs_matches:
+                        bs_matches = set(bs_courses)
+                    else:
+                        bs_matches.intersection_update(bs_courses)
 
-        if requirement_filters:
-            query = query.join(CountsFor, Course.course_code == CountsFor.course_code)\
-                        .join(Requirement, CountsFor.requirement == Requirement.requirement)\
-                        .filter(or_(*requirement_filters))
+                if bs_matches:
+                    requirement_matching_course_codes.append(list(bs_matches))
+
+        # If we have requirement filters, apply them to the main query
+        if requirement_matching_course_codes:
+            # Start with the first set of matching courses
+            matching_course_codes = set(requirement_matching_course_codes[0])
+
+            # Intersect with each additional set to get courses matching ALL requirements
+            for codes in requirement_matching_course_codes[1:]:
+                matching_course_codes.intersection_update(codes)
+
+            # Apply the filter to the main query
+            if matching_course_codes:
+                query = query.filter(Course.course_code.in_(matching_course_codes))
+            else:
+                # If no courses match all requirements, return empty result
+                return []
 
         if offered_qatar is True and offered_pitts is True:
             if semester:
