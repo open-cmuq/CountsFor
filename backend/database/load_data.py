@@ -17,6 +17,7 @@ from backend.scripts.enrollment_extractor import EnrollmentDataExtractor
 from .models import Instructor, Course, Offering, Requirement, Audit, CountsFor
 from .models import Prereqs, CourseInstructor, Enrollment, Department
 from .db import SessionLocal
+from .to_csv import export_tables_to_csv
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -243,6 +244,16 @@ def load_data_from_endpoint() -> None:
     logging.info("Combined data to be loaded: %s", {k: len(v) for k, v in data_dict.items()})
 
     load_data_from_dicts(data_dict)
+
+    # After loading data, export tables to CSV
+    logging.info("Exporting database tables to CSV...")
+    try:
+        # Call the export function from to_csv.py
+        results = export_tables_to_csv()
+        logging.info("CSV export completed with results: %s",
+                     {k: v for k, v in results.items() if v != "success"})
+    except Exception as e:
+        logging.error("Error exporting to CSV: %s", e)
 
 if __name__ == "__main__":
     load_data_from_endpoint()
