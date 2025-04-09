@@ -115,6 +115,13 @@ class AuditDataExtractor(DataExtractor):
 
         return req.strip()
 
+    def get_courses_from_code(self, dept_code, course_codes):
+        """
+        Finds all courses that start with the given department code.
+        Example: if dept_code='02', returns all courses like '02-201', '02-202'.
+        """
+        return [c for c in course_codes if c.startswith(dept_code)]
+
     def get_results(self) -> dict[str, list[dict]]:
         """
         Extracts audit data from dataframes provided by extract_audit_dataframes module.
@@ -178,16 +185,20 @@ class AuditDataExtractor(DataExtractor):
                 if row["Inclusion/Exclusion"] == "Inclusion":
                     if row["Type"] == "Code":
                         # If it's a department code, find all courses with that code
-                        matching_courses = [c for c in course_codes if c.startswith(row["Course or code"])]
-                        for course in matching_courses:
-                            combined_data.append({
-                                "requirement": processed_req,
-                                "course": course,
-                                "min_units": min_units,
-                                "audit_type": audit_type,
-                                "major": major,
-                                "audit": processed_req.split('---')[0].strip()
-                            })
+                        matching_courses = self.get_courses_from_code(row["Course or code"], course_codes)
+                        if matching_courses:
+                            for course in matching_courses:
+                                combined_data.append({
+                                    "requirement": processed_req,
+                                    "course": course,
+                                    "min_units": min_units,
+                                    "audit_type": audit_type,
+                                    "major": major,
+                                    "audit": processed_req.split('---')[0].strip()
+                                })
+                        else:
+                            # Log if no matching courses found for a department code
+                            logging.warning(f"No matching courses found for department code: {row['Course or code']}")
                     else:
                         # Regular course
                         combined_data.append({
