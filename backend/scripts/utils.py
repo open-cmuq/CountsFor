@@ -1,12 +1,10 @@
-# pylint: skip-file
-# Utility functions for course analyses
+# pylint: disable=all
 
 import pandas as pd
 import json
 from typing import *
 from pandas.io.excel._openpyxl import OpenpyxlReader
 from pandas._typing import Scalar
-import os
 
 
 def formatCourseNumber (n: int) -> str:
@@ -220,7 +218,7 @@ def getCourseTitle(course_number: str) -> str:
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
-        #print("No file for course: " + course_number)
+        # print("No file for course: " + course_number)
         return "<No file>"
     else:
         data = json.load(file)
@@ -242,7 +240,7 @@ def getCourseUnits(course_number: str) -> str:
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
-        #print("No file for course: " + course_number)
+        # print("No file for course: " + course_number)
         return "<No file>"
     else:
         data = json.load(file)
@@ -268,7 +266,7 @@ def getPreReqs(course_number: str) -> str:
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
-        #print("No file for course: " + course_number)
+        # print("No file for course: " + course_number)
         return "<No file>"
     else:
         data = json.load(file)
