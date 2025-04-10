@@ -302,7 +302,7 @@ const CourseTable = ({
               );
             })}
 
-              <td className="cell-offered">{course.offered.join(", ")}</td>
+              <td className="cell-offered">{[...new Set(course.offered)].join(", ")}</td>
               <td className="cell-prereq">
               <PrereqCell text={course.prerequisites} />
               </td>
