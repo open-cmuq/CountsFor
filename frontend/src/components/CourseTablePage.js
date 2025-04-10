@@ -256,7 +256,30 @@ const CourseTablePage = () => {
           new Map(allCourses.map((c) => [c.course_code, c])).values()
         );
 
-        const filteredCourses = uniqueCourses.filter(courseMatchesRequirementFilter);
+        // Apply additional filtering to enforce AND logic between different major categories
+        let filteredCourses = uniqueCourses;
+
+        // Get list of majors with active filters
+        const majorsWithFilters = Object.keys(selectedFilters).filter(
+          major => selectedFilters[major] && selectedFilters[major].length > 0
+        );
+
+        // If multiple major categories have active filters, apply AND logic
+        if (majorsWithFilters.length > 1) {
+          filteredCourses = uniqueCourses.filter(course => {
+            // Check if course fulfills requirements for ALL majors with active filters
+            return majorsWithFilters.every(major => {
+              const majorRequirements = course.requirements[major] || [];
+              // Check if any requirements in this major match the selected filters
+              return majorRequirements.some(reqObj =>
+                selectedFilters[major].includes(reqObj.requirement)
+              );
+            });
+          });
+        }
+
+        // Apply Core/GenEd filter
+        filteredCourses = filteredCourses.filter(courseMatchesRequirementFilter);
         setCourses(filteredCourses);
       } catch (error) {
         console.error("Error fetching courses:", error);
