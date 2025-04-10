@@ -80,15 +80,61 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
             deduped_records = df.to_dict(orient="records")
 
             if table_name == "enrollment":
+                # First, identify all unique semester-course combinations and ensure offerings exist
+                semester_course_combos = set()
                 for record in deduped_records:
-                    record["class_"] = int(record["class_"])  # Convert to int if necessary
-                    offering = db.query(Offering).filter(
-                        Offering.course_code == record["course_code"],
-                        Offering.semester == record["semester"]
+                    # Skip records with missing semester or course_code
+                    if 'semester' not in record or 'course_code' not in record or not record['semester'] or not record['course_code']:
+                        continue
+
+                    semester_course_combos.add((record['semester'], record['course_code']))
+
+                # Create missing offering records
+                for semester, course_code in semester_course_combos:
+                    # Check if an offering already exists
+                    existing_offering = db.query(Offering).filter(
+                        Offering.course_code == course_code,
+                        Offering.semester == semester
                     ).first()
 
-                    if offering:
-                        record["offering_id"] = offering.offering_id
+                    # Create new offering if it doesn't exist
+                    if not existing_offering:
+                        # Create a default offering ID
+                        offering_id = f"{course_code}_{semester}_2"  # 2 is default campus_id for Qatar
+
+                        # Check if the course exists
+                        course_exists = db.query(Course).filter(Course.course_code == course_code).first()
+                        if course_exists:
+                            new_offering = Offering(
+                                offering_id=offering_id,
+                                semester=semester,
+                                course_code=course_code,
+                                campus_id=2  # Default campus_id for Qatar
+                            )
+                            db.add(new_offering)
+
+                # Commit the new offerings
+                try:
+                    db.commit()
+                except Exception as e:
+                    db.rollback()
+                    logging.error(f"Error creating offerings: {e}")
+
+                # Now process enrollment records
+                for record in deduped_records:
+                    record["class_"] = int(record["class_"])  # Convert to int if necessary
+
+                    # Find the matching offering
+                    if 'semester' in record and 'course_code' in record and record['semester'] and record['course_code']:
+                        offering = db.query(Offering).filter(
+                            Offering.course_code == record["course_code"],
+                            Offering.semester == record["semester"]
+                        ).first()
+
+                        if offering:
+                            record["offering_id"] = offering.offering_id
+                        else:
+                            continue  # Skip this record if no offering exists
 
                     # Remove 'course_code' and 'semester' from record as they're
                     # not columns in the Enrollment model
