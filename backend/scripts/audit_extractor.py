@@ -6,7 +6,6 @@ requirement details from audit JSON files and outputs Excel files for the databa
 It inherits common functionality from DataExtractor.
 """
 
-import os
 import re
 import logging
 import pandas as pd
@@ -77,7 +76,7 @@ class AuditDataExtractor(DataExtractor):
                     validated_dataframes[df_name] = validated_df
 
             return validated_dataframes
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-exception-caught
             logging.error("Error fetching audit dataframes: %s", e)
             return {}
 
@@ -93,7 +92,7 @@ class AuditDataExtractor(DataExtractor):
         # Check if all required columns exist
         for col in required_columns:
             if col not in df.columns:
-                logging.error(f"Required column '{col}' missing from dataframe")
+                logging.error("Required column '%s' missing from dataframe", col)
                 return None
 
         # If dataframe passes validation, return it
@@ -158,14 +157,14 @@ class AuditDataExtractor(DataExtractor):
 
         # Process each dataframe
         for df_name, df in audit_dataframes.items():
-            logging.info(f"Processing dataframe: {df_name}")
+            logging.info("Processing dataframe: %s", df_name)
 
             # Extract major and audit_type from dataframe name (e.g., 'cs_core', 'ba_gened')
             try:
                 major, audit_type_str = df_name.split('_')
                 audit_type = 0 if audit_type_str == 'core' else 1  # 0 for core, 1 for gened
             except ValueError:
-                logging.error(f"Invalid dataframe name format: {df_name}")
+                logging.error("Invalid dataframe name format: %s", df_name)
                 continue
 
             # Check if the dataframe has a Min Units column
@@ -177,7 +176,7 @@ class AuditDataExtractor(DataExtractor):
 
                 # Skip excluded requirements for IS major
                 if major.lower() == 'is' and processed_req in is_excluded_requirements:
-                    logging.info(f"Skipping excluded IS requirement: {processed_req}")
+                    logging.info("Skipping excluded IS requirement: %s", processed_req)
                     continue
 
                 # Get min_units value if available
@@ -192,7 +191,8 @@ class AuditDataExtractor(DataExtractor):
                 if row["Inclusion/Exclusion"] == "Inclusion":
                     if row["Type"] == "Code":
                         # If it's a department code, find all courses with that code
-                        matching_courses = self.get_courses_from_code(row["Course or code"], course_codes)
+                        matching_courses = self.get_courses_from_code(row["Course or code"],
+                                                                      course_codes)
                         if matching_courses:
                             for course in matching_courses:
                                 combined_data.append({
@@ -205,7 +205,8 @@ class AuditDataExtractor(DataExtractor):
                                 })
                         else:
                             # Log if no matching courses found for a department code
-                            logging.warning(f"No matching courses found for department code: {row['Course or code']}")
+                            logging.warning("No matching courses found for department code: %s",
+                                            row['Course or code'])
                     else:
                         # Regular course
                         combined_data.append({
@@ -221,10 +222,12 @@ class AuditDataExtractor(DataExtractor):
         if combined_data:
             # Additional filtering for IS major requirements
             combined_data = [d for d in combined_data if not (d["major"].lower() == "is" and
-                                                              d["requirement"] in is_excluded_requirements)]
+                                                              d["requirement"] in
+                                                              is_excluded_requirements)]
 
             # Create audit table
-            audit_df = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
+            audit_df = pd.DataFrame(combined_data)[["audit", "audit_type",
+                                                    "major"]].drop_duplicates()
             audit_df["audit_id"] = audit_df["major"] + "_" + audit_df["audit_type"].astype(str)
             audit_df = audit_df.rename(columns={"audit": "name", "audit_type": "type"})
             audit_df = audit_df.drop_duplicates()
@@ -238,24 +241,27 @@ class AuditDataExtractor(DataExtractor):
 
             # Create countsfor table
             counts_df = pd.DataFrame(combined_data)[["requirement", "course"]]
-            counts_df = counts_df.rename(columns={"course": "course_code"}).drop_duplicates()
+            counts_df = counts_df.rename(columns={"course":
+                                                   "course_code"}).drop_duplicates()
 
             # Check how many courses aren't in the database
             if not existing_courses:
-                logging.warning("No existing courses found in database. Keeping all courses in countsfor table.")
+                logging.warning("No existing courses found in database. \
+                                Keeping all courses in countsfor table.")
             else:
                 # Log how many courses are missing from the database
                 missing_courses = set(counts_df["course_code"]) - existing_courses
                 if missing_courses:
-                    logging.warning(f"Found {len(missing_courses)} courses in audit data that aren't in the database")
+                    logging.warning("Found %d courses in audit data that aren't in the database",
+                                    len(missing_courses))
                     if len(missing_courses) < 20:  # Only log if there aren't too many
-                        logging.warning(f"Missing courses: {sorted(list(missing_courses))}")
+                        logging.warning("Missing courses: %s", sorted(list(missing_courses)))
 
-                # Optional: Filter to only include courses in database (comment this out to include all courses)
                 # counts_df = counts_df[counts_df["course_code"].isin(existing_courses)]
 
             # Create requirement table
-            req_df = pd.DataFrame(combined_data)[["requirement", "major", "audit_type"]].drop_duplicates()
+            req_df = pd.DataFrame(combined_data)[["requirement", "major",
+                                                   "audit_type"]].drop_duplicates()
             req_df = req_df.rename(columns={"audit_type": "type"})
             req_df = req_df.merge(
                 audit_df[["audit_id", "major", "type"]],
@@ -279,7 +285,7 @@ class AuditDataExtractor(DataExtractor):
             # Log summary of results
             logging.info("=== Audit Data Extraction Summary ===")
             for table_name, records in results.items():
-                logging.info(f"Table '{table_name}': {len(records)} records")
+                logging.info("Table '%s': %d records", table_name, len(records))
             logging.info("===================================")
 
             return results
