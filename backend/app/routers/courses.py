@@ -121,7 +121,7 @@ def get_courses_by_semester_route(semester: str,
     """
     courses = course_service.fetch_courses_by_semester(semester)
     if not courses.courses:
-         raise HTTPException(status_code=404, detail=f"No courses found for semester {semester}")
+        raise HTTPException(status_code=404, detail=f"No courses found for semester {semester}")
 
     return courses
 

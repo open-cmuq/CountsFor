@@ -9,6 +9,7 @@ import os
 import zipfile
 import logging
 from typing import Optional, List
+from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException
 import pandas as pd
 from backend.scripts.course_extractor import CourseDataExtractor
@@ -241,22 +242,53 @@ async def initialize_database(
                     raise HTTPException(status_code=400,
                                       detail=f"No audit JSON files found in {zip_file.filename}.")
 
-                # Ensure only allowed major folders exist
-                allowed_majors = {'ba', 'cs', 'is', 'bio'}
+                # Ensure valid structure for major folders
+                allowed_majors = {'ba', 'bio', 'cs', 'is'}
+
+                # Check for expected structure: either major folders or direct json files
                 found_dirs = set()
+                major_folders_exist = False
 
-                for _, dirs, _ in os.walk(audit_root):
-                    for dir_name in dirs:
-                        dir_lower = dir_name.lower()
-                        found_dirs.add(dir_lower)
+                for item in os.listdir(audit_root):
+                    item_path = os.path.join(audit_root, item)
+                    if os.path.isdir(item_path) and item.lower() in allowed_majors:
+                        major_folders_exist = True
+                        found_dirs.add(item.lower())
 
-                non_main_majors = found_dirs - allowed_majors
-                if non_main_majors:
-                    logging.warning("Found non-main major directories: %s. These will be ignored.",
-                                   ", ".join(non_main_majors))
-                    results["message"] = f"Note: Found directories for non-main majors\
-                                            ({', '.join(non_main_majors)}). " \
-                                        f"Only BA, CS, IS, and BIO majors will be processed."
+                # If we don't have the expected major folders, try to organize files
+                if not major_folders_exist:
+                    logging.info("No major folders found, organizing audit files...")
+
+                    # Try to organize audit files by major
+                    for json_file in json_files:
+                        file_name = os.path.basename(json_file).lower()
+                        file_path = Path(json_file)
+
+                        # Try to determine the major from the file content or name
+                        major = None
+                        for m in allowed_majors:
+                            if m in file_name or m in file_path.parent.name.lower():
+                                major = m
+                                break
+
+                        if major:
+                            # Create major folder if it doesn't exist
+                            major_folder = os.path.join(audit_root, major)
+                            os.makedirs(major_folder, exist_ok=True)
+
+                            # Move the file to the major folder
+                            dest_path = os.path.join(major_folder, os.path.basename(json_file))
+                            if json_file != dest_path:
+                                shutil.copy(json_file, dest_path)
+                                logging.info("Moved %s to %s", json_file, dest_path)
+                                found_dirs.add(major)
+
+                    # Check again if we created any major folders
+                    if not found_dirs:
+                        logging.warning("Could not identify majors from audit files")
+                        results["message"] = "Warning: Could not identify majors from \
+                                              audit files. The data structure might \
+                                              not be optimal."
 
                 main_majors = found_dirs & allowed_majors
                 if not main_majors:
@@ -264,7 +296,6 @@ async def initialize_database(
                                        detail="Audit ZIP must contain at least\
                                                one of the required major \
                                                folders: BA, CS, IS, or BIO.")
-
 
             except Exception as e:
                 logging.error("Error processing audit ZIP file %s: %s", zip_file.filename, str(e))

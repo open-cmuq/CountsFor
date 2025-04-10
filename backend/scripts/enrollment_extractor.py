@@ -55,15 +55,17 @@ class EnrollmentDataExtractor(DataExtractor):
         df.rename(columns=rename_dict, inplace=True)
 
         # Ensure required columns exist
-        required_columns = ["semester", "course_code", "class_", "enrollment_count", "department", "section"]
+        required_columns = ["semester", "course_code", "class_", "enrollment_count",
+                            "department", "section"]
         for col in required_columns:
             if col not in df.columns:
-                logging.warning(f"Required column '{col}' is missing from enrollment data")
+                logging.warning("Required column '%s' is missing from enrollment data", col)
                 df[col] = "" if col != "enrollment_count" and col != "class_" else 0
 
         # Format course codes and filter invalid codes
         if "course_code" in df.columns:
             df["course_code"] = df["course_code"].apply(self.format_course_code).astype(str)
+            # Filter out invalid course codes (those starting with letters)
             df = df[~df["course_code"].str.match(r'^[A-Za-z]{2}')]
 
         # Ensure class_ is an integer
@@ -72,8 +74,20 @@ class EnrollmentDataExtractor(DataExtractor):
         # Ensure enrollment_count is an integer
         df["enrollment_count"] = df["enrollment_count"].fillna(0).astype(int)
 
-        # Filter out any rows with invalid data
-        df = df[~df["course_code"].isna() & ~df["semester"].isna()]
+        # Fill any remaining missing semester values with a default
+        missing_semester = df["semester"].isna()
+        if missing_semester.any():
+            for idx in df[missing_semester].index:
+                course = df.loc[idx, "course_code"]
+                # Look for the same course in rows with non-missing semester
+                matching_semesters = df[(~df["semester"].isna()) &
+                                     (df["course_code"] == course)]["semester"].unique()
+                if len(matching_semesters) > 0:
+                    # Use the first matching semester
+                    df.loc[idx, "semester"] = matching_semesters[0]
+
+        # Now only filter out rows with missing course codes
+        df = df[~df["course_code"].isna()]
 
         # Convert to records for loading
         records = df.to_dict(orient="records")
