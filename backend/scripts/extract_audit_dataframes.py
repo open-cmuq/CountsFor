@@ -157,14 +157,32 @@ def makeDataFrame(audit):
 
     return df
 
-def main():
+def main(custom_base_dir=None):
+    """
+    Extracts and processes audit data from JSON files.
+
+    Args:
+        custom_base_dir: Optional path to the directory containing audit data.
+                        If None, uses the default path.
+
+    Returns:
+        Dictionary of dataframes with keys like 'cs_core', 'cs_gened', etc.
+    """
     # Get the project root directory
     project_root = Path(__file__).resolve().parent.parent.parent
 
-    # Path to the audits-json directory
-    base_dir = project_root / "data" / "audit" / "audits-json"
+    # Path to the audits-json directory - use custom path if provided
+    if custom_base_dir:
+        base_dir = Path(custom_base_dir)
+    else:
+        base_dir = project_root / "data" / "audit" / "audits-json"
 
     print(f"Looking for audit files in: {base_dir}")
+
+    # Check if directory exists
+    if not base_dir.exists():
+        print(f"Directory {base_dir} doesn't exist")
+        return {}
 
     # Dictionary to store all dataframes
     all_dataframes = {}
@@ -172,34 +190,62 @@ def main():
     # Only process specific folders
     target_folders = ['ba', 'bio', 'cs', 'is']
 
-    for folder in target_folders:
+    # Scan base_dir for folders directly
+    available_folders = [f.name for f in base_dir.iterdir() if f.is_dir()]
+
+    # Filter to only include target folders that exist
+    folders_to_process = [folder for folder in target_folders if folder in available_folders]
+
+    if not folders_to_process:
+        print(f"No target folders found in {base_dir}")
+        # Try to find any JSON files directly in the base directory
+        json_files = list(base_dir.glob('*.json'))
+        if json_files:
+            print(f"Found {len(json_files)} JSON files in base directory, attempting to process...")
+            for json_file in json_files:
+                # Try to determine the major from the filename
+                file_name = json_file.stem.lower()
+                for major in target_folders:
+                    if major in file_name:
+                        # Determine if this is a core or gened file
+                        file_type = "gened" if "gen" in file_name or "published" in file_name else "core"
+                        df_name = f"{major}_{file_type}"
+
+                        # Process the audit file
+                        try:
+                            audit_data = getAudit(str(json_file))
+                            dataframe = makeDataFrame(audit_data)
+                            all_dataframes[df_name] = dataframe
+                            print(f"Created dataframe: {df_name} with {len(dataframe)} rows")
+                        except Exception as e:
+                            print(f"Error processing {json_file}: {e}")
+                        break
+        return all_dataframes
+
+    for folder in folders_to_process:
         folder_path = base_dir / folder
 
-        # Skip if folder doesn't exist
-        if not folder_path.is_dir():
-            print(f"Folder {folder} not found, skipping...")
+        # Process each JSON file in the folder
+        json_files = list(folder_path.glob('*.json'))
+        if not json_files:
+            print(f"No JSON files found in {folder_path}, skipping...")
             continue
 
-        # Process each JSON file in the folder
-        for json_file in os.listdir(folder_path):
-            if not json_file.endswith('.json'):
-                continue
-
-            file_path = folder_path / json_file
-
+        for json_file in json_files:
             # Determine if this is a core or gened file
-            file_type = "gened" if json_file == "published.json" else "core"
+            file_type = "gened" if json_file.name == "published.json" else "core"
 
             # Create dataframe name
             df_name = f"{folder}_{file_type}"
 
             # Process the audit file
-            audit_data = getAudit(str(file_path))
-            dataframe = makeDataFrame(audit_data)
-
-            # Store the dataframe
-            all_dataframes[df_name] = dataframe
-            print(f"Created dataframe: {df_name} with {len(dataframe)} rows")
+            try:
+                audit_data = getAudit(str(json_file))
+                dataframe = makeDataFrame(audit_data)
+                all_dataframes[df_name] = dataframe
+                print(f"Created dataframe: {df_name} with {len(dataframe)} rows")
+            except Exception as e:
+                print(f"Error processing {json_file}: {e}")
 
     return all_dataframes
 

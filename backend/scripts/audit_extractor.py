@@ -55,12 +55,19 @@ class AuditDataExtractor(DataExtractor):
     def get_audit_dataframes(self):
         """
         Fetches all audit dataframes from extract_audit_dataframes module.
+        Passes the audit_base_path to the extract_audit_dataframes.main() function.
         Returns a dictionary of dataframes with keys like 'cs_core', 'cs_gened', etc.
         """
-        logging.info("Fetching audit dataframes from extract_audit_dataframes module")
+        logging.info("Fetching audit dataframes using directory: %s", self.audit_base_path)
         try:
-            dataframes = extract_audit_dataframes.main()
-            logging.info(f"Retrieved {len(dataframes)} audit dataframes")
+            # Pass the audit_base_path to the main function
+            dataframes = extract_audit_dataframes.main(custom_base_dir=self.audit_base_path)
+
+            if not dataframes:
+                logging.warning("No audit dataframes found in %s", self.audit_base_path)
+                return {}
+
+            logging.info("Retrieved %d audit dataframes", len(dataframes))
 
             # Validate and standardize each dataframe
             validated_dataframes = {}
@@ -71,7 +78,7 @@ class AuditDataExtractor(DataExtractor):
 
             return validated_dataframes
         except Exception as e:
-            logging.error(f"Error fetching audit dataframes: {e}")
+            logging.error("Error fetching audit dataframes: %s", e)
             return {}
 
     def validate_dataframe(self, df):
