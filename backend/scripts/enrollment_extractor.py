@@ -55,10 +55,11 @@ class EnrollmentDataExtractor(DataExtractor):
         df.rename(columns=rename_dict, inplace=True)
 
         # Ensure required columns exist
-        required_columns = ["semester", "course_code", "class_", "enrollment_count", "department", "section"]
+        required_columns = ["semester", "course_code", "class_", "enrollment_count",
+                            "department", "section"]
         for col in required_columns:
             if col not in df.columns:
-                logging.warning(f"Required column '{col}' is missing from enrollment data")
+                logging.warning("Required column '%s' is missing from enrollment data", col)
                 df[col] = "" if col != "enrollment_count" and col != "class_" else 0
 
         # Format course codes and filter invalid codes
@@ -76,11 +77,11 @@ class EnrollmentDataExtractor(DataExtractor):
         # Fill any remaining missing semester values with a default
         missing_semester = df["semester"].isna()
         if missing_semester.any():
-            # Try to recover missing semester values by looking at other rows with the same course code
             for idx in df[missing_semester].index:
                 course = df.loc[idx, "course_code"]
                 # Look for the same course in rows with non-missing semester
-                matching_semesters = df[(~df["semester"].isna()) & (df["course_code"] == course)]["semester"].unique()
+                matching_semesters = df[(~df["semester"].isna()) &
+                                     (df["course_code"] == course)]["semester"].unique()
                 if len(matching_semesters) > 0:
                     # Use the first matching semester
                     df.loc[idx, "semester"] = matching_semesters[0]

@@ -64,7 +64,7 @@ class AnalyticsRepository:
         # Create a dictionary to aggregate results
         aggregated_data = {}
 
-        for enrollment, semester, offering_id in enrollment_data:
+        for enrollment, semester, _ in enrollment_data:
             class_ = enrollment.class_  # Use class_ from Enrollment
             enrollment_count = enrollment.enrollment_count
 

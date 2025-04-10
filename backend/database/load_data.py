@@ -84,7 +84,9 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                 semester_course_combos = set()
                 for record in deduped_records:
                     # Skip records with missing semester or course_code
-                    if 'semester' not in record or 'course_code' not in record or not record['semester'] or not record['course_code']:
+                    if ('semester' not in record or 'course_code'
+                        not in record or not record['semester']
+                        or not record['course_code']):
                         continue
 
                     semester_course_combos.add((record['semester'], record['course_code']))
@@ -100,10 +102,10 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                     # Create new offering if it doesn't exist
                     if not existing_offering:
                         # Create a default offering ID
-                        offering_id = f"{course_code}_{semester}_2"  # 2 is default campus_id for Qatar
-
+                        offering_id = f"{course_code}_{semester}_2"
                         # Check if the course exists
-                        course_exists = db.query(Course).filter(Course.course_code == course_code).first()
+                        course_exists = db.query(Course).filter(Course.course_code
+                                                                 == course_code).first()
                         if course_exists:
                             new_offering = Offering(
                                 offering_id=offering_id,
@@ -116,16 +118,18 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                 # Commit the new offerings
                 try:
                     db.commit()
-                except Exception as e:
+                except (IntegrityError, SQLAlchemyError) as e:
                     db.rollback()
-                    logging.error(f"Error creating offerings: {e}")
+                    logging.error("Error creating offerings: %s", e)
 
                 # Now process enrollment records
                 for record in deduped_records:
                     record["class_"] = int(record["class_"])  # Convert to int if necessary
 
                     # Find the matching offering
-                    if 'semester' in record and 'course_code' in record and record['semester'] and record['course_code']:
+                    if ('semester' in record and 'course_code' in
+                        record and record['semester'] and
+                        record['course_code']):
                         offering = db.query(Offering).filter(
                             Offering.course_code == record["course_code"],
                             Offering.semester == record["semester"]
@@ -298,7 +302,7 @@ def load_data_from_endpoint() -> None:
         results = export_tables_to_csv()
         logging.info("CSV export completed with results: %s",
                      {k: v for k, v in results.items() if v != "success"})
-    except Exception as e:
+    except (IOError, SQLAlchemyError) as e:
         logging.error("Error exporting to CSV: %s", e)
 
 if __name__ == "__main__":
