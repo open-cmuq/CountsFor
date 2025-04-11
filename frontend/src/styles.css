@@ -1,71 +1,70 @@
 .table-container {
     padding: 20px;
   }
-  
+
   table {
     width: 100%;
     border-collapse: collapse;
   }
-  
-  th, td {
-    border: 0.5px solid #ddd;
-    padding: 10px;
-    text-align: center;
-    border-radius: 4px;
-  }
-  
+
   th {
     background-color: #f4f4f4;
     font-weight: bold;
   }
-  
+
   td:hover {
     background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
-  
+
 
   .header-ba {
     background-color: #4A68FB; /* Blue */
     color: white;
+    width: 17%;
   }
-  
+
   .header-bs {
     background-color: #22AA0A; /* Green */
     color: white;
+    width: 17%;
   }
-  
+
   .header-cs {
     background-color: #CF1314; /* Red */
-    color: white;
+    width: 17%;
   }
-  
+
   .header-is {
     background-color: #FFC033; /* Yellow */
     color: white;
+    width: 17%;
   }
 
   .cell-ba {
     background-color: #B3BBFD; /* Blue */
     color: white;
+    width: 17%;
   }
-  
+
   .cell-bs {
     background-color: #A3D799; /* Green */
     color: white;
+    width: 17%;
   }
-  
+
   .cell-cs {
     background-color: #EB989D; /* Red */
     color: white;
+    width: 17%;
   }
-  
+
   .cell-is {
     background-color: #FFDB99; /* Yellow */
     color: white;
+    width: 17%;
   }
 
-  
   .remove-btn {
     background: none;
     border: none;
@@ -73,7 +72,7 @@
     font-size: 16px;
     color: black;
   }
-  
+
   .remove-btn:hover {
     color: darkred;
   }
@@ -83,21 +82,9 @@
     display: inline-block;
     padding: auto;
   }
-  
-  .dropdown-content {
-    position: absolute;
-    background-color: white;
-    border: 1px solid #ccc;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    top: 100%; /* Appears below the button */
-    left: 0;
-    width: 200px; /* Adjust width as needed */
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-  }
-  
+
+
+
   .dropdown-item {
     display: flex;
     align-items: center;
@@ -105,7 +92,7 @@
     padding: 5px 0;
     color: black;
   }
-  
+
   .drop-clear-btn {
     background: #ff4d4d;
     color: white;
@@ -117,21 +104,26 @@
     border-radius: 4px;
     width: 80%;
   }
-  
+
   .drop-clear-btn:hover {
     background: #cc0000;
   }
 
   .dropdown-btn {
-    width: 70%;  /* Full width of the cell */
-    height: 100%; /* Full height of the cell */
-    text-align: center;
-    font-size: 1rem; 
-    background-color: white;
+    width: 110px;
+    height: 90%;
+    padding: 3px;
     border: 1px solid #ccc;
-    cursor: pointer;
+    background-color: white;
+    font-size: 1rem;
     border-radius: 4px;
-    padding-top: 2px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    border-radius: 4px;
+    text-overflow: ellipsis;
+    margin-top: 7px;
+    transition: all 0.3s ease;
   }
 
   .cell-container {
@@ -140,109 +132,42 @@
     height: 100%;
   }
   .cell {
-    color: black !important; /* Override other styles */
+    color: black !important;
   }
-  
 
-  .dropdown-content {
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    text-align: left; 
-    font-weight: normal; /* Remove bold */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
   .dropdown-item {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 14px;
     cursor: pointer;
-
   }
-
 
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
   }
-  
-  /* .search-bar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
 
-  */
-
-  
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
     text-align: center;
     border-radius: 12px;
   }
-  
+
   .remove-btn {
     background: none;
     border: none;
     cursor: pointer;
     font-size: 16px;
   }
-  
-/* Ensure table uses fixed layout */
-table {
-    table-layout: fixed;
-    width: 100%;
-  }
-  
-  /* Fix column widths */
-  th:first-child, td:first-child { 
-    width: 3%; /* Smallest column for delete (X) */
-  }
-  
-  th:nth-child(2), td:nth-child(2) { 
-    width: 13%; /* Course Code & Name */
-  }
-  
-  /* Ensuring equal width for BA, BS, CS, IS */
-  th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
-  td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
-    width: 17%; /* Adjusted for better spacing */
-  }
-  
-  /* Making Pre-Req and Offer columns smaller */
-  th:nth-child(7), th:nth-child(8),
-  td:nth-child(7), td:nth-child(8) {
-    width: 8%;
-  }
-  
-  /* Ensure text wraps instead of overflowing */
-  td {
-    word-wrap: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
-  }
 
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 6px;
-  }
-
-  
 /* Gray out N/A cells */
 .na-cell {
   background-color: white !important;
   color: transparent; /* Hide text */
   pointer-events: none; /* Prevent interactions */
 }
-
 
   /* Close Button */
   .close-btn {
@@ -252,13 +177,11 @@ table {
     font-size: 16px;
     cursor: pointer;
   }
-  
+
   .close-btn:hover {
     color: #ffdddd;
   }
-  
-  
-  
+
   /* Resize Handle */
   .react-resizable-handle {
     position: absolute;
@@ -270,35 +193,20 @@ table {
     cursor: nwse-resize;
     border-radius: 50%;
   }
-  
+
   .search-label {
     font-weight: bold;
-    font-size: large;
+    font-size: 25px;
   }
-  
+
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
   }
-  
- 
-  .search-btn {
-    background: white;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    padding: 8px;
-  }
-  
-  .selected-filters {
-    display: flex;
-    gap: 1px;
-    margin-top: 4px;
-    margin-bottom: 4px;
-  }
-  
+
   .filter-tag {
-    background: darkgrey;
+    background: black;
     color: white;
     padding: 5px;
     border-radius: 5px;
@@ -307,78 +215,79 @@ table {
     gap: 5px;
     font-size: 15px;
     height: 19px;
-    max-width: 550px; 
+    max-width: 550px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 3px;
+    padding-right: 7px;
     display: inline-block;
+    margin-top: 2px;
   }
-  
+
   .filter-tag:hover {
-    background: #333;
+    background: #636363;
   }
-  
+
   .filter-tag button {
     background: transparent;
     color: white;
     border: none;
-    /* background: none; */
     border: none;
     color: white;
     margin-left: 0px;
     cursor: pointer;
     padding-left: 3px;
-    padding-right: 3px;
+    padding-right: 4px;
   }
-  
-  .h1 {
-    font-size: 50px;
-    font-weight: bold;
+
+  .title {
+    font-size: 45px;
+    margin-top: 20px;
+    margin-bottom: 15px;
   }
-  
+
+
   .table-container {
-    padding: 20px;
+    padding: 10px;
   }
-  
+
   table {
     width: 100%;
     border-collapse: collapse;
   }
-  
+
   th, td {
     border: 0.5px solid #ddd;
     padding: 10px;
     text-align: center;
     border-radius: 4px;
   }
-  
+
   th {
     background-color: #f4f4f4;
     font-weight: bold;
   }
-  
+
   td:hover {
     background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
-  
 
   .header-ba {
     background-color: #4A68FB; /* Blue */
     color: white;
   }
-  
+
   .header-bs {
     background-color: #22AA0A; /* Green */
     color: white;
   }
-  
+
   .header-cs {
     background-color: #CF1314; /* Red */
     color: white;
   }
-  
+
   .header-is {
     background-color: #FFC033; /* Yellow */
     color: white;
@@ -388,23 +297,23 @@ table {
     background-color: #B3BBFD; /* Blue */
     color: white;
   }
-  
+
   .cell-bs {
     background-color: #A3D799; /* Green */
     color: white;
   }
-  
+
   .cell-cs {
     background-color: #EB989D; /* Red */
     color: white;
   }
-  
+
   .cell-is {
     background-color: #FFDB99; /* Yellow */
     color: white;
   }
 
-  
+
   .remove-btn {
     background: none;
     border: none;
@@ -412,103 +321,45 @@ table {
     font-size: 16px;
     color: black;
   }
-  
+
   .remove-btn:hover {
     color: darkred;
   }
 
-  .dropdown {
-    position: relative;
-    display: inline-block;
-    padding: auto;
-  }
-  
   .dropdown-content {
-    position: absolute;
-    background-color: white;
-    border: 1px solid #ccc;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    top: 100%; /* Appears below the button */
-    left: 0;
-    width: 200px; /* Adjust width as needed */
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 0;
-    color: black;
-  }
-  
-  .drop-clear-btn {
-    background: #ff4d4d;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    text-align: center;
-    border-radius: 4px;
-    width: 80%;
-  }
-  
-  .drop-clear-btn:hover {
-    background: #cc0000;
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  top: 100%;
+  left: 0;
+  width: 275px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 5px;
+  margin-top: 0px;
+  text-align: left;
+  font-weight: normal;
+
   }
 
-  .dropdown-btn {
-    width: 70%;  /* Full width of the cell */
-    height: 100%; /* Full height of the cell */
-    text-align: center;
-    font-size: 1rem; 
-    background-color: white;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    border-radius: 4px;
-    padding-top: 2px;
-  }
-
-  .cell-container {
-    padding: 0;
-    width: 100%;
-    height: 100%;
-  }
-  .cell {
-    color: black !important; /* Override other styles */
-  }
-  
-
-  .dropdown-content {
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    text-align: left; 
-    font-weight: normal; /* Remove bold */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
   .dropdown-item {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 14px;
     cursor: pointer;
-
   }
- 
+
   .grayed-out {
     background-color: #f0f0f0;
     color: #999;
     text-align: center;
     border-radius: 12px;
   }
-  
+
   .remove-btn {
     background: none;
     border: none;
@@ -516,35 +367,32 @@ table {
     font-size: 16px;
   }
 
-
-/* Ensure table uses fixed layout */
 table {
     table-layout: fixed;
     width: 100%;
   }
-  
-  /* Fix column widths */
-  th:first-child, td:first-child { 
-    width: 3%; /* Smallest column for delete (X) */
+
+  .remove-col {
+    width: 40px;
+    text-align: center;
+    white-space: nowrap;
   }
-  
-  th:nth-child(2), td:nth-child(2) { 
-    width: 13%; /* Course Code & Name */
+
+  .course-info-col {
+    width: 200px;
+    min-width: 200px;
+    max-width: 300px;
   }
-  
-  /* Ensuring equal width for BA, BS, CS, IS */
-  th:nth-child(3), th:nth-child(4), th:nth-child(5), th:nth-child(6),
-  td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6) {
-    width: 17%; /* Adjusted for better spacing */
+
+  .header-offered, .cell-offered {
+    width: 8%;
+    text-align: center;
   }
-  
-  /* Making Pre-Req and Offer columns smaller */
-  th:nth-child(7), th:nth-child(8),
-  td:nth-child(7), td:nth-child(8) {
+
+  .header-prereq, .cell-prereq {
     width: 8%;
   }
-  
-  /* Ensure text wraps instead of overflowing */
+
   td {
     word-wrap: break-word;
     overflow: hidden;
@@ -557,7 +405,7 @@ table {
     text-align: center;
     border-radius: 6px;
   }
-  
+
 /* Gray out N/A cells */
 .na-cell {
   background-color: white !important;
@@ -573,11 +421,11 @@ table {
     font-size: 16px;
     cursor: pointer;
   }
-  
+
   .close-btn:hover {
     color: #ffdddd;
   }
-  
+
   .search-container {
     background: #d9d9d9;
     padding: 10px;
@@ -585,55 +433,39 @@ table {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    width: 40%
+    width: 920px;
+    margin-bottom: 10px;
   }
-  
-  .search-label {
-    font-weight: bold;
-    font-size: large;
-  }
-  
+
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
   }
-  
- 
-  .search-btn {
-    background: white;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    padding: 8px;
-  }
 
-  
   .selected-filters {
     display: flex;
-    gap: 1px;
+    overflow: hidden;
+    gap: 2px;
     margin-top: 5px;
     margin-bottom: 5px;
+    padding-right: 5px;
   }
 
-  .search-label {
-    font-weight: bold;
-    white-space: nowrap; 
-  }
-  
   .search-inputs {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex-grow: 1; 
+    flex-grow: 1;
   }
-  
+
   .search-dropdown, .text-input {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    flex: 1; 
+    width: 350px;
   }
-  
+
   .search-btn {
     background: white;
     border: 1px solid #ccc;
@@ -641,22 +473,29 @@ table {
     padding: 8px;
     border-radius: 100px;
   }
-  
+
   .search-clear-btn {
     background: black;
     color: white;
     border: none;
-    padding: 8px;
+    padding: 5px 10px;
     cursor: pointer;
     text-transform: uppercase;
-    border-radius: 4px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .search-clear-btn:hover {
+    background-color: #333;
+    color: #f0f0f0;
+    transform: scale(1.03);
   }
 
   .header-container {
     display: flex;
     padding: 10px 20px;
   }
-  
+
   .page-title {
     font-size: 20px;
     font-weight: bold;
@@ -666,22 +505,22 @@ table {
     position: fixed;
     top: 0;
     right: 0;
-    width: 450px; 
-    height: 100vh; 
+    width: 500px;
+    height: 100vh;
     background: white;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-    overflow-y: auto; 
+    overflow-y: auto;
     padding: 20px;
     z-index: 1000;
     border-left: 2px solid #ddd;
   }
-  
+
   .popup-panel {
-    max-height: 90vh; 
-    overflow-y: auto; 
-    padding-bottom: 10px; 
+    max-height: 90vh;
+    overflow-y: auto;
+    padding-bottom: 10px;
   }
-  
+
     .popup-close-btn {
     align-self: flex-end;
     background: none;
@@ -706,7 +545,7 @@ table {
     padding-bottom: 5px;
     margin-bottom: 15px;
   }
-  
+
   .requirement-group {
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -715,19 +554,19 @@ table {
     background-color: #f9f9f9;
     padding-bottom: 10px;
   }
-  
+
   .courses-title {
     font-weight: bold;
     margin-bottom: 5px;
     margin-left: 5px;
   }
-  
+
   .course-link {
     color: blue;
     text-decoration: underline;
     cursor: pointer;
   }
-  
+
   .course-link:hover {
     color: darkblue;
   }
@@ -741,28 +580,472 @@ table {
     border-radius: 8px;
     background-color: #fafafa;
   }
-  
+
   .requirement-group {
-    margin-bottom: 10px; 
+    margin-bottom: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid #ddd;
   }
-  
+
   .requirement-group h3 {
     padding-top: 5px;
     margin: 0;
     padding-left: 5px;
     font-size: 1.1rem;
   }
-  
+
   .requirement-list {
-    padding-left: 20px; 
+    padding-left: 20px;
     margin-top: 5px;
   }
-  
+
   .requirement-list li {
-    list-style-type: disc; 
+    list-style-type: disc;
     margin-bottom: 3px;
   }
-  
-  
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .pagination-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .pagination-container button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  .pagination-container button.active {
+    background: #4A90E2;
+    color: white;
+    font-weight: bold;
+    border-color: #4A90E2;
+  }
+
+  .pagination-container button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pagination-container select {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .view-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+    flex-wrap: wrap;
+  }
+
+  .view-count {
+    font-size: 0.9rem;
+    color: #333;
+  }
+
+  .view-toggle {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    background-color: white;
+    min-width: 150px;
+    transition: all 0.4s ease;
+  }
+
+  .view-toggle:focus {
+    outline: none;
+    border-color: #4a68fb;
+  }
+
+  .view-toggle:hover {
+    transform: scale(1.01);
+  }
+
+  .prereq-expandable {
+    max-width: 240px;
+    padding: 8px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .expand-toggle {
+    display: inline-block;
+    color: darkblue;
+    margin-left: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: smaller;
+  }
+
+  .dropdown-group {
+    padding-left: 1px;
+  }
+
+  .dropdown-group-label {
+    background-color: #f0f0f0;
+    color: #222;
+    font-weight: 600;
+    font-size: 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    padding-right: 7px;
+    margin: 4px 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .dropdown-group-label:hover {
+    background-color: #e0e0e0;
+  }
+
+  .dropdown-subgroup {
+    padding-left: 10px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+
+  .dropdown-item.nested {
+    font-size: 13px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .select-all-btn {
+    background-color: #bbbbbb;
+    color: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    margin-bottom: 3px;
+    font-weight: bold;
+    font-size: 15px;
+    width: 100%;
+    align-self: center;
+  }
+
+  .select-all-btn:hover {
+    background-color: darkred;
+    transform: scale(1.01);
+    }
+
+  .tab-bar {
+    display: flex;
+    background-color: #f2f2f2;
+    border-bottom: 2px solid #ccc;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .tab:hover {
+    background-color: #eaeaea;
+  }
+
+  .tab.active {
+    border-bottom: 3px solid #000;
+    background-color: white;
+  }
+
+
+  .search-results {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+    max-width: 600px;
+  }
+
+  .search-result-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.4rem;
+    border-bottom: 1px solid #e2e2e2;
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  .course-link {
+    color: #0074cc;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .dropdown-offered .dropdown-content {
+    min-width: 100px;
+    max-width: 100px;
+  }
+
+  .dropdown-offered .drop-clear-btn {
+    width: 95%;
+  }
+
+  .dropdown-prereq .dropdown-content {
+    width: 95%;
+  }
+
+  .search-filters {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-top: 10px;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-label {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 0px;
+  }
+
+  .search-bar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: left;
+    gap: 15px;
+    margin-top: 8px;
+  }
+
+  .location-dropdown-wrapper .dropdown-btn {
+    margin-top: 3px;
+    width: 150px;
+  }
+
+  .course-type-dropdown-wrapper .dropdown-btn {
+    margin-top: 3px;
+    width: 150px;
+  }
+
+  .department-dropdown-wrapper .dropdown-btn {
+    margin-top: 3px;
+    width: 150px;
+  }
+
+  .department-dropdown-wrapper .dropdown-content {
+    max-height: 500px;
+    overflow-y: scroll;
+  }
+
+  .dropdown-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .dropdown-content::-webkit-scrollbar-thumb {
+    background-color: #aaa;
+    border-radius: 10px;
+  }
+
+  .dropdown-content::-webkit-scrollbar-track {
+    background-color: #f0f0f0;
+  }
+
+  .dropdown-item.checkbox-right {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background-color: #f8f8f8;
+    margin: 4px 0;
+  }
+
+  .item-text {
+    text-align: left;
+    flex: 1;
+    padding-right: 10px;
+  }
+
+  .dropdown-item.checkbox-right input[type="checkbox"] {
+    margin-left: 12px;
+    transform: scale(1.1);
+  }
+
+  .add-all-btn {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease, color 0.3s ease;
+    background-color: black;
+    color: white;
+  }
+
+  .add-all-btn:hover {
+    background-color: darkred;
+    transform: scale(1.03);
+  }
+
+  /* Disabled state — gray + no hover */
+  .add-all-btn.disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+    color: #eee;
+  }
+
+  .popup-overlay-2 {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+
+  .popup-box {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 90%;
+  }
+
+  .popup-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .confirm-btn {
+    background-color: darkred;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .cancel-btn {
+    background-color: #aaa;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .no-results-msg {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    border: 1px dashed #ccc;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .clear-all-filters-btn {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease, color 0.3s ease;
+    background-color: black;
+    color: white;
+  }
+
+  .clear-all-filters-btn:hover {
+    background-color: darkred;
+    transform: scale(1.03);
+  }
+
+  .clear-all-filters-btn.disabled,
+  .clear-all-filters-btn:disabled {
+  background-color: #ccc;
+  color: #777;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left: 4px solid black;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

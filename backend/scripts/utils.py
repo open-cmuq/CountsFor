@@ -1,5 +1,4 @@
-# pylint: skip-file
-# Utility functions for course analyses
+# pylint: disable=all
 
 import pandas as pd
 import json
@@ -219,7 +218,7 @@ def getCourseTitle(course_number: str) -> str:
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
-        #print("No file for course: " + course_number)
+        # print("No file for course: " + course_number)
         return "<No file>"
     else:
         data = json.load(file)
@@ -241,7 +240,7 @@ def getCourseUnits(course_number: str) -> str:
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
-        #print("No file for course: " + course_number)
+        # print("No file for course: " + course_number)
         return "<No file>"
     else:
         data = json.load(file)
@@ -267,7 +266,7 @@ def getPreReqs(course_number: str) -> str:
     try:
         file = open('data/course-details/' + course_number + '.json')
     except FileNotFoundError:
-        #print("No file for course: " + course_number)
+        # print("No file for course: " + course_number)
         return "<No file>"
     else:
         data = json.load(file)
