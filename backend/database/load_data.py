@@ -309,12 +309,35 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
 def load_data_from_endpoint() -> None:
     """
     Placeholder function to simulate loading data fetched from an endpoint.
-    Loads data sequentially: Courses first, then Audits, ensuring dependencies.
+    Loads data sequentially: Departments, Courses, Audits, Enrollment.
     """
     logging.info("--- Starting Data Loading from Endpoint Simulation ---")
     all_course_data = {}
     all_audit_data = {}
     db_course_codes = set()
+
+    # --- 0. Process and Load Department Data --- #
+    dept_csv_path = os.path.join(DATA_DIR, "departments", "departments.csv")
+    if os.path.exists(dept_csv_path):
+        try:
+            logging.info("Processing Department data from %s", dept_csv_path)
+            dept_df = pd.read_csv(dept_csv_path)
+            # Validate columns
+            if 'dep_code' in dept_df.columns and 'name' in dept_df.columns:
+                dept_df = dept_df[['name', 'dep_code']].dropna(subset=['dep_code', 'name'])
+                dept_records = dept_df.to_dict(orient="records")
+                if dept_records:
+                    logging.info("Loading Department data into the database...")
+                    load_data_from_dicts({"department": dept_records})
+                    logging.info("Finished loading Department data.")
+                else:
+                    logging.warning("No valid department records found in %s.", dept_csv_path)
+            else:
+                logging.warning("Department CSV %s missing required columns (dep_code, name). Skipping.", dept_csv_path)
+        except Exception as e:
+            logging.error("Failed to process or load department data from %s: %s", dept_csv_path, e)
+    else:
+        logging.warning("Department data file not found: %s. Skipping department load.", dept_csv_path)
 
     # --- 1. Process and Load Course Data --- #
     course_data_dir = os.path.join(DATA_DIR, "courses")
