@@ -281,10 +281,11 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                     db.rollback()
 
             try:
-                db.commit()
+                db.commit() # Commit all successful merges for the table
                 # --- Temporarily reduce logging --- #
-                if table_name in log_tables:
-                    logging.info("Table %s: %d records successfully merged, %d failed.",
+                # Log commit success specifically for offering and enrollment
+                if table_name in log_tables or table_name in ["offering", "enrollment"]:
+                    logging.info("COMMIT SUCCEEDED for table %s: %d records successfully merged, %d failed.",
                                  table_name, successful_upserts, failed_upserts)
             except SQLAlchemyError as e:
                 # logging.error("Error committing merges for table %s: %s", table_name, e)
@@ -309,6 +310,44 @@ def load_data_from_endpoint() -> None:
     Loads data sequentially: Courses first, then Audits, ensuring dependencies.
     """
     logging.info("--- Starting Data Loading from Endpoint Simulation ---")
+
+    # --- 0. Process and Load Department Data --- #
+    department_dir = os.path.join(DATA_DIR, "departments")
+    department_data_path = None
+    if os.path.exists(department_dir) and os.path.isdir(department_dir):
+        csv_files = [f for f in os.listdir(department_dir) if f.endswith('.csv') and os.path.isfile(os.path.join(department_dir, f))]
+        if len(csv_files) == 1:
+            department_data_path = os.path.join(department_dir, csv_files[0])
+            logging.info(f"Found department CSV: {csv_files[0]}")
+        elif len(csv_files) > 1:
+            logging.warning(f"Multiple CSV files found in {department_dir}. Using the first one found: {csv_files[0]}")
+            department_data_path = os.path.join(department_dir, csv_files[0])
+        else:
+            logging.warning(f"No CSV file found in department directory: {department_dir}")
+    else:
+        logging.warning(f"Department data directory not found or is not a directory: {department_dir}")
+
+    if department_data_path:
+        try:
+            logging.info("Processing Department data from %s", department_data_path)
+            dept_df = pd.read_csv(department_data_path)
+            # Ensure columns match the Department model (name, dep_code)
+            if "name" in dept_df.columns and "dep_code" in dept_df.columns:
+                # Convert dep_code to string if it's not already, handle potential float conversion from CSV read
+                dept_df["dep_code"] = dept_df["dep_code"].astype(str)
+                department_records = dept_df[["name", "dep_code"]].to_dict(orient="records")
+                if department_records:
+                    logging.info("Loading Department data into the database...")
+                    load_data_from_dicts({"department": department_records})
+                    logging.info("Finished loading Department data.")
+                else:
+                    logging.warning("No department records found in the CSV.")
+            else:
+                logging.warning("Department CSV missing required columns ('name', 'dep_code').")
+        except Exception as e:
+            logging.error("Failed to process or load department data from %s: %s", department_data_path, e)
+    # else: Department data path was not set, warnings logged above
+
     all_course_data = {}
     all_audit_data = {}
     db_course_codes = set()
@@ -390,7 +429,6 @@ def load_data_from_endpoint() -> None:
         logging.warning("Audit data directory not found: %s", audit_data_dir)
 
     # --- 4. Process and Load Other Data (Optional - Deprecated Logging/Loading) --- #
-    # Load Department data if needed (currently commented out)
     # Load Enrollment data if needed (currently commented out)
 
     logging.info("--- Finished Data Loading from Endpoint Simulation ---")

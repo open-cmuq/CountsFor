@@ -6,6 +6,7 @@ database operations for analytics-related queries.
 from typing import Optional
 from sqlalchemy.orm import Session
 from backend.database.models import CountsFor, Requirement, Offering, Course, Audit, Enrollment
+import logging # Add logging
 
 class AnalyticsRepository:
     """encapsulates database operations for analytics-related queries."""
@@ -54,32 +55,46 @@ class AnalyticsRepository:
 
     def get_enrollment_data(self, course_code: str):
         """Fetch past enrollment data for a specific course, including offering_id and semester."""
-        enrollment_data = (
-            self.db.query(Enrollment, Offering.semester, Offering.offering_id)
-            .join(Offering, Enrollment.offering_id == Offering.offering_id)  # Join on offering_id
-            .filter(Offering.course_code == course_code)  # Filter by course_code from Offering
-            .all()
-        )
+        logging.info(f"[AnalyticsRepository] Fetching enrollment data for course: {course_code}")
+        try:
+            enrollment_data = (
+                self.db.query(Enrollment, Offering.semester, Offering.offering_id)
+                .join(Offering, Enrollment.offering_id == Offering.offering_id)  # Join on offering_id
+                .filter(Offering.course_code == course_code)  # Filter by course_code from Offering
+                .all()
+            )
+            logging.info(f"[AnalyticsRepository] Raw DB query returned {len(enrollment_data)} rows.")
+            # Log first few results if available
+            if enrollment_data:
+                 logging.debug(f"[AnalyticsRepository] First raw result example: {enrollment_data[0]}")
 
-        # Create a dictionary to aggregate results
-        aggregated_data = {}
+            # Create a dictionary to aggregate results
+            aggregated_data = {}
 
-        for enrollment, semester, _ in enrollment_data:
-            class_ = enrollment.class_  # Use class_ from Enrollment
-            enrollment_count = enrollment.enrollment_count
+            for enrollment, semester, _ in enrollment_data: # offering_id is fetched but not used in key
+                class_ = enrollment.class_  # Use class_ from Enrollment
+                enrollment_count = enrollment.enrollment_count
 
-            # Create a unique key for each semester and class combination
-            key = (semester, class_)
+                # Create a unique key for each semester and class combination
+                key = (semester, class_)
 
-            if key not in aggregated_data:
-                aggregated_data[key] = {
-                    "semester": semester,
-                    "class_": class_,
-                    "enrollment_count": 0
-                }
+                if key not in aggregated_data:
+                    aggregated_data[key] = {
+                        "semester": semester,
+                        "class_": class_,
+                        "enrollment_count": 0
+                    }
 
-            # Sum the enrollment counts
-            aggregated_data[key]["enrollment_count"] += enrollment_count
+                # Sum the enrollment counts
+                aggregated_data[key]["enrollment_count"] += enrollment_count
 
-        # Convert the aggregated data to a list of dictionaries
-        return list(aggregated_data.values())
+            final_result = list(aggregated_data.values())
+            logging.info(f"[AnalyticsRepository] Aggregated enrollment data into {len(final_result)} records.")
+            if final_result:
+                 logging.debug(f"[AnalyticsRepository] First aggregated result example: {final_result[0]}")
+
+            return final_result
+        except Exception as e:
+             logging.error(f"[AnalyticsRepository] Error fetching enrollment data for {course_code}: {e}")
+             # Re-raise or return empty list depending on desired error handling
+             raise
