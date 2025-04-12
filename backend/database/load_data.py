@@ -9,6 +9,7 @@ and inserts the results into the database.
 import logging
 import os
 import pandas as pd
+from pandas.errors import ParserError
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from backend.scripts.audit_extractor import AuditDataExtractor
@@ -23,7 +24,7 @@ from .to_csv import export_tables_to_csv
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Define the centralized data directory
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data"))
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
 os.makedirs(DATA_DIR, exist_ok=True)
 
 tables = {
@@ -72,13 +73,18 @@ def _ensure_offerings_exist(db: Session, enrollment_records: list[dict]) -> None
             courses_to_check.add(course_code)
 
     if not semester_course_combos:
-        logging.warning("No valid semester/course combinations found in enrollment records.")
+        logging.warning(
+            "No valid semester/course combinations found in enrollment records."
+        )
         return
 
     # Pre-fetch existing courses to minimize DB calls inside loop
     existing_db_courses = set()
     if courses_to_check:
-        course_results = db.query(Course.course_code).filter(Course.course_code.in_(courses_to_check)).all()
+        # Split filter for line length
+        course_results = db.query(Course.course_code).filter(
+            Course.course_code.in_(courses_to_check)
+        ).all()
         existing_db_courses = {c[0] for c in course_results}
 
     # Pre-fetch existing offerings
@@ -104,8 +110,10 @@ def _ensure_offerings_exist(db: Session, enrollment_records: list[dict]) -> None
                     campus_id=2  # Default campus_id for Qatar
                 ))
             else:
-                logging.warning("Cannot create offering for (%s, %s) because Course %s does not exist.",
-                                semester, course_code, course_code)
+                logging.warning(
+                    "Cannot create offering for (%s, %s) because Course %s does not exist.",
+                    semester, course_code, course_code
+                )
 
     if offerings_to_add:
         try:
@@ -131,14 +139,15 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
             _ensure_offerings_exist(db, data_dict["enrollment"])
 
         # Process tables in a specific order to handle dependencies
-        table_order = ["department", "instructor", "course", "offering", "audit",
-                       "requirement", "prereqs", "countsfor", "course_instructor", "enrollment"]
+        table_order = [
+            "department", "instructor", "course", "offering", "audit",
+            "requirement", "prereqs", "countsfor", "course_instructor", "enrollment"
+        ]
 
         # Cache fetched offerings to reduce DB lookups inside the enrollment loop
         offering_cache = {}
 
         # --- Temporarily reduce logging --- #
-        # log_tables = {"course", "offering", "audit", "requirement", "prereqs", "countsfor", "course_instructor", "instructor"}
         # Enable logging specifically for audit related tables
         log_tables = {"audit", "requirement", "countsfor"}
 
@@ -167,9 +176,12 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                 else:
                     df.drop_duplicates(keep='last', inplace=True)
                 deduped_records = df.to_dict(orient="records")
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as _: # Renamed unused variable e to _
                 # --- Temporarily reduce logging --- #
-                # logging.error("Error during DataFrame processing for %s: %s. Using raw records.", table_name, e)
+                # logging.error(
+                #    "Error during DataFrame processing for %s: %s. Using raw records.",
+                #    table_name, e
+                # )
                 deduped_records = records
 
             if not deduped_records:
@@ -201,10 +213,15 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                                 offering_id = offering.offering_id
                                 offering_cache[cache_key] = offering_id
                             # else:
-                                # logging.warning("Offering not found for enrollment record (%s, %s), skipping record.", semester, course_code)
+                                # logging.warning(
+                                #    "Offering not found for enrollment record (%s, %s), "
+                                #    "skipping record.", semester, course_code
+                                # )
                                 # continue
                     # else:
-                        # logging.warning("Enrollment record missing semester/course_code: %s", record)
+                        # logging.warning(
+                        #    "Enrollment record missing semester/course_code: %s", record
+                        # )
                         # continue
 
                     if not offering_id:
@@ -221,9 +238,13 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                         section = record.get("section", "")
                         class_val = record.get("class_", "")
                         department = record.get("department", "")
-                        record["enrollment_id"] = f"{record['offering_id']}_{class_val}_{section}_{department}"
+                        record["enrollment_id"] = (
+                            f"{record['offering_id']}_{class_val}_{section}_{department}"
+                        )
                     elif "enrollment_id" not in record:
-                        # logging.warning("Could not generate enrollment_id for record: %s", record)
+                        # logging.warning(
+                        #    "Could not generate enrollment_id for record: %s", record
+                        # )
                         continue
 
                     processed_enrollment.append(record)
@@ -236,9 +257,11 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                 try:
                     db.bulk_insert_mappings(model, deduped_records)
                     db.commit()
-                except (IntegrityError, SQLAlchemyError) as error:
+                except (IntegrityError, SQLAlchemyError) as _: # Renamed unused variable error to _
                     db.rollback()
-                    # logging.error("Error bulk inserting into %s: %s", table_name, error)
+                    # logging.error(
+                    #    "Error bulk inserting into %s: %s", table_name, error
+                    # )
                 continue
 
             successful_upserts = 0
@@ -251,7 +274,10 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                         if key in record and record[key] is not None:
                             filter_conditions[key] = record[key]
                         else:
-                            # logging.warning("Skipping record in %s due to missing PK '%s': %s", table_name, key, record)
+                            # logging.warning(
+                            #    "Skipping record in %s due to missing PK '%s': %s",
+                            #    table_name, key, record
+                            # )
                             has_all_keys = False
                             break
 
@@ -266,17 +292,27 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
 
                     instance_to_merge = model(**filter_conditions)
                     for key, value in instance_data.items():
-                        attr_name = 'class_' if table_name == 'enrollment' and key == 'class' else key
+                        # attr_name = 'class_' if table_name == 'enrollment'
+                        #  and key == 'class' else key
+                        if table_name == 'enrollment' and key == 'class':
+                            attr_name = 'class_'
+                        else:
+                            attr_name = key
                         if hasattr(instance_to_merge, attr_name):
                             setattr(instance_to_merge, attr_name, value)
                         # else:
-                            # logging.warning("Model %s missing attr %s from key %s", table_name, attr_name, key)
+                            # logging.warning(
+                            #    "Model %s missing attr %s from key %s",
+                            #    table_name, attr_name, key
+                            # )
 
                     db.merge(instance_to_merge)
                     successful_upserts += 1
 
-                except SQLAlchemyError as e:
-                    # logging.error("Error merging record into %s: %s Record: %s", table_name, e, record)
+                except SQLAlchemyError as _: # Renamed unused variable e to _
+                    # logging.error(
+                    #    "Error merging record into %s: %s Record: %s", table_name, _, record
+                    # )
                     failed_upserts += 1
                     db.rollback()
 
@@ -285,13 +321,15 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
                 # --- Temporarily reduce logging --- #
                 # Log commit success specifically for offering and enrollment
                 if table_name in log_tables or table_name in ["offering", "enrollment"]:
-                    logging.info("COMMIT SUCCEEDED for table %s: %d records successfully merged, %d failed.",
-                                 table_name, successful_upserts, failed_upserts)
-            except SQLAlchemyError as e:
+                    logging.info(
+                        "COMMIT SUCCEEDED for table %s: %d records successfully merged, %d failed.",
+                        table_name, successful_upserts, failed_upserts
+                    )
+            except SQLAlchemyError as _: # Renamed unused variable e to _
                 # logging.error("Error committing merges for table %s: %s", table_name, e)
                 db.rollback()
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         logging.exception("An unexpected error occurred during data loading: %s", e)
         db.rollback()
     finally:
@@ -300,8 +338,8 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
         try:
             # Pass the current session and the list of table names to export
             export_tables_to_csv(session=db, table_names=list(tables.keys()))
-        except Exception as csv_e:
-             logging.error("CSV Export failed: %s", csv_e)
+        except (IOError, SQLAlchemyError) as csv_e:
+            logging.error("CSV Export failed: %s", csv_e)
         # Close the session AFTER exporting
         db.close()
         logging.info("Database session closed.")
@@ -331,13 +369,23 @@ def load_data_from_endpoint() -> None:
                     load_data_from_dicts({"department": dept_records})
                     logging.info("Finished loading Department data.")
                 else:
-                    logging.warning("No valid department records found in %s.", dept_csv_path)
+                    logging.warning(
+                        "No valid department records found in %s.", dept_csv_path
+                    )
             else:
-                logging.warning("Department CSV %s missing required columns (dep_code, name). Skipping.", dept_csv_path)
-        except Exception as e:
-            logging.error("Failed to process or load department data from %s: %s", dept_csv_path, e)
+                logging.warning(
+                    "Department CSV %s missing required columns (dep_code, name). Skipping.",
+                    dept_csv_path
+                )
+        except (FileNotFoundError, pd.errors.EmptyDataError,
+                ParserError, ValueError, KeyError) as e:
+            logging.error(
+                "Failed to process or load department data from %s: %s", dept_csv_path, e
+            )
     else:
-        logging.warning("Department data file not found: %s. Skipping department load.", dept_csv_path)
+        logging.warning(
+            "Department data file not found: %s. Skipping department load.", dept_csv_path
+        )
 
     # --- 1. Process and Load Course Data --- #
     course_data_dir = os.path.join(DATA_DIR, "courses")
@@ -361,7 +409,7 @@ def load_data_from_endpoint() -> None:
             else:
                 logging.warning("Course extractor returned no data.")
 
-        except Exception as e:
+        except (IOError, ValueError, FileNotFoundError) as e:
             logging.error("Failed to process or load course data from %s: %s", course_data_dir, e)
     else:
         logging.warning("Course data directory not found or empty: %s", course_data_dir)
@@ -374,9 +422,15 @@ def load_data_from_endpoint() -> None:
         db_course_codes = {c[0] for c in course_results}
         logging.info("Found %d existing course codes.", len(db_course_codes))
         if not db_course_codes:
-            logging.warning("No course codes found in DB after attempting course load! Audit data cannot be linked.")
-    except Exception as e:
-        logging.error("Failed to fetch course codes from database: %s. Audit results may be incomplete.", e)
+            logging.warning(
+                "No course codes found in DB after attempting course load! "
+                "Audit data cannot be linked."
+            )
+    except SQLAlchemyError as e:
+        logging.error(
+            "Failed to fetch course codes from database: %s. "
+            "Audit results may be incomplete.", e
+        )
     finally:
         if db_session:
             db_session.close()
@@ -399,8 +453,10 @@ def load_data_from_endpoint() -> None:
                     data_to_load_now = {k: v for k, v in all_audit_data.items() if k in audit_keys}
                     if data_to_load_now:
                         # Log counts before loading
-                        logging.info("Audit Extractor produced counts: %s",
-                                     {k: len(v) for k, v in data_to_load_now.items()})
+                        logging.info(
+                            "Audit Extractor produced counts: %s",
+                            {k: len(v) for k, v in data_to_load_now.items()}
+                        )
                         load_data_from_dicts(data_to_load_now)
                         logging.info("Finished loading Audit related data.")
                     else:
@@ -408,10 +464,12 @@ def load_data_from_endpoint() -> None:
                 else:
                     logging.warning("Audit extractor returned no data.")
 
-            except Exception as e:
+            except (IOError, ValueError, FileNotFoundError) as e:
                 logging.error("Failed to process or load audit data from %s: %s", audit_data_dir, e)
         else:
-            logging.warning("Skipping Audit data processing because no course codes were found in the database.")
+            logging.warning(
+                "Skipping Audit data processing because no course codes were found in the database."
+            )
     else:
         logging.warning("Audit data directory not found: %s", audit_data_dir)
 
@@ -434,8 +492,12 @@ def load_data_from_endpoint() -> None:
                 logging.info("Finished loading Enrollment related data.")
             else:
                 logging.warning("Enrollment extractor returned no data from the Excel file.")
-        except Exception as e:
-            logging.error("Failed to process or load enrollment data from %s: %s", enrollment_data_path, e)
+        except (FileNotFoundError, ParserError, ValueError,
+                SQLAlchemyError, KeyError) as e:
+            logging.error(
+                "Failed to process or load enrollment data from %s: %s",
+                enrollment_data_path, e
+            )
     else:
         logging.warning("Enrollment data file not found: %s", enrollment_data_path)
 
