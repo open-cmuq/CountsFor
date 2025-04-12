@@ -46,7 +46,7 @@ const Popup = ({ isOpen, onClose, type, content, openPopup }) => {
             <p><strong>Units:</strong> {content.units}</p>
             <p><strong>Description:</strong> {content.description}</p>
             <p>
-              <strong>Prerequisites:</strong> {content.prerequisites ? content.prerequisites.replace(/[\[\]]/g, '') : "None"}
+              <strong>Prerequisites:</strong> {content.prerequisites ? content.prerequisites.replace(/[[\]]/g, '') : "None"}
             </p>
             <p>
               <strong>Semesters Offered:</strong> {content.offered.join(", ")}

@@ -282,52 +282,70 @@ class CourseRepository:
         requirement_filters = []
 
         if cs_requirement:
-            cs_reqs = [r.strip() for r in cs_requirement.split(",") if r.strip()]
+            cs_req_str = cs_requirement.strip()
+            # Heuristic: If '---' is present, assume it's one requirement name, don't split by comma.
+            # Otherwise, split by comma for potential multiple selections.
+            if "---" in cs_req_str:
+                cs_reqs = [cs_req_str]
+            else:
+                cs_reqs = [r.strip() for r in cs_req_str.split(",") if r.strip()]
+
             if cs_reqs:
-                # Create individual filters for each CS requirement
-                for req in cs_reqs:
-                    requirement_filters.append(
-                        and_(
-                            Requirement.audit_id.like("cs%"),
-                            CountsFor.requirement == req
-                        )
+                logging.info(f"Filtering CS requirements: {cs_reqs}")
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("cs%"),
+                        CountsFor.requirement.in_(cs_reqs)
                     )
+                )
 
         if is_requirement:
-            is_reqs = [r.strip() for r in is_requirement.split(",") if r.strip()]
+            is_req_str = is_requirement.strip()
+            if "---" in is_req_str:
+                is_reqs = [is_req_str]
+            else:
+                is_reqs = [r.strip() for r in is_req_str.split(",") if r.strip()]
+
             if is_reqs:
-                # Create individual filters for each IS requirement
-                for req in is_reqs:
-                    requirement_filters.append(
-                        and_(
-                            Requirement.audit_id.like("is%"),
-                            CountsFor.requirement == req
-                        )
+                logging.info(f"Filtering IS requirements: {is_reqs}")
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("is%"),
+                        CountsFor.requirement.in_(is_reqs)
                     )
+                )
 
         if ba_requirement:
-            ba_reqs = [r.strip() for r in ba_requirement.split(",") if r.strip()]
+            ba_req_str = ba_requirement.strip()
+            if "---" in ba_req_str:
+                ba_reqs = [ba_req_str]
+            else:
+                ba_reqs = [r.strip() for r in ba_req_str.split(",") if r.strip()]
+
             if ba_reqs:
-                # Create individual filters for each BA requirement
-                for req in ba_reqs:
-                    requirement_filters.append(
-                        and_(
-                            Requirement.audit_id.like("ba%"),
-                            CountsFor.requirement == req
-                        )
+                logging.info(f"Filtering BA requirements: {ba_reqs}")
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("ba%"),
+                        CountsFor.requirement.in_(ba_reqs)
                     )
+                )
 
         if bs_requirement:
-            bs_reqs = [r.strip() for r in bs_requirement.split(",") if r.strip()]
+            bs_req_str = bs_requirement.strip()
+            if "---" in bs_req_str:
+                bs_reqs = [bs_req_str]
+            else:
+                bs_reqs = [r.strip() for r in bs_req_str.split(",") if r.strip()]
+
             if bs_reqs:
-                # Create individual filters for each BS requirement
-                for req in bs_reqs:
-                    requirement_filters.append(
-                        and_(
-                            Requirement.audit_id.like("bio%"),
-                            CountsFor.requirement == req
-                        )
+                logging.info(f"Filtering BS requirements: {bs_reqs}")
+                requirement_filters.append(
+                    and_(
+                        Requirement.audit_id.like("bio%"),
+                        CountsFor.requirement.in_(bs_reqs)
                     )
+                )
 
         if requirement_filters:
             query = query.join(CountsFor, Course.course_code == CountsFor.course_code)\
