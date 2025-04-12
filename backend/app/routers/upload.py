@@ -150,15 +150,23 @@ async def initialize_database(
         else: department_csv = None
 
         # Course ZIPs
-        valid_course_zips = [await validate_upload_file(f) for f in course_zips if f and f.filename]
+        # Check if course_zips is None before iterating
+        valid_course_zips = []
+        if course_zips is not None:
+            valid_course_zips = [await validate_upload_file(f) for f in course_zips if f and f.filename]
+
         if valid_course_zips:
             prepared_paths["course_dir"] = os.path.join(UPLOAD_DIR, "courses")
             folders_to_clear.append("courses")
             upload_content["courses"] = True
-        else: valid_course_zips = []
+        # else: valid_course_zips is already []
 
         # Audit ZIPs
-        valid_audit_zips = [await validate_upload_file(f) for f in audit_zips if f and f.filename]
+        # Check if audit_zips is None before iterating
+        valid_audit_zips = []
+        if audit_zips is not None:
+            valid_audit_zips = [await validate_upload_file(f) for f in audit_zips if f and f.filename]
+
         if valid_audit_zips:
             prepared_paths["audit_root"] = os.path.join(UPLOAD_DIR, "audit")
             folders_to_clear.append("audit")
@@ -285,7 +293,7 @@ async def initialize_database(
     loaded_types_display = []
     try:
         # Stage 1: Load Departments
-        if prepared_paths["dept_csv_path"]:
+        if upload_content["departments"] and prepared_paths["dept_csv_path"]:
             logging.info("Processing and loading department CSV...")
             try:
                 dept_df = pd.read_csv(prepared_paths["dept_csv_path"])
@@ -302,7 +310,7 @@ async def initialize_database(
 
         # Stage 2: Load Courses
         course_related_data = {}
-        if prepared_paths["course_dir"]:
+        if upload_content["courses"] and prepared_paths["course_dir"]:
             logging.info("Processing and loading course data...")
             try:
                 course_extractor = CourseDataExtractor(folder_path=prepared_paths["course_dir"], base_dir=UPLOAD_DIR)
@@ -320,9 +328,7 @@ async def initialize_database(
 
         # Stage 3: Fetch Course Codes (NOW courses are loaded)
         db_course_codes = set()
-        # Fetch codes if audit or enrollment data needs them (or just always fetch?)
-        # Let's fetch if audit processing is needed.
-        if prepared_paths["audit_root"]:
+        if upload_content["audits"] and prepared_paths["audit_root"]:
             db = SessionLocal()
             try:
                 logging.info("Fetching latest course codes for audit processing...")
@@ -336,7 +342,7 @@ async def initialize_database(
                 db.close()
 
         # Stage 4: Load Audits
-        if prepared_paths["audit_root"]:
+        if upload_content["audits"] and prepared_paths["audit_root"]:
             logging.info("Processing and loading audit data...")
             if not db_course_codes:
                  logging.warning("Proceeding with audit processing, but no course codes were found in DB. 'countsfor' links may be incomplete.")
@@ -366,7 +372,7 @@ async def initialize_database(
                 raise HTTPException(status_code=400, detail=f"Error processing/loading audit data: {e}")
 
         # Stage 5: Load Enrollment
-        if prepared_paths["enrollment_excel_path"]:
+        if upload_content["enrollment"] and prepared_paths["enrollment_excel_path"]:
             logging.info("Processing and loading enrollment file...")
             try:
                 enrollment_df = pd.read_excel(prepared_paths["enrollment_excel_path"])
