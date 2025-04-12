@@ -33,18 +33,3 @@ class DataExtractor:
             logging.info("Data successfully saved to %s", output_path)
         except (OSError, ValueError) as error:
             logging.error("Error saving to %s: %s", output_path, error)
-
-    @staticmethod
-    def load_json(file_path: str) -> Any:
-        """
-        Loads JSON data from the given file path.
-        Catches file I/O and JSON decoding errors.
-        """
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                return json.load(file)
-        except FileNotFoundError as fnf_error:
-            logging.error("File not found %s: %s", file_path, fnf_error)
-        except json.JSONDecodeError as json_error:
-            logging.error("Error decoding JSON file %s: %s", file_path, json_error)
-        return None

@@ -6,6 +6,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
+import logging
 
 class CourseRepository:
     """encapsulates all database operations for the 'Course' entity."""
@@ -121,8 +122,6 @@ class CourseRepository:
                 })
 
         return requirements
-
-
 
     def get_courses_by_requirement(self, cs_requirement=None, is_requirement=None,
                                     ba_requirement=None, bs_requirement=None):
@@ -243,7 +242,6 @@ class CourseRepository:
         # Each row is a tuple (semester,), so extract the first element.
         return [semester[0] for semester in semesters]
 
-
     def get_courses_by_filters(self,
                             department: Optional[str] = None,
                             search_query: Optional[str] = None,
@@ -279,7 +277,6 @@ class CourseRepository:
                     (Course.prereqs_text.is_(None)) | (Course.prereqs_text == "")
                       | (Course.prereqs_text == "None")
                 )
-
 
         # Build requirement filters.
         requirement_filters = []
@@ -367,22 +364,40 @@ class CourseRepository:
                     Offering.semester.in_(semester_list)
                 ).subquery()
                 query = query.filter(Course.course_code.in_(subq))
-        courses = query.distinct().all()
+
+        # Execute the query
+        try:
+            courses = query.distinct().all()
+            logging.info(f"Filter query returned {len(courses)} distinct courses.")
+        except Exception as e:
+            logging.error(f"Error executing course filter query: {e}")
+            return [] # Return empty list on query error
 
         result = []
+        logging.info("Processing course results to add requirements and offerings...")
         for course in courses:
-            offered_semesters = self.get_offered_semesters(course.course_code)
-            requirements = self.get_course_requirements(course.course_code)
-            result.append({
-                "course_code": course.course_code,
-                "course_name": course.name,
-                "department": course.dep_code,
-                "units": course.units,
-                "description": course.description,
-                "prerequisites": course.prereqs_text or "None",
-                "offered_qatar": course.offered_qatar,
-                "offered_pitts": course.offered_pitts,
-                "offered": offered_semesters,
-                "requirements": requirements,
-            })
+            try:
+                offered_semesters = self.get_offered_semesters(course.course_code)
+                requirements = self.get_course_requirements(course.course_code)
+                # Log the fetched requirements for debugging
+                logging.info(f"Course: {course.course_code}, Requirements fetched: {requirements}")
+
+                result.append({
+                    "course_code": course.course_code,
+                    "course_name": course.name,
+                    "department": course.dep_code,
+                    "units": course.units,
+                    "description": course.description,
+                    "prerequisites": course.prereqs_text or "None",
+                    "offered_qatar": course.offered_qatar,
+                    "offered_pitts": course.offered_pitts,
+                    "offered": offered_semesters,
+                    "requirements": requirements, # Ensure this is the structured dict
+                })
+            except Exception as e:
+                 logging.error(f"Error processing details for course {course.course_code}: {e}")
+                 # Optionally skip this course or append with partial data
+                 continue
+
+        logging.info(f"Finished processing filters. Returning {len(result)} courses with details.")
         return result

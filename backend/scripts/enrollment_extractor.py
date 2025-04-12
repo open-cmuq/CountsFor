@@ -25,70 +25,83 @@ class EnrollmentDataExtractor(DataExtractor):
             logging.warning("Failed to format course code: %s, error: %s", code, error)
             return str(code)
 
-    def extract_enrollment_data(self, file_path: str) -> list[dict]:
+    def process_enrollment_dataframe(self, df: pd.DataFrame) -> list[dict]:
         """
-        Reads and processes enrollment data from the given Excel file.
+        Processes enrollment data from the given DataFrame.
         Returns a list of enrollment dictionaries for load_data.py.
         """
-        try:
-            df = pd.read_excel(file_path)
-        except (OSError, ValueError) as error:
-            logging.error("Failed to read file %s: %s", file_path, error)
+        if df.empty:
+            logging.warning("Received empty DataFrame for enrollment processing.")
             return []
 
-        # Forward fill specific columns
-        forward_fill_cols = ["Semester Id (Schedule)", "Course Id", "Section Id",
-                             "Department Id", "Class Id"]
-        for col in forward_fill_cols:
-            if col in df.columns:
-                df[col] = df[col].ffill()
+        try:
+            df = df.copy()
 
-        # Rename columns for consistency
-        rename_dict = {
-            "Semester Id (Schedule)": "semester",
-            "Course Id": "course_code",
-            "Section Id": "section",
-            "Department Id": "department",
-            "Class Id": "class_",
-            "Count of Class Id": "enrollment_count"
-        }
-        df.rename(columns=rename_dict, inplace=True)
+            # Forward fill specific columns
+            forward_fill_cols = ["Semester Id (Schedule)", "Course Id", "Section Id",
+                                 "Department Id", "Class Id"]
+            for col in forward_fill_cols:
+                if col in df.columns:
+                    df[col] = df[col].ffill()
+                else:
+                     logging.warning("Expected forward-fill column '%s' not found in enrollment DataFrame.", col)
 
-        # Ensure required columns exist
-        required_columns = ["semester", "course_code", "class_", "enrollment_count",
-                            "department", "section"]
-        for col in required_columns:
-            if col not in df.columns:
-                logging.warning("Required column '%s' is missing from enrollment data", col)
-                df[col] = "" if col != "enrollment_count" and col != "class_" else 0
+            # Rename columns
+            rename_dict = {
+                "Semester Id (Schedule)": "semester",
+                "Course Id": "course_code",
+                "Section Id": "section",
+                "Department Id": "department",
+                "Class Id": "class_",
+                "Count of Class Id": "enrollment_count"
+            }
+            df.rename(columns=rename_dict, inplace=True)
 
-        # Format course codes and filter invalid codes
-        if "course_code" in df.columns:
-            df["course_code"] = df["course_code"].apply(self.format_course_code).astype(str)
-            # Filter out invalid course codes (those starting with letters)
-            df = df[~df["course_code"].str.match(r'^[A-Za-z]{2}')]
+            # Ensure required columns exist
+            required_columns = ["semester", "course_code", "class_", "enrollment_count",
+                                "department", "section"]
+            for col in required_columns:
+                if col not in df.columns:
+                    logging.warning("Required column '%s' is missing from enrollment DataFrame, adding default.", col)
+                    df[col] = 0 if col in ["enrollment_count", "class_"] else ""
 
-        # Ensure class_ is an integer
-        df["class_"] = df["class_"].fillna(0).astype(int)
+            # Format course codes
+            if "course_code" in df.columns:
+                df["course_code"] = df["course_code"].apply(self.format_course_code).astype(str)
+                valid_codes = df["course_code"].notna() & ~df["course_code"].str.match(r'^[A-Za-z]{2}')
+                df = df[valid_codes]
 
-        # Ensure enrollment_count is an integer
-        df["enrollment_count"] = df["enrollment_count"].fillna(0).astype(int)
+            # Ensure numeric types
+            df["class_"] = pd.to_numeric(df["class_"], errors='coerce').fillna(0).astype(int)
+            df["enrollment_count"] = pd.to_numeric(df["enrollment_count"], errors='coerce').fillna(0).astype(int)
 
-        # Fill any remaining missing semester values with a default
-        missing_semester = df["semester"].isna()
-        if missing_semester.any():
-            for idx in df[missing_semester].index:
-                course = df.loc[idx, "course_code"]
-                # Look for the same course in rows with non-missing semester
-                matching_semesters = df[(~df["semester"].isna()) &
-                                     (df["course_code"] == course)]["semester"].unique()
-                if len(matching_semesters) > 0:
-                    # Use the first matching semester
-                    df.loc[idx, "semester"] = matching_semesters[0]
+            # Fill missing semesters
+            missing_semester = df["semester"].isna()
+            if missing_semester.any():
+                 logging.warning("Found %d rows with missing semester. Attempting to fill...", missing_semester.sum())
+                 semester_map = df.dropna(subset=["semester"]).groupby("course_code")["semester"].first()
+                 df["semester"] = df["semester"].fillna(df["course_code"].map(semester_map))
+                 still_missing = df["semester"].isna().sum()
+                 if still_missing > 0:
+                     logging.warning("Could not determine semester for %d records.", still_missing)
 
-        # Now only filter out rows with missing course codes
-        df = df[~df["course_code"].isna()]
+            # Filter rows with essential missing data
+            df = df.dropna(subset=["course_code", "semester"])
 
-        # Convert to records for loading
-        records = df.to_dict(orient="records")
-        return records
+            records = df.to_dict(orient="records")
+            logging.info("Processed %d valid enrollment records from DataFrame.", len(records))
+            return records
+
+        except Exception as e:
+            logging.exception("Error processing enrollment DataFrame: %s", e)
+            return []
+
+    # Deprecated - Reads file first, then calls new method
+    def extract_enrollment_data(self, file_path: str) -> list[dict]:
+        logging.warning("Using deprecated extract_enrollment_data(file_path). Prefer process_enrollment_dataframe(df).")
+        try:
+            df = pd.read_excel(file_path)
+            return self.process_enrollment_dataframe(df)
+        except Exception as e:
+            logging.error("Failed to read/process Excel file %s: %s", file_path, e)
+            return []

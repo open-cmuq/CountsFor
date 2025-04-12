@@ -181,31 +181,32 @@ const CourseTablePage = () => {
 
   // Memoize the helper function so it only changes when coreOnly or genedOnly change.
   const courseMatchesRequirementFilter = useCallback((course) => {
-    // If neither filter is active, include all courses.
-    if (coreOnly === null && genedOnly === null) return true;
-
-    // Check if the course has ANY requirements at all.
-    const majors = Object.keys(course.requirements || {});
-    const hasAnyReq = majors.some(
-      (major) => (course.requirements[major] || []).length > 0
-    );
-    // If a course has no requirement data, include it.
-    if (!hasAnyReq) return true;
-
-    // For each major, filter the requirement objects.
-    for (let major of majors) {
-      const reqObjs = course.requirements[major] || [];
-      const filtered = reqObjs.filter((reqObj) => {
-        if (coreOnly && !genedOnly) {
-          return reqObj.type === false; // Only Core requirements.
-        } else if (genedOnly && !coreOnly) {
-          return reqObj.type === true;  // Only GenEd requirements.
-        }
-        return true; // If both filters are inactive or both active, include all.
-      });
-      if (filtered.length > 0) return true;
+    // If BOTH Core and GenEd are selected (or potentially neither, though UI might prevent),
+    // do not filter based on requirement type. Show all courses that pass other filters.
+    if ((coreOnly && genedOnly) || (!coreOnly && !genedOnly) ) {
+      return true; // Don't filter by type
     }
-    return false;
+
+    // --- Apply filter only if exactly ONE type is selected ---
+
+    if (!course.requirements) {
+        return false; // No requirements means it cannot match a specific type filter
+    }
+
+    const majors = Object.keys(course.requirements);
+    for (const major of majors) {
+      if (course.requirements[major]) { // Check if major requirements exist
+          for (const reqObj of course.requirements[major]) {
+            // reqObj.type is true for GenEd, false for Core
+            // If coreOnly is true (and genedOnly must be false here), check for Core type
+            if (coreOnly && !reqObj.type) return true;
+            // If genedOnly is true (and coreOnly must be false here), check for GenEd type
+            if (genedOnly && reqObj.type) return true;
+          }
+      }
+    }
+
+    return false; // No matching requirement type found for the single selected type
   }, [coreOnly, genedOnly]);
 
   // Fetch courses using combined filters from backend
@@ -296,10 +297,7 @@ const CourseTablePage = () => {
     noPrereqs,
     offeredQatar,
     offeredPitts,
-    selectedFilters.BA,
-    selectedFilters.BS,
-    selectedFilters.CS,
-    selectedFilters.IS,
+    selectedFilters,
     coreOnly,
     genedOnly,
     courseMatchesRequirementFilter,
