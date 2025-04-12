@@ -196,44 +196,47 @@ class AuditDataExtractor(DataExtractor):
         """
         logging.info("Processing audit files in: %s", self.audit_base_path)
         processed_data = {}
-        target_folders = {'ba', 'bio', 'cs', 'is'} # Use a set for efficiency
+        target_folders = {'ba', 'bio', 'cs', 'is'}
+        subdirs = [d for d in self.audit_base_path.iterdir() if d.is_dir()]
+        subdirs_names = {d.name for d in subdirs}
 
-        if not self.audit_base_path.exists():
-            logging.error("Audit base directory not found: %s", self.audit_base_path)
-            return {}
+        folders_to_scan = []
+
+        # Check if the base path itself contains the major folders
+        if target_folders.issubset(subdirs_names) or any(m in subdirs_names for m in target_folders):
+            logging.info(f"Found major folders directly under {self.audit_base_path}. Processing these.")
+            folders_to_scan = [d for d in subdirs if d.name in target_folders]
+            # scan_path remains self.audit_base_path
+        # If not, check if there's exactly ONE subdirectory, and assume THAT contains the major folders
+        elif len(subdirs) == 1:
+            potential_intermediate_dir = subdirs[0]
+            logging.info(f"Found single subdirectory '{potential_intermediate_dir.name}'. Checking inside for major folders.")
+            scan_path = potential_intermediate_dir # Update scan path
+            major_subdirs_inside = [d for d in scan_path.iterdir() if d.is_dir() and d.name in target_folders]
+            if major_subdirs_inside:
+                logging.info(f"Found major folders inside '{potential_intermediate_dir.name}'. Processing these.")
+                folders_to_scan = major_subdirs_inside
+            else:
+                logging.warning(f"Single subdirectory '{potential_intermediate_dir.name}' did not contain expected major folders.")
+        # If multiple subdirs but none match the expected structure, log warning
+        elif len(subdirs) > 1:
+            logging.warning(f"Multiple subdirectories found in {self.audit_base_path}, but none directly contain the expected major folders ({', '.join(target_folders)}).")
+            # Decide how to handle this - currently will lead to empty folders_to_scan
+        else:
+            logging.warning(f"No subdirectories found in {self.audit_base_path}.")
+            # This also leads to empty folders_to_scan
 
         files_processed_count = 0
-        scan_path = self.audit_base_path # Start scanning from the base path
-
-        # Check for intermediate directory structure: data/audit/<intermediate>/<major>
-        subdirs = [d for d in self.audit_base_path.iterdir() if d.is_dir()]
-        if subdirs:
-            # If subdirectories exist, assume the first one is the intermediate holder
-            intermediate_dir = subdirs[0]
-            logging.info("Found intermediate directory: %s. Scanning inside for major folders.", intermediate_dir.name)
-            scan_path = intermediate_dir # Change scan path to the intermediate dir
-            # Check if major folders exist inside the intermediate directory
-            folders_to_scan = [d for d in scan_path.iterdir() if d.is_dir() and d.name in target_folders]
-            if not folders_to_scan:
-                 logging.warning("Did not find expected major folders (%s) inside %s.",
-                                 ", ".join(target_folders), scan_path)
-                 # Optionally, could still check for JSONs directly in intermediate_dir here
-                 # json_files_intermediate = list(scan_path.glob('*.json'))
-                 # ... processing logic ...
-                 # For now, we strictly expect major folders inside the intermediate dir
-                 return {}
-        else:
-            # No intermediate directory, check for major folders directly in audit_base_path
-            logging.info("No intermediate directory found. Scanning %s directly for major folders or JSON files.", self.audit_base_path)
-            folders_to_scan = [d for d in scan_path.iterdir() if d.is_dir() and d.name in target_folders]
+        scan_path = self.audit_base_path # Ensure scan_path is initialized
 
         # --- Process based on findings --- #
 
         if folders_to_scan: # Found major folders (either directly or in intermediate)
-            logging.info("Found major folders to process: %s (scanning from %s)",
-                         [f.name for f in folders_to_scan], scan_path)
+            logging.info(f"Processing major folders found: {[f.name for f in folders_to_scan]}")
             for folder_path in folders_to_scan:
                 major = folder_path.name
+                # Log the actual folder being processed
+                logging.info(f"Processing audit files in folder: {folder_path}")
                 json_files = list(folder_path.glob('*.json'))
                 if not json_files:
                     logging.warning("No JSON files found in %s, skipping...", folder_path)

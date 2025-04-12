@@ -67,6 +67,8 @@ class AnalyticsRepository:
             # Log first few results if available
             if enrollment_data:
                  logging.debug(f"[AnalyticsRepository] First raw result example: {enrollment_data[0]}")
+                 if len(enrollment_data) > 1:
+                      logging.debug(f"[AnalyticsRepository] Second raw result example: {enrollment_data[1]}")
 
             # Create a dictionary to aggregate results
             aggregated_data = {}

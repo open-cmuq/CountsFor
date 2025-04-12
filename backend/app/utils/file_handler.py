@@ -99,6 +99,33 @@ def unzip_and_flatten(zip_path: str, extract_to: str):
                  logging.error("Error removing temporary directory %s: %s", temp_extract_path, cleanup_error)
 
 
+def unzip_preserve_structure(zip_path: str, extract_to: str):
+    """
+    Unzips a ZIP file to a specified directory, preserving the internal folder structure.
+    Ignores macOS specific metadata folders.
+    Returns the path to the directory where files were extracted.
+    """
+    zip_path_obj = Path(zip_path)
+    extract_to_obj = Path(extract_to)
+    os.makedirs(extract_to_obj, exist_ok=True)
+    logging.debug(f"Extracting {zip_path_obj.name} to {extract_to_obj} preserving structure...")
+
+    try:
+        with zipfile.ZipFile(zip_path_obj, "r") as zip_ref:
+            # Extract all members except those in __MACOSX or .DS_Store
+            members_to_extract = [m for m in zip_ref.infolist()
+                                if not m.filename.startswith('__MACOSX/') and
+                                '.DS_Store' not in m.filename]
+            zip_ref.extractall(extract_to_obj, members=members_to_extract)
+        logging.info(f"Successfully extracted archive {zip_path_obj.name} to {extract_to_obj}")
+        return str(extract_to_obj)
+    except zipfile.BadZipFile:
+         logging.error("Bad ZIP file: %s", zip_path)
+         raise ValueError(f"Invalid or corrupted ZIP file: {zip_path_obj.name}")
+    except Exception as e:
+         logging.error("Error during extraction of %s: %s", zip_path, e)
+         raise # Re-raise other exceptions
+
 def validate_zip_content(zip_path: str, expected_type: str) -> bool:
     """Validate that a ZIP file contains the expected type of data."""
     logging.debug("Validating ZIP content for %s as type '%s'", zip_path, expected_type)
@@ -134,62 +161,6 @@ def validate_zip_content(zip_path: str, expected_type: str) -> bool:
     except Exception as e:
          logging.error("Error validating ZIP content for %s: %s", zip_path, e)
          return False
-
-
-def organize_audit_files(audit_root_str: str):
-    """
-    Organizes audit JSON files found directly under audit_root into subfolders
-    named after majors ('ba', 'bio', 'cs', 'is') based on filename.
-    """
-    audit_root = Path(audit_root_str) # Work with Path object
-    logging.info("Organizing audit files in %s...", audit_root)
-    allowed_majors = {'ba', 'bio', 'cs', 'is'}
-
-    # Check if major subfolders already exist
-    major_folders_exist = any(d.is_dir() and d.name in allowed_majors for d in audit_root.iterdir())
-
-    # Find JSON files directly in the root audit directory
-    direct_json_files = [f for f in audit_root.iterdir() if f.is_file() and f.suffix == '.json']
-
-    if not major_folders_exist and direct_json_files:
-        logging.info("No major folders found, attempting to organize %d audit files by major...", len(direct_json_files))
-        files_moved = 0
-        found_dirs = set()
-        for json_file_path in direct_json_files:
-            file_name_lower = json_file_path.stem.lower()
-            major = None
-            for m in allowed_majors:
-                # Simple check if major code is in filename
-                if m in file_name_lower:
-                    major = m
-                    break
-
-            if major:
-                major_folder = audit_root / major
-                major_folder.mkdir(exist_ok=True)
-                dest_path = major_folder / json_file_path.name
-                try:
-                    # Use move for efficiency
-                    shutil.move(str(json_file_path), str(dest_path))
-                    logging.info("Moved %s to %s", json_file_path.name, dest_path)
-                    found_dirs.add(major)
-                    files_moved += 1
-                except Exception as move_error:
-                    logging.error("Error moving %s to %s: %s", json_file_path.name, dest_path, move_error)
-
-        if files_moved > 0:
-            logging.info("Organized %d audit files into major folders: %s", files_moved, list(found_dirs))
-        else:
-            # Warn only if still no major folders exist after trying
-            if not any(d.is_dir() and d.name in allowed_majors for d in audit_root.iterdir()):
-                 logging.warning("Could not identify majors from audit filenames to organize them.")
-
-    # Final check for logging/validation
-    final_major_dirs = {d.name for d in audit_root.iterdir() if d.is_dir() and d.name in allowed_majors}
-    if not final_major_dirs:
-        logging.warning("Audit directory %s does not contain expected major subfolders after processing.", audit_root)
-    else:
-        logging.debug("Found major subfolders after organization: %s", list(final_major_dirs))
 
 async def save_upload_file(file_like: IO, filename: str, destination: Path) -> None:
     """

@@ -62,6 +62,7 @@ const AggregatedEnrollmentAnalytics = () => {
         return response.json();
       })
       .then(json => {
+        console.log('API Response (Aggregated):', json);
         setCourses(prev =>
           prev.map(course =>
             course.courseCode === courseCode
@@ -117,6 +118,8 @@ const AggregatedEnrollmentAnalytics = () => {
         name: courseCode
       });
     });
+
+    console.log('Traces for Aggregated Plot:', traces);
 
     return traces;
   };
@@ -239,6 +242,7 @@ const ClassEnrollmentAnalytics = () => {
         return response.json();
       })
       .then(json => {
+        console.log('API Response (Class):', json);
         setCourseData(json.enrollment_data);
         setLoading(false);
       })
@@ -300,6 +304,8 @@ const ClassEnrollmentAnalytics = () => {
         connectgaps: true
       });
     });
+
+    console.log('Traces for Class Plot:', traces);
 
     return traces;
   };

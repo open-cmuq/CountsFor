@@ -7,25 +7,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 from sqlalchemy.orm import Session
+from .models import Base
 
 # Load database URL (Default: SQLite)
 DATABASE_URL = "sqlite:///backend/database/gened_db.sqlite"
 
 # Define the tables you want to export
-tables = [
-    "department",
-    "course",
-    "offering",
-    "requirement",
-    "audit",
-    "countsfor",
-    "prereqs",
-    "course_instructor",
-    "enrollment"
-]
-
-# Define dummy Base if import fails to prevent further import errors elsewhere, though functionality will fail
-class Base: pass
+# tables = [ ... ] # Removed hardcoded list
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -34,13 +22,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Example: table_models = { 'department': Department, 'course': Course, ... }
 
 # Renamed db parameter to session for clarity
-def export_tables_to_csv(session: Session = None, output_dir: str = None) -> dict:
+def export_tables_to_csv(session: Session = None,
+                         output_dir: str = None,
+                         table_names: list[str] = None) -> dict:
     """
-    Exports all tables defined in models.py (via Base.metadata) to CSV files.
+    Exports specified tables to CSV files.
 
     Args:
         session (Session, optional): Existing database session. If None, a new one is created.
         output_dir (str, optional): Directory to save CSV files. Defaults to '../../data/csv_exports'.
+        table_names (list[str], optional): List of table names to export. If None, attempts to use Base.metadata.
 
     Returns:
         dict: Status of export for each table ('success' or error message).
@@ -62,12 +53,24 @@ def export_tables_to_csv(session: Session = None, output_dir: str = None) -> dic
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
 
-        if not hasattr(Base, 'metadata') or not Base.metadata.tables:
-             logging.error("Base.metadata.tables is not populated. Cannot determine tables to export.")
-             return {"error": "Metadata not found"}
+        tables_to_process = []
+        if table_names:
+            tables_to_process = table_names
+            logging.info(f"Exporting specified tables: {tables_to_process}")
+        elif hasattr(Base, 'metadata') and Base.metadata.tables:
+            tables_to_process = list(Base.metadata.tables.keys())
+            logging.info(f"Exporting tables found in metadata: {tables_to_process}")
+        else:
+             logging.error("No table names provided and Base.metadata.tables is not populated. Cannot determine tables to export.")
+             return {"error": "Metadata not found and no table names specified"}
 
-        # Iterate through all tables defined in the metadata
-        for table_name, table in Base.metadata.tables.items():
+        # Iterate through the determined list of table names
+        for table_name in tables_to_process:
+            # Check if table actually exists in metadata if using fallback (optional safety check)
+            # if table_names is None and table_name not in Base.metadata.tables:
+            #    logging.warning(f"Skipping '{table_name}' as it wasn't found in Base.metadata after initial listing.")
+            #    continue
+
             csv_file_path = os.path.join(output_dir, f"{table_name}.csv")
             logging.debug(f"Attempting to export table '{table_name}' to '{csv_file_path}'")
             try:

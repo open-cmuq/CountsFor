@@ -295,12 +295,14 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
         logging.exception("An unexpected error occurred during data loading: %s", e)
         db.rollback()
     finally:
-        # --- Temporarily reduce logging --- #
-        # logging.info("Exporting tables to CSV...")
-        # try:
-        #     export_tables_to_csv(session=db)
-        # except Exception as csv_e:
-        #      logging.error("CSV Export failed: %s", csv_e)
+        # Export tables to CSV after loading/processing
+        logging.info("Exporting tables to CSV...")
+        try:
+            # Pass the current session and the list of table names to export
+            export_tables_to_csv(session=db, table_names=list(tables.keys()))
+        except Exception as csv_e:
+             logging.error("CSV Export failed: %s", csv_e)
+        # Close the session AFTER exporting
         db.close()
         logging.info("Database session closed.")
 
@@ -310,44 +312,6 @@ def load_data_from_endpoint() -> None:
     Loads data sequentially: Courses first, then Audits, ensuring dependencies.
     """
     logging.info("--- Starting Data Loading from Endpoint Simulation ---")
-
-    # --- 0. Process and Load Department Data --- #
-    department_dir = os.path.join(DATA_DIR, "departments")
-    department_data_path = None
-    if os.path.exists(department_dir) and os.path.isdir(department_dir):
-        csv_files = [f for f in os.listdir(department_dir) if f.endswith('.csv') and os.path.isfile(os.path.join(department_dir, f))]
-        if len(csv_files) == 1:
-            department_data_path = os.path.join(department_dir, csv_files[0])
-            logging.info(f"Found department CSV: {csv_files[0]}")
-        elif len(csv_files) > 1:
-            logging.warning(f"Multiple CSV files found in {department_dir}. Using the first one found: {csv_files[0]}")
-            department_data_path = os.path.join(department_dir, csv_files[0])
-        else:
-            logging.warning(f"No CSV file found in department directory: {department_dir}")
-    else:
-        logging.warning(f"Department data directory not found or is not a directory: {department_dir}")
-
-    if department_data_path:
-        try:
-            logging.info("Processing Department data from %s", department_data_path)
-            dept_df = pd.read_csv(department_data_path)
-            # Ensure columns match the Department model (name, dep_code)
-            if "name" in dept_df.columns and "dep_code" in dept_df.columns:
-                # Convert dep_code to string if it's not already, handle potential float conversion from CSV read
-                dept_df["dep_code"] = dept_df["dep_code"].astype(str)
-                department_records = dept_df[["name", "dep_code"]].to_dict(orient="records")
-                if department_records:
-                    logging.info("Loading Department data into the database...")
-                    load_data_from_dicts({"department": department_records})
-                    logging.info("Finished loading Department data.")
-                else:
-                    logging.warning("No department records found in the CSV.")
-            else:
-                logging.warning("Department CSV missing required columns ('name', 'dep_code').")
-        except Exception as e:
-            logging.error("Failed to process or load department data from %s: %s", department_data_path, e)
-    # else: Department data path was not set, warnings logged above
-
     all_course_data = {}
     all_audit_data = {}
     db_course_codes = set()
@@ -428,8 +392,35 @@ def load_data_from_endpoint() -> None:
     else:
         logging.warning("Audit data directory not found: %s", audit_data_dir)
 
-    # --- 4. Process and Load Other Data (Optional - Deprecated Logging/Loading) --- #
-    # Load Enrollment data if needed (currently commented out)
+    # --- 4. Process and Load Enrollment Data --- #
+    enrollment_data_path = os.path.join(DATA_DIR, "enrollment", "enrollment.xlsx")
+    if os.path.exists(enrollment_data_path):
+        try:
+            logging.info("Processing Enrollment data from %s", enrollment_data_path)
+            enrollment_df = pd.read_excel(enrollment_data_path)
+            enrollment_extractor = EnrollmentDataExtractor()
+            enrollment_records = enrollment_extractor.process_enrollment_dataframe(enrollment_df)
+
+            if enrollment_records:
+                logging.info("Loading Enrollment related data into the database...")
+                # Ensure offerings exist BEFORE loading enrollment that depends on them
+                with SessionLocal() as temp_db:
+                    _ensure_offerings_exist(temp_db, enrollment_records)
+                # Now load the enrollment data
+                load_data_from_dicts({"enrollment": enrollment_records})
+                logging.info("Finished loading Enrollment related data.")
+            else:
+                logging.warning("Enrollment extractor returned no data from the Excel file.")
+        except Exception as e:
+            logging.error("Failed to process or load enrollment data from %s: %s", enrollment_data_path, e)
+    else:
+        logging.warning("Enrollment data file not found: %s", enrollment_data_path)
+
+    # --- 5. Process and Load Other Data (Optional) --- #
+    # Example: Load instructor data if not loaded during course processing
+    # if all_course_data and "instructor" in all_course_data:
+    #     logging.info("Loading Instructor data...")
+    #     load_data_from_dicts({"instructor": all_course_data["instructor"]})
 
     logging.info("--- Finished Data Loading from Endpoint Simulation ---")
 

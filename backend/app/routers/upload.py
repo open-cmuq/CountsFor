@@ -22,8 +22,8 @@ from backend.database.db import SessionLocal
 from backend.app.utils.file_handler import (
     save_upload_file,
     unzip_and_flatten,
+    unzip_preserve_structure,
     validate_zip_content,
-    organize_audit_files,
     find_json_files,
     UPLOAD_DIR # Import the constant if needed here
 )
@@ -106,6 +106,8 @@ def clear_existing_data(folders_to_clear: List[str]):
              logging.error("Error creating directory %s: %s", folder_path, e)
              raise HTTPException(status_code=500, detail=f"Could not create data directory for {folder}")
 
+ALLOWED_AUDIT_MAJORS = {'ba', 'bio', 'cs', 'is'} # Define allowed majors
+
 @router.post(
     "/upload/init-db/",
     summary="Upload and Initialize Database",
@@ -119,246 +121,278 @@ def clear_existing_data(folders_to_clear: List[str]):
     response_description="Returns a list of successfully loaded data types"
 )
 async def initialize_database(
-    # Use Depends for validation?
-    course_zips: Optional[List[UploadFile]] = File(default=None,
-                                                description="ZIP files containing course JSON data"),
-    audit_zips: Optional[List[UploadFile]] = File(default=None,
-                                              description="ZIP files containing audit JSON data"),
-    enrollment_file: Optional[UploadFile] = File(default=None,
-                                               description="Excel file containing enrollment data"),
-    department_csv: Optional[UploadFile] = File(default=None,
-                                              description="CSV file containing department data (columns: dep_code, name)")
+    course_zips: Optional[List[UploadFile]] = File(default=None, description="ZIP files containing course JSON data"),
+    audit_zips: Optional[List[UploadFile]] = File(default=None, description="ZIP files containing audit JSON data"),
+    enrollment_file: Optional[UploadFile] = File(default=None, description="Excel file containing enrollment data"),
+    department_csv: Optional[UploadFile] = File(default=None, description="CSV file containing department data (columns: dep_code, name)")
 ):
     """Initialize or update the database with uploaded files."""
     logging.info("=== Starting Database Initialization Request ===")
 
-    # --- File Validation and Preparation --- (Moved to separate section)
-    # Create dictionaries to store paths of prepared data
     prepared_paths = {
-        "dept_csv": None,
+        "dept_csv_path": None,
         "course_dir": None,
         "audit_root": None,
-        "enrollment_excel": None
+        "enrollment_excel_path": None
     }
     folders_to_clear = []
+    upload_content = {"departments": False, "courses": False, "audits": False, "enrollment": False}
 
+    # --- 1. Validate and Prepare File Paths ---
     try:
-        # 1. Department CSV
+        # Department CSV
         if department_csv and department_csv.filename:
-            await validate_upload_file(department_csv) # Basic validation
+            await validate_upload_file(department_csv)
             dept_dir = os.path.join(UPLOAD_DIR, "departments")
             folders_to_clear.append("departments")
-            prepared_paths["dept_csv"] = Path(dept_dir) / "departments.csv"
-            # Save handled later after clearing dirs
-        else:
-            department_csv = None # Ensure it's None if no valid file
+            prepared_paths["dept_csv_path"] = Path(dept_dir) / "departments.csv" # Use a consistent name
+            upload_content["departments"] = True
+        else: department_csv = None
 
-        # 2. Course ZIPs
+        # Course ZIPs
         valid_course_zips = [await validate_upload_file(f) for f in course_zips if f and f.filename]
         if valid_course_zips:
             prepared_paths["course_dir"] = os.path.join(UPLOAD_DIR, "courses")
             folders_to_clear.append("courses")
-            # Save/unzip handled later
-        else:
-             valid_course_zips = [] # Ensure it's an empty list
+            upload_content["courses"] = True
+        else: valid_course_zips = []
 
-        # 3. Audit ZIPs
+        # Audit ZIPs
         valid_audit_zips = [await validate_upload_file(f) for f in audit_zips if f and f.filename]
         if valid_audit_zips:
             prepared_paths["audit_root"] = os.path.join(UPLOAD_DIR, "audit")
             folders_to_clear.append("audit")
-            # Save/unzip/organize handled later
-        else:
-            valid_audit_zips = [] # Ensure it's an empty list
+            upload_content["audits"] = True
+        else: valid_audit_zips = []
 
-        # 4. Enrollment Excel
+        # Enrollment Excel
         if enrollment_file and enrollment_file.filename:
             await validate_upload_file(enrollment_file)
             enrollment_dir = os.path.join(UPLOAD_DIR, "enrollment")
             folders_to_clear.append("enrollment")
-            prepared_paths["enrollment_excel"] = Path(enrollment_dir) / enrollment_file.filename
-            # Save handled later
-        else:
-             enrollment_file = None # Ensure it's None if no valid file
+            # Use a consistent name, e.g., enrollment.xlsx
+            prepared_paths["enrollment_excel_path"] = Path(enrollment_dir) / "enrollment.xlsx"
+            upload_content["enrollment"] = True
+        else: enrollment_file = None
 
-        # Check if any files were actually provided
-        if not any([department_csv, valid_course_zips, valid_audit_zips, enrollment_file]):
-            logging.warning("No valid files found in the request")
-            raise HTTPException(status_code=400,
-                                detail="No valid files provided for upload. Please select at least one file.")
+        if not any(upload_content.values()):
+            raise HTTPException(status_code=400, detail="No valid files provided.")
 
-        # Clear relevant directories *before* saving new files
+        # --- Dependencies Check ---
+        if upload_content["audits"] and not upload_content["courses"]:
+             raise HTTPException(status_code=400, detail="Audit data requires course data.")
+        if upload_content["enrollment"] and not upload_content["courses"]:
+            raise HTTPException(status_code=400, detail="Enrollment data requires course data.")
+
+        # --- 2. Clear Directories and Save Files ---
         if folders_to_clear:
             clear_existing_data(folders_to_clear)
 
-        # Save and process uploaded files
-        if department_csv:
-             await save_upload_file(department_csv.file, department_csv.filename, prepared_paths["dept_csv"])
+        # Save Department CSV
+        if department_csv and prepared_paths["dept_csv_path"]:
+             await save_upload_file(department_csv.file, department_csv.filename, prepared_paths["dept_csv_path"])
 
-        if valid_course_zips:
+        # Save and Unzip Course ZIPs
+        if valid_course_zips and prepared_paths["course_dir"]:
             course_dir = prepared_paths["course_dir"]
             for zip_file in valid_course_zips:
-                 # Save temporarily for validation/unzipping
                  temp_zip_path = Path(course_dir) / zip_file.filename
                  await save_upload_file(zip_file.file, zip_file.filename, temp_zip_path)
-                 if not validate_zip_content(str(temp_zip_path), "course"):
-                     temp_zip_path.unlink(missing_ok=True) # Clean up invalid zip
-                     raise HTTPException(status_code=400, detail=f"Invalid course data content in {zip_file.filename}.")
+                 if not validate_zip_content(str(temp_zip_path), "course"): raise HTTPException(status_code=400, detail=f"Invalid course ZIP: {zip_file.filename}")
                  unzip_and_flatten(str(temp_zip_path), course_dir)
-                 temp_zip_path.unlink() # Clean up temporary zip
-            # Post-validation: check if JSON files actually exist after unzipping
-            if not find_json_files(course_dir):
-                 raise HTTPException(status_code=400, detail="No course JSON files found after extracting ZIP(s).")
+                 temp_zip_path.unlink()
+            if not find_json_files(course_dir): raise HTTPException(status_code=400, detail="No course JSONs extracted.")
 
-        if valid_audit_zips:
-            audit_root = prepared_paths["audit_root"]
-            for zip_file in valid_audit_zips:
-                temp_zip_path = Path(audit_root) / zip_file.filename
-                await save_upload_file(zip_file.file, zip_file.filename, temp_zip_path)
-                if not validate_zip_content(str(temp_zip_path), "audit"):
-                    temp_zip_path.unlink(missing_ok=True)
-                    raise HTTPException(status_code=400, detail=f"Invalid audit data content in {zip_file.filename}.")
-                unzip_and_flatten(str(temp_zip_path), audit_root)
-                temp_zip_path.unlink()
-            organize_audit_files(audit_root)
-            # Post-validation
-            if not find_json_files(audit_root):
-                 raise HTTPException(status_code=400, detail="No audit JSON files found after extracting/organizing ZIP(s).")
+        # Save and Unzip/Organize Audit ZIPs
+        if valid_audit_zips and prepared_paths["audit_root"]:
+            audit_final_dest = Path(prepared_paths["audit_root"])
+            temp_extract_dir = Path(UPLOAD_DIR) / f"audit_temp_extract_{os.urandom(4).hex()}"
+            os.makedirs(temp_extract_dir, exist_ok=True)
+            logging.debug(f"Created temporary audit extraction dir: {temp_extract_dir}")
+            extracted_correctly = False
 
-        if enrollment_file:
-             await save_upload_file(enrollment_file.file, enrollment_file.filename, prepared_paths["enrollment_excel"])
+            try:
+                for zip_file in valid_audit_zips:
+                    temp_zip_path = temp_extract_dir / zip_file.filename
+                    await save_upload_file(zip_file.file, zip_file.filename, temp_zip_path)
+                    if not validate_zip_content(str(temp_zip_path), "audit"): raise HTTPException(status_code=400, detail=f"Invalid audit ZIP: {zip_file.filename}")
+                    # Extract preserving structure into the temp dir
+                    unzip_preserve_structure(str(temp_zip_path), str(temp_extract_dir))
+                    temp_zip_path.unlink() # Remove the temporary zip file
 
-    except (HTTPException, ValueError, IOError) as e: # Catch specific errors from validation/saving
+                # Find the directory containing major subfolders within the temp extraction dir
+                source_audit_dir = None
+                potential_dirs = [d for d in temp_extract_dir.iterdir() if d.is_dir()] # Look one level deep first
+                if potential_dirs:
+                    for potential_dir in potential_dirs:
+                        subdirs = {sd.name for sd in potential_dir.iterdir() if sd.is_dir()}
+                        if ALLOWED_AUDIT_MAJORS.issubset(subdirs) or any(m in subdirs for m in ALLOWED_AUDIT_MAJORS):
+                             source_audit_dir = potential_dir
+                             logging.info(f"Found major folders within subdirectory: {potential_dir.name}")
+                             break
+                # If not found one level deep, check the temp dir itself
+                if not source_audit_dir:
+                     root_subdirs = {sd.name for sd in temp_extract_dir.iterdir() if sd.is_dir()}
+                     if ALLOWED_AUDIT_MAJORS.issubset(root_subdirs) or any(m in root_subdirs for m in ALLOWED_AUDIT_MAJORS):
+                         source_audit_dir = temp_extract_dir
+                         logging.info("Found major folders directly within temp extraction dir.")
+
+                if not source_audit_dir:
+                     raise HTTPException(status_code=400, detail="Could not find expected major subfolders (ba, bio, cs, is) within the extracted audit ZIP content.")
+
+                # Move only the allowed major folders to the final destination
+                for major_folder in source_audit_dir.iterdir():
+                    if major_folder.is_dir() and major_folder.name in ALLOWED_AUDIT_MAJORS:
+                        dest_path = audit_final_dest / major_folder.name
+                        try:
+                            # Ensure the destination doesn't exist from a previous run (covered by clear_existing_data)
+                            # shutil.rmtree(dest_path, ignore_errors=True)
+                            shutil.move(str(major_folder), str(dest_path))
+                            logging.info(f"Moved audit major folder: {major_folder.name} to {dest_path}")
+                        except Exception as move_error:
+                            logging.error(f"Error moving audit major folder {major_folder.name}: {move_error}")
+                            # Decide if this is fatal
+                            raise HTTPException(status_code=500, detail=f"Failed to move processed audit folder {major_folder.name}")
+
+                # Removed call to organize_audit_files
+                # organize_audit_files(audit_root)
+                if not find_json_files(str(audit_final_dest)):
+                    # Check the final destination AFTER moving
+                    raise HTTPException(status_code=400, detail="No audit JSONs found in final destination after processing.")
+                extracted_correctly = True
+            finally:
+                # Clean up the temporary extraction directory
+                if temp_extract_dir.exists():
+                    shutil.rmtree(temp_extract_dir)
+                    logging.debug(f"Cleaned up temporary audit extraction dir: {temp_extract_dir}")
+
+            # Check if extraction was successful before proceeding
+            if not extracted_correctly:
+                 raise HTTPException(status_code=500, detail="Audit file extraction failed unexpectedly.")
+
+        # Save Enrollment Excel
+        if enrollment_file and prepared_paths["enrollment_excel_path"]:
+             await save_upload_file(enrollment_file.file, enrollment_file.filename, prepared_paths["enrollment_excel_path"])
+
+    except (HTTPException, ValueError, IOError) as e:
         logging.error("File preparation error: %s", e)
-        # If it's already HTTPException, re-raise, otherwise wrap
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=400, detail=f"File handling error: {e}") from e
+        raise e if isinstance(e, HTTPException) else HTTPException(status_code=400, detail=f"File handling error: {e}") from e
     except Exception as e:
         logging.exception("Unexpected error during file preparation: %s", e)
-        raise HTTPException(status_code=500, detail=f"Internal server error during file handling.")
+        raise HTTPException(status_code=500, detail="Internal server error during file handling.")
 
-    # --- Data Extraction and Loading --- (Now uses prepared paths)
-    results = {"message": "Data loading initiated", "loaded_data": []}
-    all_data_to_load = {}
-
+    # --- 3. Data Extraction and Staged Loading ---
+    loaded_types_display = []
     try:
-        # Fetch course codes ONCE if needed for audit
-        db_course_codes = None
-        if prepared_paths["audit_root"]:
-            db = SessionLocal()
+        # Stage 1: Load Departments
+        if prepared_paths["dept_csv_path"]:
+            logging.info("Processing and loading department CSV...")
             try:
-                logging.info("Fetching course codes for audit processing...")
-                course_results = db.query(Course.course_code).all()
-                db_course_codes = {c[0] for c in course_results}
-                logging.info("Found %d existing course codes.", len(db_course_codes))
-                if not db_course_codes: logging.warning("No courses found in DB!")
-            except Exception as e:
-                logging.error("DB Error fetching course codes for audit: %s", e)
-                # Decide if fatal - maybe allow audit processing without codes?
-            finally:
-                db.close()
-
-        # Department Data
-        if prepared_paths["dept_csv"]:
-            logging.info("Processing department CSV...")
-            try:
-                dept_df = pd.read_csv(prepared_paths["dept_csv"])
+                dept_df = pd.read_csv(prepared_paths["dept_csv_path"])
                 if 'dep_code' in dept_df.columns and 'name' in dept_df.columns:
                     dept_df = dept_df[['name', 'dep_code']].dropna(subset=['dep_code', 'name'])
-                    all_data_to_load["department"] = dept_df.to_dict(orient="records")
-                    # results["loaded_data"].append("departments") # Add only after successful DB load
-                else:
-                    raise ValueError("Department CSV missing required columns (dep_code, name)")
+                    dept_records = dept_df.to_dict(orient="records")
+                    if dept_records:
+                        load_data_from_dicts({"department": dept_records})
+                        if "departments" not in loaded_types_display: loaded_types_display.append("departments")
+                    else: logging.warning("No department records found in CSV.")
+                else: raise ValueError("Department CSV missing required columns (dep_code, name)")
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Error processing department CSV: {e}")
+                raise HTTPException(status_code=400, detail=f"Error processing/loading department CSV: {e}")
 
-        # Course Data
+        # Stage 2: Load Courses
+        course_related_data = {}
         if prepared_paths["course_dir"]:
-            logging.info("Processing course data...")
+            logging.info("Processing and loading course data...")
             try:
                 course_extractor = CourseDataExtractor(folder_path=prepared_paths["course_dir"], base_dir=UPLOAD_DIR)
                 course_extractor.process_all_courses()
-                all_data_to_load.update(course_extractor.get_results())
-                # results["loaded_data"].append("courses")
+                course_results = course_extractor.get_results()
+                # Extract only course-related tables for immediate loading
+                course_keys = {"course", "instructor", "offering", "prereqs", "course_instructor"}
+                course_related_data = {k: v for k, v in course_results.items() if k in course_keys and v}
+                if course_related_data:
+                    load_data_from_dicts(course_related_data)
+                    if "courses" not in loaded_types_display: loaded_types_display.append("courses")
+                else: logging.warning("Course extractor returned no data to load.")
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Error processing course data: {e}")
+                raise HTTPException(status_code=400, detail=f"Error processing/loading course data: {e}")
 
-        # Audit Data
+        # Stage 3: Fetch Course Codes (NOW courses are loaded)
+        db_course_codes = set()
+        # Fetch codes if audit or enrollment data needs them (or just always fetch?)
+        # Let's fetch if audit processing is needed.
         if prepared_paths["audit_root"]:
-            logging.info("Processing audit data...")
-            if db_course_codes is None: # Check if fetching failed earlier
-                 logging.warning("Cannot process audit data because course codes could not be fetched.")
-                 # Optionally raise HTTPException here?
-            else:
-                try:
-                    audit_extractor = AuditDataExtractor(audit_base_path=prepared_paths["audit_root"])
-                    audit_results = audit_extractor.get_results(db_course_codes=db_course_codes or set())
-                    all_data_to_load.update(audit_results)
-                    # results["loaded_data"].append("audits")
-                except Exception as e:
-                    raise HTTPException(status_code=400, detail=f"Error processing audit data: {e}")
-
-        # Enrollment Data
-        if prepared_paths["enrollment_excel"]:
-            logging.info("Processing enrollment file...")
+            db = SessionLocal()
             try:
-                enrollment_df = pd.read_excel(prepared_paths["enrollment_excel"])
+                logging.info("Fetching latest course codes for audit processing...")
+                course_results = db.query(Course.course_code).all()
+                db_course_codes = {c[0] for c in course_results}
+                logging.info("Found %d course codes after course load.", len(db_course_codes))
+            except Exception as e:
+                logging.error("DB Error fetching course codes: %s", e)
+                # Potentially raise or allow audit to proceed without codes? For now, let it proceed.
+            finally:
+                db.close()
+
+        # Stage 4: Load Audits
+        if prepared_paths["audit_root"]:
+            logging.info("Processing and loading audit data...")
+            if not db_course_codes:
+                 logging.warning("Proceeding with audit processing, but no course codes were found in DB. 'countsfor' links may be incomplete.")
+            try:
+                audit_base_path = prepared_paths["audit_root"]
+                logging.info(f"Calling AuditDataExtractor with base_path: {audit_base_path} and {len(db_course_codes)} course codes.") # Log input
+                audit_extractor = AuditDataExtractor(audit_base_path=audit_base_path)
+                audit_results = audit_extractor.get_results(db_course_codes=db_course_codes)
+
+                # Log output of the extractor
+                log_audit_counts = {k: len(v) for k, v in audit_results.items()} if audit_results else {}
+                logging.info(f"AuditDataExtractor returned: {log_audit_counts}")
+
+                # Extract only audit-related tables
+                audit_keys = {"audit", "requirement", "countsfor"}
+                audit_related_data = {k: v for k, v in audit_results.items() if k in audit_keys and v}
+
+                # Log data being sent to load_data_from_dicts
+                log_audit_load_counts = {k: len(v) for k, v in audit_related_data.items()} if audit_related_data else {}
+                logging.info(f"Preparing to load audit data: {log_audit_load_counts}")
+
+                if audit_related_data:
+                    load_data_from_dicts(audit_related_data)
+                    if "audits" not in loaded_types_display: loaded_types_display.append("audits")
+                else: logging.warning("Audit extractor returned no data to load.")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Error processing/loading audit data: {e}")
+
+        # Stage 5: Load Enrollment
+        if prepared_paths["enrollment_excel_path"]:
+            logging.info("Processing and loading enrollment file...")
+            try:
+                enrollment_df = pd.read_excel(prepared_paths["enrollment_excel_path"])
                 enrollment_extractor = EnrollmentDataExtractor()
                 enrollment_records = enrollment_extractor.process_enrollment_dataframe(enrollment_df)
                 if enrollment_records:
-                    all_data_to_load["enrollment"] = enrollment_records
-                    # results["loaded_data"].append("enrollment")
+                    # _ensure_offerings_exist is called within load_data_from_dicts now
+                    load_data_from_dicts({"enrollment": enrollment_records})
+                    if "enrollment" not in loaded_types_display: loaded_types_display.append("enrollment")
                 else:
-                    logging.warning("No valid enrollment records extracted from %s", enrollment_file.filename)
+                    logging.warning("No valid enrollment records extracted from Excel.")
             except Exception as e:
-                detail = f"Error processing enrollment file: {e}"
-                if isinstance(e, ValueError):
-                    detail = f"Invalid data in enrollment file: {e}"
-                elif 'Excel file format cannot be determined' in str(e):
-                    detail = "Invalid file format. Please upload Excel (.xlsx/.xls)."
-                raise HTTPException(status_code=400, detail=detail)
+                # ... (error handling as before) ...
+                raise HTTPException(status_code=400, detail=f"Error processing/loading enrollment file: {e}")
 
-        # Load all collected data into the database
-        if all_data_to_load:
-            logging.info("Loading processed data into the database... Tables: %s", list(all_data_to_load.keys()))
-            try:
-                # Pass the relevant subset of loaded data types to the message
-                loaded_keys = list(all_data_to_load.keys())
-                # Map internal keys to user-friendly names if desired
-                type_map = {
-                    "department": "departments",
-                    "course": "courses", "prereqs": "courses", "offering": "courses",
-                    "instructor": "courses", "course_instructor": "courses",
-                    "audit": "audits", "requirement": "audits", "countsfor": "audits",
-                    "enrollment": "enrollment"
-                }
-                loaded_types_display = sorted(list(set(type_map[k] for k in loaded_keys if k in type_map)))
-
-                load_data_from_dicts(all_data_to_load)
-                results["loaded_data"] = loaded_types_display
-                results["message"] = f"Successfully loaded: {', '.join(loaded_types_display)}"
-                logging.info("Database load successful for: %s", loaded_types_display)
-            except Exception as e:
-                logging.exception("Database loading failed: %s", e)
-                raise HTTPException(status_code=500, detail=f"Database loading failed: {e}")
-        else:
-            results["message"] = "No data was processed to load."
-            # Raise error if files were uploaded but nothing was processed
-            if any([department_csv, valid_course_zips, valid_audit_zips, enrollment_file]):
-                raise HTTPException(status_code=400,
-                                    detail="Provided files could not be processed or contained no data.")
 
     except HTTPException as e:
-         # Log and re-raise HTTP exceptions from processing steps
          logging.error("Data processing/loading error: %s (Detail: %s)", e.status_code, e.detail)
          raise e
     except Exception as e:
-        logging.exception("Unexpected error during data processing/loading: %s", e)
-        raise HTTPException(status_code=500, detail=f"Internal server error during data processing.")
+        logging.exception("Unexpected error during staged data loading: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error during data loading.")
 
-    logging.info("=== Finished Database Initialization Request ===")
-    return results
+    final_message = f"Successfully loaded: {', '.join(loaded_types_display)}" if loaded_types_display else "No data was processed or loaded."
+    logging.info("=== Finished Database Initialization Request: %s ===", final_message)
+    return {"message": final_message, "loaded_data": loaded_types_display}
 
 # Removed clear_existing_department_data, clear_existing_course_data, clear_existing_audit_data
 # Use clear_existing_data(folders) instead
