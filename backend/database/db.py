@@ -10,8 +10,8 @@ from backend.database.models import Base
 # Load database URL (Default: SQLite)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///backend/database/gened_db.sqlite")
 
-# Create the engine
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, echo=True)
+# Create the engine (Disable echo temporarily)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, echo=False)
 
 # Create a session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

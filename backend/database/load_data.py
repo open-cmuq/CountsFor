@@ -52,6 +52,71 @@ primary_keys = {
     "enrollment": ["enrollment_id"]
 }
 
+def _ensure_offerings_exist(db: Session, enrollment_records: list[dict]) -> None:
+    """
+    Checks enrollment records and creates missing Offering records in the database.
+    This ensures that enrollment data can be linked to a valid offering.
+    """
+    if not enrollment_records:
+        return
+
+    logging.info("Ensuring necessary Offering records exist for enrollment data...")
+    semester_course_combos = set()
+    courses_to_check = set()
+
+    for record in enrollment_records:
+        semester = record.get('semester')
+        course_code = record.get('course_code')
+        if semester and course_code:
+            semester_course_combos.add((semester, course_code))
+            courses_to_check.add(course_code)
+
+    if not semester_course_combos:
+        logging.warning("No valid semester/course combinations found in enrollment records.")
+        return
+
+    # Pre-fetch existing courses to minimize DB calls inside loop
+    existing_db_courses = set()
+    if courses_to_check:
+        course_results = db.query(Course.course_code).filter(Course.course_code.in_(courses_to_check)).all()
+        existing_db_courses = {c[0] for c in course_results}
+
+    # Pre-fetch existing offerings
+    existing_offerings = set()
+    if semester_course_combos:
+        # Build query dynamically might be complex, fetch all relevant and filter in memory
+        # Or fetch in chunks if memory is a concern
+        relevant_offerings = db.query(Offering.semester, Offering.course_code).filter(
+            Offering.course_code.in_(courses_to_check)
+        ).all()
+        existing_offerings = {(o.semester, o.course_code) for o in relevant_offerings}
+
+    offerings_to_add = []
+    for semester, course_code in semester_course_combos:
+        if (semester, course_code) not in existing_offerings:
+            # Check if the course itself exists in the database before creating offering
+            if course_code in existing_db_courses:
+                offering_id = f"{course_code}_{semester}_2" # Assume campus_id 2 (Qatar)
+                offerings_to_add.append(Offering(
+                    offering_id=offering_id,
+                    semester=semester,
+                    course_code=course_code,
+                    campus_id=2  # Default campus_id for Qatar
+                ))
+            else:
+                logging.warning("Cannot create offering for (%s, %s) because Course %s does not exist.",
+                                semester, course_code, course_code)
+
+    if offerings_to_add:
+        try:
+            db.bulk_save_objects(offerings_to_add)
+            db.commit()
+            logging.info("Created %d missing Offering records.", len(offerings_to_add))
+        except (IntegrityError, SQLAlchemyError) as e:
+            db.rollback()
+            logging.error("Error creating missing Offering records: %s", e)
+            # Propagate the error or handle as needed - potentially raise?
+
 def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
     """
     Loads data from a dictionary of table names and list-of-dict records.
@@ -61,249 +126,278 @@ def load_data_from_dicts(data_dict: dict[str, list[dict]]) -> None:
     try:
         logging.info("Loading data from dictionaries...")
 
+        # Pre-process: Ensure offerings exist for enrollment data
+        if "enrollment" in data_dict:
+            _ensure_offerings_exist(db, data_dict["enrollment"])
+
         # Process tables in a specific order to handle dependencies
         table_order = ["department", "instructor", "course", "offering", "audit",
                        "requirement", "prereqs", "countsfor", "course_instructor", "enrollment"]
+
+        # Cache fetched offerings to reduce DB lookups inside the enrollment loop
+        offering_cache = {}
+
+        # --- Temporarily reduce logging --- #
+        # log_tables = {"course", "offering", "audit", "requirement", "prereqs", "countsfor", "course_instructor", "instructor"}
+        # Enable logging specifically for audit related tables
+        log_tables = {"audit", "requirement", "countsfor"}
 
         for table_name in table_order:
             records = data_dict.get(table_name, [])
             if not records:
                 continue
 
-            logging.info("Processing table: %s with %d records", table_name, len(records))
+            # --- Temporarily reduce logging --- #
+            if table_name in log_tables:
+                logging.info("Processing table: %s with %d records", table_name, len(records))
 
             model = tables.get(table_name)
             if not model:
+                # --- Temporarily reduce logging --- #
+                # logging.warning("No model found for table: %s. Skipping.", table_name)
                 continue
 
-            df = pd.DataFrame(records).drop_duplicates()
-            deduped_records = df.to_dict(orient="records")
+            # Basic deduplication based on all columns before processing
+            try:
+                df = pd.DataFrame(records)
+                df.dropna(axis=1, how='all', inplace=True)
+                pk = primary_keys.get(table_name)
+                if pk and all(k in df.columns for k in pk):
+                    df.drop_duplicates(subset=pk, keep='last', inplace=True)
+                else:
+                    df.drop_duplicates(keep='last', inplace=True)
+                deduped_records = df.to_dict(orient="records")
+            except Exception as e:
+                # --- Temporarily reduce logging --- #
+                # logging.error("Error during DataFrame processing for %s: %s. Using raw records.", table_name, e)
+                deduped_records = records
 
+            if not deduped_records:
+                # --- Temporarily reduce logging --- #
+                # logging.info("No records remaining for %s after deduplication.", table_name)
+                continue
+
+            # Special handling for enrollment (linking offering_id)
             if table_name == "enrollment":
-                # First, identify all unique semester-course combinations and ensure offerings exist
-                semester_course_combos = set()
+                processed_enrollment = []
                 for record in deduped_records:
-                    # Skip records with missing semester or course_code
-                    if ('semester' not in record or 'course_code'
-                        not in record or not record['semester']
-                        or not record['course_code']):
+                    record["class_"] = int(record.get("class_", 0))
+                    record["enrollment_count"] = int(record.get("enrollment_count", 0))
+
+                    semester = record.get("semester")
+                    course_code = record.get("course_code")
+                    offering_id = None
+
+                    if semester and course_code:
+                        cache_key = (semester, course_code)
+                        if cache_key in offering_cache:
+                            offering_id = offering_cache[cache_key]
+                        else:
+                            offering = db.query(Offering.offering_id).filter(
+                                Offering.course_code == course_code,
+                                Offering.semester == semester
+                            ).first()
+                            if offering:
+                                offering_id = offering.offering_id
+                                offering_cache[cache_key] = offering_id
+                            # else:
+                                # logging.warning("Offering not found for enrollment record (%s, %s), skipping record.", semester, course_code)
+                                # continue
+                    # else:
+                        # logging.warning("Enrollment record missing semester/course_code: %s", record)
+                        # continue
+
+                    if not offering_id:
+                        continue # Skip if offering couldn't be found
+
+                    record["offering_id"] = offering_id
+
+                    original_keys = list(record.keys())
+                    for key in original_keys:
+                        if not hasattr(model, key) and key != 'class_':
+                            del record[key]
+
+                    if "enrollment_id" not in record and record.get("offering_id"):
+                        section = record.get("section", "")
+                        class_val = record.get("class_", "")
+                        department = record.get("department", "")
+                        record["enrollment_id"] = f"{record['offering_id']}_{class_val}_{section}_{department}"
+                    elif "enrollment_id" not in record:
+                        # logging.warning("Could not generate enrollment_id for record: %s", record)
                         continue
 
-                    semester_course_combos.add((record['semester'], record['course_code']))
+                    processed_enrollment.append(record)
+                deduped_records = processed_enrollment
 
-                # Create missing offering records
-                for semester, course_code in semester_course_combos:
-                    # Check if an offering already exists
-                    existing_offering = db.query(Offering).filter(
-                        Offering.course_code == course_code,
-                        Offering.semester == semester
-                    ).first()
-
-                    # Create new offering if it doesn't exist
-                    if not existing_offering:
-                        # Create a default offering ID
-                        offering_id = f"{course_code}_{semester}_2"
-                        # Check if the course exists
-                        course_exists = db.query(Course).filter(Course.course_code
-                                                                 == course_code).first()
-                        if course_exists:
-                            new_offering = Offering(
-                                offering_id=offering_id,
-                                semester=semester,
-                                course_code=course_code,
-                                campus_id=2  # Default campus_id for Qatar
-                            )
-                            db.add(new_offering)
-
-                # Commit the new offerings
+            keys = primary_keys.get(table_name)
+            if not keys:
+                # --- Temporarily reduce logging --- #
+                # logging.warning("No primary keys defined for %s. Bulk inserting...", table_name)
                 try:
+                    db.bulk_insert_mappings(model, deduped_records)
                     db.commit()
-                except (IntegrityError, SQLAlchemyError) as e:
+                except (IntegrityError, SQLAlchemyError) as error:
                     db.rollback()
-                    logging.error("Error creating offerings: %s", e)
+                    # logging.error("Error bulk inserting into %s: %s", table_name, error)
+                continue
 
-                # Now process enrollment records
-                for record in deduped_records:
-                    record["class_"] = int(record["class_"])  # Convert to int if necessary
-
-                    # Find the matching offering
-                    if ('semester' in record and 'course_code' in
-                        record and record['semester'] and
-                        record['course_code']):
-                        offering = db.query(Offering).filter(
-                            Offering.course_code == record["course_code"],
-                            Offering.semester == record["semester"]
-                        ).first()
-
-                        if offering:
-                            record["offering_id"] = offering.offering_id
+            successful_upserts = 0
+            failed_upserts = 0
+            for record in deduped_records:
+                try:
+                    filter_conditions = {}
+                    has_all_keys = True
+                    for key in keys:
+                        if key in record and record[key] is not None:
+                            filter_conditions[key] = record[key]
                         else:
-                            continue  # Skip this record if no offering exists
+                            # logging.warning("Skipping record in %s due to missing PK '%s': %s", table_name, key, record)
+                            has_all_keys = False
+                            break
 
-                    # Remove 'course_code' and 'semester' from record as they're
-                    # not columns in the Enrollment model
-                    if "course_code" in record:
-                        del record["course_code"]
-                    if "semester" in record:
-                        del record["semester"]
+                    if not has_all_keys:
+                        failed_upserts += 1
+                        continue
 
-                    # Ensure enrollment_id is set
-                    if "enrollment_id" not in record and "offering_id" in record:
-                        section = record.get("section", "")
-                        class_ = record.get("class_", "")
-                        department = record.get("department", "")
-                        record["enrollment_id"] = (
-                            f"{record['offering_id']}_{class_}_{section}_{department}")
+                    instance_data = record.copy()
+                    for key in filter_conditions:
+                        if key in instance_data:
+                            del instance_data[key]
+
+                    instance_to_merge = model(**filter_conditions)
+                    for key, value in instance_data.items():
+                        attr_name = 'class_' if table_name == 'enrollment' and key == 'class' else key
+                        if hasattr(instance_to_merge, attr_name):
+                            setattr(instance_to_merge, attr_name, value)
+                        # else:
+                            # logging.warning("Model %s missing attr %s from key %s", table_name, attr_name, key)
+
+                    db.merge(instance_to_merge)
+                    successful_upserts += 1
+
+                except SQLAlchemyError as e:
+                    # logging.error("Error merging record into %s: %s Record: %s", table_name, e, record)
+                    failed_upserts += 1
+                    db.rollback()
 
             try:
-                keys = primary_keys.get(table_name, [])
-
-                if keys:
-                    for record in deduped_records:
-                        filter_conditions = []
-                        has_all_keys = True
-                        for key in keys:
-                            if key in record:
-                                filter_conditions.append(getattr(model, key) == record[key])
-                            else:
-                                has_all_keys = False
-                                break
-
-                        if has_all_keys:
-                            # For requirements, which are causing unique constraint issues,
-                            # we need special handling to update connections to audits
-                            if (table_name == "requirement" and len(keys) == 1
-                                and keys[0] == "requirement"):
-                                existing = db.query(model).filter(*filter_conditions).first()
-                                if existing:
-                                    # If requirement exists but with different audit_id, keep the
-                                    # existing one We don't update the audit_id here,
-                                    # that relationship is managed through Countsfor
-                                    continue
-                                else:
-                                    new_record = model(**record)
-                                    db.add(new_record)
-                            else:
-                                # Regular record handling for other tables
-                                existing = db.query(model).filter(*filter_conditions).first()
-                                if existing:
-                                    for key, value in record.items():
-                                        setattr(existing, key, value)
-                                else:
-                                    new_record = model(**record)
-                                    db.add(new_record)
-                else:
-                    db.bulk_insert_mappings(model, deduped_records)
-
                 db.commit()
+                # --- Temporarily reduce logging --- #
+                if table_name in log_tables:
+                    logging.info("Table %s: %d records successfully merged, %d failed.",
+                                 table_name, successful_upserts, failed_upserts)
+            except SQLAlchemyError as e:
+                # logging.error("Error committing merges for table %s: %s", table_name, e)
+                db.rollback()
 
-            except IntegrityError as error:
-                db.rollback()
-                logging.error("Integrity error processing %s: %s", table_name, error)
-
-                # For requirement table, which often has unique constraint issues,
-                # try a different approach by processing records individually
-                if table_name == "requirement":
-                    logging.info("Retrying requirement records individually...")
-                    for record in deduped_records:
-                        try:
-                            # Check if requirement already exists
-                            existing = db.query(Requirement).filter(
-                                Requirement.requirement == record["requirement"]).first()
-                            if not existing:
-                                new_record = Requirement(**record)
-                                db.add(new_record)
-                                db.commit()
-                        except (IntegrityError, SQLAlchemyError) as inner_error:
-                            db.rollback()
-                            logging.error("Error processing requirement record: %s", inner_error)
-                            continue
-                elif table_name == "countsfor":
-                    logging.info("Processing countsfor records individually...")
-                    for record in deduped_records:
-                        try:
-                            # Check if relationship already exists
-                            existing = db.query(CountsFor).filter(
-                                CountsFor.course_code == record["course_code"],
-                                CountsFor.requirement == record["requirement"]).first()
-                            if not existing:
-                                new_record = CountsFor(**record)
-                                db.add(new_record)
-                                db.commit()
-                        except (IntegrityError, SQLAlchemyError) as inner_error:
-                            db.rollback()
-                            logging.error("Error processing countsfor record: %s", inner_error)
-                            continue
-                else:
-                    raise
-            except SQLAlchemyError as error:
-                db.rollback()
-                logging.error("SQLAlchemy error processing %s: %s", table_name, error)
-                raise
-            except ValueError as error:
-                db.rollback()
-                logging.error("Value error processing %s: %s", table_name, error)
-                raise
-            except Exception as error:
-                db.rollback()
-                logging.error("Unexpected error processing %s: %s", table_name, error)
-                raise
+    except Exception as e:
+        logging.exception("An unexpected error occurred during data loading: %s", e)
+        db.rollback()
     finally:
+        # --- Temporarily reduce logging --- #
+        # logging.info("Exporting tables to CSV...")
+        # try:
+        #     export_tables_to_csv(session=db)
+        # except Exception as csv_e:
+        #      logging.error("CSV Export failed: %s", csv_e)
         db.close()
-        logging.info("Finished data loading process")
+        logging.info("Database session closed.")
 
 def load_data_from_endpoint() -> None:
     """
-    Loads data directly from the new extractor endpoints instead of Excel files,
-    and inserts the results into the database.
+    Placeholder function to simulate loading data fetched from an endpoint.
+    Loads data sequentially: Courses first, then Audits, ensuring dependencies.
     """
-    audit_extractor = AuditDataExtractor(audit_base_path=os.path.join(DATA_DIR, "audit"),
-                                          course_base_path=os.path.join(DATA_DIR, "course"))
-    course_extractor = CourseDataExtractor(folder_path=os.path.join(DATA_DIR, "course/courses"),
-                                            base_dir=os.path.join(DATA_DIR, "course"))
-    enrollment_extractor = EnrollmentDataExtractor()
+    logging.info("--- Starting Data Loading from Endpoint Simulation ---")
+    all_course_data = {}
+    all_audit_data = {}
+    db_course_codes = set()
 
-    audit_results = audit_extractor.get_results()
-    course_results = course_extractor.get_results()
-    enrollment_data = enrollment_extractor.extract_enrollment_data(
-        file_path=os.path.join(DATA_DIR, "enrollment/Enrollment.xlsx"))
+    # --- 1. Process and Load Course Data --- #
+    course_data_dir = os.path.join(DATA_DIR, "courses")
+    if os.path.exists(course_data_dir):
+        try:
+            logging.info("Processing Course data from %s", course_data_dir)
+            course_extractor = CourseDataExtractor(folder_path=course_data_dir, base_dir=DATA_DIR)
+            course_extractor.process_all_courses()
+            all_course_data = course_extractor.get_results()
 
-    logging.info("Audit extractor results: %s", audit_results)
-    logging.info("Course extractor results: %s", course_results)
-    logging.info("Enrollment data extracted: %s",
-                 enrollment_data if enrollment_data else "No enrollment data")
+            if all_course_data:
+                logging.info("Loading Course related data into the database...")
+                # Select only course-related keys for the first load
+                course_keys = {"course", "instructor", "offering", "prereqs", "course_instructor"}
+                data_to_load_now = {k: v for k, v in all_course_data.items() if k in course_keys}
+                if data_to_load_now:
+                    load_data_from_dicts(data_to_load_now)
+                    logging.info("Finished loading Course related data.")
+                else:
+                    logging.warning("No course-related data found to load initially.")
+            else:
+                logging.warning("Course extractor returned no data.")
 
-    data_dict = {}
-    data_dict.update(audit_results)
-    data_dict.update(course_results)
-    data_dict["enrollment"] = (enrollment_data if isinstance(enrollment_data, list) else [])
+        except Exception as e:
+            logging.error("Failed to process or load course data from %s: %s", course_data_dir, e)
+    else:
+        logging.warning("Course data directory not found or empty: %s", course_data_dir)
 
+    # --- 2. Fetch Course Codes (after loading course data) --- #
+    db_session = SessionLocal()
     try:
-        dept_df = pd.read_csv(os.path.join(DATA_DIR, "department/departments.csv"))
-        data_dict["department"] = dept_df.to_dict(orient="records")
-    except FileNotFoundError as e:
-        logging.error("Department data file not found: %s", e)
-        data_dict["department"] = []
-    except pd.errors.EmptyDataError as e:
-        logging.error("Department data file is empty: %s", e)
-        data_dict["department"] = []
-    except Exception as e: # pylint: disable=broad-exception-caught
-        logging.error("Unexpected error loading department data: %s", e)
-        data_dict["department"] = []
+        logging.info("Fetching existing course codes from database...")
+        course_results = db_session.query(Course.course_code).all()
+        db_course_codes = {c[0] for c in course_results}
+        logging.info("Found %d existing course codes.", len(db_course_codes))
+        if not db_course_codes:
+            logging.warning("No course codes found in DB after attempting course load! Audit data cannot be linked.")
+    except Exception as e:
+        logging.error("Failed to fetch course codes from database: %s. Audit results may be incomplete.", e)
+    finally:
+        if db_session:
+            db_session.close()
 
-    logging.info("Combined data to be loaded: %s", {k: len(v) for k, v in data_dict.items()})
+    # --- 3. Process and Load Audit Data --- #
+    audit_data_dir = os.path.join(DATA_DIR, "audit")
+    if os.path.exists(audit_data_dir):
+        # Only proceed if we have course codes to validate against
+        if db_course_codes:
+            try:
+                logging.info("Processing Audit data from %s", audit_data_dir)
+                audit_extractor = AuditDataExtractor(audit_base_path=audit_data_dir)
+                # Pass the fetched course codes
+                all_audit_data = audit_extractor.get_results(db_course_codes=db_course_codes)
 
-    load_data_from_dicts(data_dict)
+                if all_audit_data:
+                    logging.info("Loading Audit related data into the database...")
+                    # Select only audit-related keys for the second load
+                    audit_keys = {"audit", "requirement", "countsfor"}
+                    data_to_load_now = {k: v for k, v in all_audit_data.items() if k in audit_keys}
+                    if data_to_load_now:
+                        # Log counts before loading
+                        logging.info("Audit Extractor produced counts: %s",
+                                     {k: len(v) for k, v in data_to_load_now.items()})
+                        load_data_from_dicts(data_to_load_now)
+                        logging.info("Finished loading Audit related data.")
+                    else:
+                        logging.warning("No audit-related data found to load.")
+                else:
+                    logging.warning("Audit extractor returned no data.")
 
-    # After loading data, export tables to CSV
-    logging.info("Exporting database tables to CSV...")
-    try:
-        # Call the export function from to_csv.py
-        results = export_tables_to_csv()
-        logging.info("CSV export completed with results: %s",
-                     {k: v for k, v in results.items() if v != "success"})
-    except (IOError, SQLAlchemyError) as e:
-        logging.error("Error exporting to CSV: %s", e)
+            except Exception as e:
+                logging.error("Failed to process or load audit data from %s: %s", audit_data_dir, e)
+        else:
+            logging.warning("Skipping Audit data processing because no course codes were found in the database.")
+    else:
+        logging.warning("Audit data directory not found: %s", audit_data_dir)
 
+    # --- 4. Process and Load Other Data (Optional - Deprecated Logging/Loading) --- #
+    # Load Department data if needed (currently commented out)
+    # Load Enrollment data if needed (currently commented out)
+
+    logging.info("--- Finished Data Loading from Endpoint Simulation ---")
+
+# Example usage (optional, for testing)
 if __name__ == "__main__":
+    # You might want to reset the DB before loading if needed
+    from .db import reset_db
+    reset_db()
     load_data_from_endpoint()

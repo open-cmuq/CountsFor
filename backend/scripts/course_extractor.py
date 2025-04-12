@@ -36,12 +36,6 @@ class CourseDataExtractor(DataExtractor):
         self.course_instructor: List[Dict[str, Any]] = []
         self.instructors_data: Dict[str, Dict[str, Any]] = {}
 
-        # Define output file paths
-        self.course_table_file = os.path.join(self.base_dir, "Course.xlsx")
-        self.prereqs_table_file = os.path.join(self.base_dir, "Prereqs.xlsx")
-        self.offerings_table_file = os.path.join(self.base_dir, "Offering.xlsx")
-        self.course_instructor_table_file = os.path.join(self.base_dir, "Course_Instructor.xlsx")
-        self.instructor_table_file = os.path.join(self.base_dir, "Instructor.xlsx")
 
     # ------------------------- Utility Methods -------------------------
 
@@ -243,110 +237,63 @@ class CourseDataExtractor(DataExtractor):
         except (AttributeError, TypeError) as error:
             logging.error("Error extracting instructors for course %s: %s", code, error)
 
-    def process_course_file(self, file_path: str) -> None:
+    def process_course_data(self, data: Dict[str, Any], source_name: str = "Unknown") -> None:
         """
-        Processes a single course JSON file.
-        Catches specific exceptions expected from file operations and JSON parsing.
+        Processes a dictionary containing course data (typically from a JSON file).
+        Updates the extractor's internal lists.
+        `source_name` is used for logging.
         """
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
-        except FileNotFoundError as fnf_error:
-            logging.warning("File not found %s: %s", os.path.basename(file_path), fnf_error)
-            return
-        except json.JSONDecodeError as json_error:
-            logging.warning("JSON decoding error in file %s: %s",
-                            os.path.basename(file_path), json_error)
-            return
-
         if not data.get("success", True):
+            logging.debug("Skipping course data from %s due to success=false indicator.", source_name)
             return
 
         try:
             course_info = self.extract_course_info(data)
         except ValueError as ve:
-            logging.warning("Error extracting course info from %s: %s",
-                            os.path.basename(file_path), ve)
+            logging.warning("Skipping course data from %s: %s", source_name, ve)
             return
 
+        # Append data if extraction was successful
+        course_code = course_info["course_code"]
         self.courses_data.append(course_info)
-        self.extract_prereqs(data, course_info["course_code"])
-        self.extract_offerings(data, course_info["course_code"])
-        self.extract_instructors(data, course_info["course_code"])
-
+        self.extract_prereqs(data, course_code)
+        self.extract_offerings(data, course_code)
+        self.extract_instructors(data, course_code)
+        # logging.info("Successfully processed course data for %s from %s", course_code, source_name)
 
     def process_all_courses(self) -> None:
+        """
+        Walks the folder path, reads JSON files, and processes their data.
+        """
         if not os.path.exists(self.folder_path):
-            logging.error("Folder not found: %s", self.folder_path)
+            logging.error("Course data folder not found: %s", self.folder_path)
             return
+
+        json_files_processed = 0
         # Recursively walk through the folder structure
         for root, dirs, files in os.walk(self.folder_path):
-            logging.info("Scanning directory: %s", root)
+            # Skip typical hidden / system folders
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d != '__pycache__']
+
+            logging.info("Scanning directory for courses: %s", root)
             for filename in files:
-                if filename.endswith(".json"):
+                if filename.endswith(".json") and not filename.startswith('.'):
                     file_path = os.path.join(root, filename)
-                    logging.info("Processing file: %s", file_path)
-                    self.process_course_file(file_path)
+                    logging.debug("Attempting to read course file: %s", file_path)
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as file:
+                            data = json.load(file)
+                        # Process the loaded data
+                        self.process_course_data(data, source_name=os.path.basename(file_path))
+                        json_files_processed += 1
+                    except FileNotFoundError as fnf_error:
+                        logging.warning("File not found %s: %s", os.path.basename(file_path), fnf_error)
+                    except json.JSONDecodeError as json_error:
+                        logging.warning("JSON decoding error in file %s: %s", os.path.basename(file_path), json_error)
+                    except Exception as e: # Catch other potential errors during processing
+                        logging.error("Unexpected error processing course file %s: %s", os.path.basename(file_path), e)
 
-
-
-    def save_results(self) -> None:
-        """
-        Saves all extracted data to Excel files.
-        """
-        instructors_list = list(self.instructors_data.values())
-        self.save_to_excel(self.courses_data, self.course_table_file)
-        self.save_to_excel(self.prereq_relationships, self.prereqs_table_file)
-        self.save_to_excel(self.offerings_records, self.offerings_table_file)
-        self.save_to_excel(self.course_instructor, self.course_instructor_table_file)
-        self.save_to_excel(instructors_list, self.instructor_table_file)
-
-    # ------------------------- DataFrame Processing -------------------------
-
-    @staticmethod
-    def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Handles missing values in the DataFrame.
-        """
-        try:
-            if "units" in df.columns:
-                df["units"] = df["units"].fillna(9).astype(int)
-            if "min_units" in df.columns:
-                df["min_units"] = df["min_units"].fillna(
-                    df["units"].apply(lambda x: 9 if pd.isna(x) else x)).astype(int)
-            if "max_units" in df.columns:
-                df["max_units"] = df["max_units"].fillna(
-                    df["units"].apply(lambda x: 9 if pd.isna(x) else x)).astype(int)
-            if "short_name" in df.columns and "name" in df.columns:
-                df["short_name"] = df["short_name"].fillna(df["name"])
-            if "dep_code" in df.columns:
-                df["dep_code"] = df["dep_code"].fillna(-1).astype(int)
-            if "offered_qatar" in df.columns:
-                df["offered_qatar"] = df["offered_qatar"].fillna(False).astype(bool)
-            if "offered_pitts" in df.columns:
-                df["offered_pitts"] = df["offered_pitts"].fillna(False).astype(bool)
-        except (KeyError, ValueError, TypeError) as error:
-            logging.error("Error handling missing values: %s", error)
-        return df
-
-    @staticmethod
-    def save_to_excel_static(data: List[Dict[str, Any]],
-                             output_file: str, columns: List[str] = None) -> None:
-        """
-        Saves data to an Excel file using specified columns.
-        """
-        try:
-            if not data:
-                logging.warning("No data to save for %s", output_file)
-                return
-            df = pd.DataFrame(data)
-            if columns:
-                df = df[columns]
-                df = CourseDataExtractor.handle_missing_values(df)
-            df.to_excel(output_file, index=False)
-            logging.info("Data successfully saved to %s", output_file)
-        except (KeyError, ValueError, TypeError) as error:
-            logging.error("Error saving to %s: %s", output_file, error)
+        logging.info("Finished processing courses. Processed data from %d JSON files.", json_files_processed)
 
     def get_results(self) -> dict[str, list[dict]]:
         return {
@@ -367,11 +314,4 @@ def process_courses(course_base_path: str) -> Dict[str, str]:
     folder_path = os.path.join(course_base_path, "courses")
     extractor = CourseDataExtractor(folder_path=folder_path, base_dir=course_base_path)
     extractor.process_all_courses()
-    extractor.save_results()
-    return {
-        "course_file": extractor.course_table_file,
-        "prereqs_file": extractor.prereqs_table_file,
-        "offerings_file": extractor.offerings_table_file,
-        "course_instructor_file": extractor.course_instructor_table_file,
-        "instructor_file": extractor.instructor_table_file,
-    }
+    return extractor.get_results()

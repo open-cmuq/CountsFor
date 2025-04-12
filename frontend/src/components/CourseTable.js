@@ -80,7 +80,7 @@ const CourseTable = ({
       const [expanded, setExpanded] = useState(false);
 
       // Remove square brackets from the text
-      const cleanedText = text ? text.replace(/[\[\]]/g, '') : text;
+      const cleanedText = text ? text.replace(/[[\]]/g, '') : text;
       const previewText = cleanedText.length > 40 ? cleanedText.slice(0, 40) + "..." : cleanedText;
 
       return (

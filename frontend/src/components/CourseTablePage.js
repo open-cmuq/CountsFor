@@ -181,31 +181,18 @@ const CourseTablePage = () => {
 
   // Memoize the helper function so it only changes when coreOnly or genedOnly change.
   const courseMatchesRequirementFilter = useCallback((course) => {
-    // If neither filter is active, include all courses.
-    if (coreOnly === null && genedOnly === null) return true;
+    if (!coreOnly && !genedOnly) return true; // Show all if neither is exclusively selected
+    if (!course.requirements) return false; // No requirements means it can't match
 
-    // Check if the course has ANY requirements at all.
-    const majors = Object.keys(course.requirements || {});
-    const hasAnyReq = majors.some(
-      (major) => (course.requirements[major] || []).length > 0
-    );
-    // If a course has no requirement data, include it.
-    if (!hasAnyReq) return true;
-
-    // For each major, filter the requirement objects.
-    for (let major of majors) {
-      const reqObjs = course.requirements[major] || [];
-      const filtered = reqObjs.filter((reqObj) => {
-        if (coreOnly && !genedOnly) {
-          return reqObj.type === false; // Only Core requirements.
-        } else if (genedOnly && !coreOnly) {
-          return reqObj.type === true;  // Only GenEd requirements.
-        }
-        return true; // If both filters are inactive or both active, include all.
-      });
-      if (filtered.length > 0) return true;
+    const majors = Object.keys(course.requirements);
+    for (const major of majors) {
+      for (const reqObj of course.requirements[major]) {
+        // reqObj.type is true for GenEd, false for Core
+        if (coreOnly && !reqObj.type) return true; // Found a Core requirement
+        if (genedOnly && reqObj.type) return true; // Found a GenEd requirement
+      }
     }
-    return false;
+    return false; // No matching requirement found
   }, [coreOnly, genedOnly]);
 
   // Fetch courses using combined filters from backend
@@ -296,10 +283,7 @@ const CourseTablePage = () => {
     noPrereqs,
     offeredQatar,
     offeredPitts,
-    selectedFilters.BA,
-    selectedFilters.BS,
-    selectedFilters.CS,
-    selectedFilters.IS,
+    selectedFilters,
     coreOnly,
     genedOnly,
     courseMatchesRequirementFilter,
