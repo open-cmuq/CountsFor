@@ -181,18 +181,32 @@ const CourseTablePage = () => {
 
   // Memoize the helper function so it only changes when coreOnly or genedOnly change.
   const courseMatchesRequirementFilter = useCallback((course) => {
-    if (!coreOnly && !genedOnly) return true; // Show all if neither is exclusively selected
-    if (!course.requirements) return false; // No requirements means it can't match
+    // If BOTH Core and GenEd are selected (or potentially neither, though UI might prevent),
+    // do not filter based on requirement type. Show all courses that pass other filters.
+    if ((coreOnly && genedOnly) || (!coreOnly && !genedOnly) ) {
+      return true; // Don't filter by type
+    }
+
+    // --- Apply filter only if exactly ONE type is selected ---
+
+    if (!course.requirements) {
+        return false; // No requirements means it cannot match a specific type filter
+    }
 
     const majors = Object.keys(course.requirements);
     for (const major of majors) {
-      for (const reqObj of course.requirements[major]) {
-        // reqObj.type is true for GenEd, false for Core
-        if (coreOnly && !reqObj.type) return true; // Found a Core requirement
-        if (genedOnly && reqObj.type) return true; // Found a GenEd requirement
+      if (course.requirements[major]) { // Check if major requirements exist
+          for (const reqObj of course.requirements[major]) {
+            // reqObj.type is true for GenEd, false for Core
+            // If coreOnly is true (and genedOnly must be false here), check for Core type
+            if (coreOnly && !reqObj.type) return true;
+            // If genedOnly is true (and coreOnly must be false here), check for GenEd type
+            if (genedOnly && reqObj.type) return true;
+          }
       }
     }
-    return false; // No matching requirement found
+
+    return false; // No matching requirement type found for the single selected type
   }, [coreOnly, genedOnly]);
 
   // Fetch courses using combined filters from backend
