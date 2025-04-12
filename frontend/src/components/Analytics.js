@@ -22,8 +22,9 @@ const AnalyticsPage = () => {
   }, [selectedMajor]);
 
   return (
-    <div className="table-container">
-      <h1 className="title" style={{ marginBottom: "30px" }}>Analytics Dashboard</h1>
+    <div className="analytics-container table-container">
+      <h1 className="title" style={{ marginBottom: "30px" }}>Analyze Courses</h1>
+      <p className="subtitle" style={{ marginTop: "-20px", marginBottom: "30px" }}>Visualize requirement coverage, enrollment trends, and course relationships.</p>
 
       {/* Category Coverage Section */}
       <div style={{ marginBottom: "40px" }}>

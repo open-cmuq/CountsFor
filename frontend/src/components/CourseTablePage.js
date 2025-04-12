@@ -396,7 +396,8 @@ const CourseTablePage = () => {
 
   return (
     <div className="table-container">
-      <h1 className="title">CMU-Q General Education</h1>
+      <h1 className="title">CMU-Q Curriculum Requirements</h1>
+      <p className="subtitle">Visualize, plan, and analyze CMU-Q course requirements across all majors.</p>
 
       <SearchBar
         selectedDepartments={selectedDepartments}
