@@ -2,7 +2,7 @@
 This script contains the business logic for handling courses.
 """
 
-from typing import Dict, Optional
+from typing import Optional
 from sqlalchemy.orm import Session
 from backend.repository.courses import CourseRepository
 from backend.app.schemas import CourseResponse, CourseListResponse

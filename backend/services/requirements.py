@@ -1,4 +1,7 @@
-from typing import Optional
+"""
+This script contains the business logic for handling requirements.
+"""
+
 from sqlalchemy.orm import Session
 from backend.repository.requirements import RequirementRepository
 from backend.app.schemas import RequirementResponse, RequirementsResponse

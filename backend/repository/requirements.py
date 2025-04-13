@@ -28,21 +28,4 @@ class RequirementRepository:
             for requirement, audit_type, major in requirements
         ]
 
-    def search_requirements(self, query: str):
-        """Search for requirements by a keyword."""
-        query = f"%{query}%"
-        requirements = (
-            self.db.query(Requirement.requirement, Audit.type, Audit.major)
-            .join(Audit, Requirement.audit_id == Audit.audit_id)
-            .filter(Requirement.requirement.ilike(query))
-            .all()
-        )
-
-        return [
-            {
-                "requirement": requirement,
-                "type": bool(audit_type),
-                "major": major
-            }
-            for requirement, audit_type, major in requirements
-        ]
+    # Removed unused search_requirements method

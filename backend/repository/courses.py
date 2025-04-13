@@ -2,11 +2,15 @@
 This script implements the data access layer for courses.
 """
 
-from typing import Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
-from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
 import logging
+from typing import Optional
+
+from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from backend.database.models import Course, CountsFor, Requirement, Offering, Audit
+
 
 class CourseRepository:
     """encapsulates all database operations for the 'Course' entity."""
@@ -123,7 +127,8 @@ class CourseRepository:
             if semester:
                 semester_list = [s.strip() for s in semester.split(",") if s.strip()]
                 if semester_list:
-                    offering_subquery = offering_subquery.filter(Offering.semester.in_(semester_list))
+                    offering_subquery = offering_subquery.filter(
+                        Offering.semester.in_(semester_list))
 
             # Filter by location
             location_conditions = []
@@ -136,25 +141,26 @@ class CourseRepository:
             if location_conditions:
                  # If specific locations are requested, apply OR logic between them
                 if offered_qatar is True and offered_pitts is True:
-                     # If both are True, we might need courses offered in EITHER location
-                     # depending on exact requirements, but the current filter finds courses
-                     # listed in offerings for the specified semesters at either campus.
-                     # Let's assume user wants courses available in *at least one* of the specified locations+semesters
-                     offering_subquery = offering_subquery.filter(or_(*location_conditions))
+                    # If both are True, we might need courses offered in EITHER location
+                    # depending on exact requirements, but the current filter finds courses
+                    # listed in offerings for the specified semesters at either campus.
+                    # Let's assume user wants courses available in *at least one* of
+                    # the specified locations+semesters
+                    offering_subquery = offering_subquery.filter(or_(*location_conditions))
                 elif offered_qatar is True:
                     offering_subquery = offering_subquery.filter(location_conditions[0])
                 elif offered_pitts is True:
                     offering_subquery = offering_subquery.filter(location_conditions[0])
             elif offered_qatar is False or offered_pitts is False:
-                 # Handle cases where user explicitly wants courses *not* in a location.
-                 # This requires a more complex subquery or anti-join, potentially excluding
-                 # courses based on campus_id. Let's stick to positive filtering for now.
-                 # If offered_qatar is False, filter out courses linked to campus_id 2?
-                 # If offered_pitts is False, filter out courses linked to campus_id 1?
-                 # This needs clarification, current logic handles only True cases.
-                 # For simplicity, we only filter *for* locations specified as True.
-                 # If only False is provided (e.g., qatar=False, pitts=None), this block isn't hit.
-                 pass
+                # Handle cases where user explicitly wants courses *not* in a location.
+                # This requires a more complex subquery or anti-join, potentially excluding
+                # courses based on campus_id. Let's stick to positive filtering for now.
+                # If offered_qatar is False, filter out courses linked to campus_id 2?
+                # If offered_pitts is False, filter out courses linked to campus_id 1?
+                # This needs clarification, current logic handles only True cases.
+                # For simplicity, we only filter *for* locations specified as True.
+                # If only False is provided (e.g., qatar=False, pitts=None), this block isn't hit.
+                pass
 
 
             # Apply the subquery filter to the main query
@@ -164,58 +170,91 @@ class CourseRepository:
         # Execute the query to get candidate courses
         try:
             candidate_courses = query.distinct().all()
-            logging.info(f"Initial filter query returned {len(candidate_courses)} candidate courses.")
-        except Exception as e:
-            logging.error(f"Error executing initial course filter query: {e}")
+            logging.info("Initial filter query returned %d candidate courses.",
+                         len(candidate_courses))
+        except SQLAlchemyError as e: # Catch specific DB errors
+            logging.error("Error executing initial course filter query: %s", e)
             return [] # Return empty list on query error
 
         # --- Python-based Requirement Filtering ---
-        required_cs_set = set(r.strip() for r in cs_requirement.strip().split(',') if r.strip()) if cs_requirement else set()
-        required_is_set = set(r.strip() for r in is_requirement.strip().split(',') if r.strip()) if is_requirement else set()
-        required_ba_set = set(r.strip() for r in ba_requirement.strip().split(',') if r.strip()) if ba_requirement else set()
-        required_bs_set = set(r.strip() for r in bs_requirement.strip().split(',') if r.strip()) if bs_requirement else set()
+        required_cs_set = set(
+            r.strip() for r in cs_requirement.strip().split(',') if r.strip()
+        ) if cs_requirement else set()
+        required_is_set = set(
+            r.strip() for r in is_requirement.strip().split(',') if r.strip()
+        ) if is_requirement else set()
+        required_ba_set = set(
+            r.strip() for r in ba_requirement.strip().split(',') if r.strip()
+        ) if ba_requirement else set()
+        required_bs_set = set(
+            r.strip() for r in bs_requirement.strip().split(',') if r.strip()
+        ) if bs_requirement else set()
 
-        any_req_filter_active = bool(required_cs_set or required_is_set or required_ba_set or required_bs_set)
+        any_req_filter_active = bool(required_cs_set or
+                                     required_is_set or
+                                     required_ba_set or
+                                     required_bs_set)
 
         if not any_req_filter_active:
             # If no requirement filters are active, all candidates pass
             filtered_courses = candidate_courses
         else:
             filtered_courses = []
-            logging.info(f"Applying Python requirement filters: CS={required_cs_set}, IS={required_is_set}, BA={required_ba_set}, BS={required_bs_set}")
+            logging.info("Applying Python requirement filters: CS=%s, IS=%s, "
+                         "BA=%s, BS=%s",
+                         required_cs_set, required_is_set,
+                         required_ba_set, required_bs_set)
             for course in candidate_courses:
                 requirements_dict = self.get_course_requirements(course.course_code)
 
-                actual_cs = set(r['requirement'] for r in requirements_dict.get('CS', []))
-                actual_is = set(r['requirement'] for r in requirements_dict.get('IS', []))
-                actual_ba = set(r['requirement'] for r in requirements_dict.get('BA', []))
-                actual_bs = set(r['requirement'] for r in requirements_dict.get('BS', []))
+                actual_cs = set(r['requirement']
+                                for r in requirements_dict.get('CS', []))
+                actual_is = set(r['requirement']
+                                for r in requirements_dict.get('IS', []))
+                actual_ba = set(r['requirement']
+                                for r in requirements_dict.get('BA', []))
+                actual_bs = set(r['requirement']
+                                for r in requirements_dict.get('BS', []))
 
                 # Check if ALL specified requirements for EACH major are met
-                cs_match = not required_cs_set or required_cs_set.issubset(actual_cs)
-                is_match = not required_is_set or required_is_set.issubset(actual_is)
-                ba_match = not required_ba_set or required_ba_set.issubset(actual_ba)
-                bs_match = not required_bs_set or required_bs_set.issubset(actual_bs)
+                cs_match = not required_cs_set or \
+                           required_cs_set.issubset(actual_cs)
+                is_match = not required_is_set or \
+                           required_is_set.issubset(actual_is)
+                ba_match = not required_ba_set or \
+                           required_ba_set.issubset(actual_ba)
+                bs_match = not required_bs_set or \
+                           required_bs_set.issubset(actual_bs)
 
-                # The course must satisfy the requirements for all majors for which requirements were specified
+                # The course must satisfy the requirements for all majors
+                # for which requirements were specified
                 if cs_match and is_match and ba_match and bs_match:
                     filtered_courses.append(course)
-                    # logging.info(f"Course {course.course_code} MATCHED filters.") # Verbose logging if needed
+                    # logging.info(f"Course {course.course_code} MATCHED filters.")
+                    # # Verbose logging if needed
                 # else:
-                    # logging.info(f"Course {course.course_code} REJECTED by filters. CS:{cs_match}, IS:{is_match}, BA:{ba_match}, BS:{bs_match}") # Verbose logging
+                    # logging.info(
+                    #    f"Course {course.course_code} REJECTED by filters. "
+                    #    f"CS:{cs_match}, IS:{is_match}, BA:{ba_match}, BS:{bs_match}"
+                    # ) # Verbose logging
 
 
         # Format the final list of courses
         result = []
-        logging.info(f"Processing {len(filtered_courses)} filtered courses to add details...")
+        logging.info("Processing %d filtered courses to add details...",
+                     len(filtered_courses))
         for course in filtered_courses:
             try:
                 # Fetch details needed for the response object
                 offered_semesters = self.get_offered_semesters(course.course_code)
-                # Fetch requirements again to ensure the final response object has the full, correct structure
+                # Fetch requirements again to ensure the final response object has
+                # the full, correct structure
                 requirements = self.get_course_requirements(course.course_code)
                 # Log the fetched requirements for debugging
-                # logging.debug(f"Course: {course.course_code}, Requirements for response: {requirements}")
+                # logging.debug(
+                #    f"Course: {course.course_code}, "
+                #    f"Requirements for response: {requirements}"
+                # )
 
                 result.append({
                     "course_code": course.course_code,
@@ -229,9 +268,11 @@ class CourseRepository:
                     "offered": offered_semesters,
                     "requirements": requirements, # Ensure this is the structured dict
                 })
-            except Exception as e:
-                 logging.error(f"Error processing details for course {course.course_code}: {e}")
-                 continue
+            except SQLAlchemyError as e: # Catch specific DB errors during detail fetch
+                logging.error("Error processing details for course %s: %s",
+                              course.course_code, e)
+                continue
 
-        logging.info(f"Finished processing filters. Returning {len(result)} courses with details.")
+        logging.info("Finished processing filters. Returning %d courses with details.",
+                     len(result))
         return result

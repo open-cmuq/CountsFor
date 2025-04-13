@@ -1,3 +1,7 @@
+"""
+This script contains the test cases for the endpoints.
+"""
+
 from fastapi.testclient import TestClient
 from backend.app.main import app
 client = TestClient(app)
@@ -37,43 +41,6 @@ def test_analytics_enrollment_data():
 # Courses Endpoints (from courses router)
 # ---------------------------
 
-def test_get_all_courses():
-    response = client.get("/courses")
-    assert response.status_code in (200, 404)
-    if response.status_code == 200:
-        data = response.json()
-        assert isinstance(data, dict)
-        assert "courses" in data
-
-def test_get_courses_by_department():
-    params = {"department": "CS"}
-    response = client.get("/courses/by-department", params=params)
-    assert response.status_code in (200, 404)
-    if response.status_code == 200:
-        data = response.json()
-        assert "courses" in data
-
-def test_get_courses_by_requirement():
-    # Using dummy values; adjust according to your test dataset.
-    params = {
-        "cs_requirement": "Some CS Req",
-        "is_requirement": None,
-        "ba_requirement": None,
-        "bs_requirement": None
-    }
-    response = client.get("/courses/filter", params=params)
-    assert response.status_code in (200, 404)
-
-def test_get_courses_by_prerequisite():
-    params = {"has_prereqs": "true"}
-    response = client.get("/courses/by-prerequisite", params=params)
-    assert response.status_code in (200, 404)
-
-def test_get_courses_by_offered_location():
-    params = {"offered_qatar": "true", "offered_pitts": "false"}
-    response = client.get("/courses/by-offered_location", params=params)
-    assert response.status_code in (200, 404)
-
 def test_search_courses():
     # Adjust these parameters exactly to your CombinedCourseFilter field names/types
     params = {
@@ -88,12 +55,6 @@ def test_search_courses():
     response = client.get("/courses/search", params=params)
     # With the fix, we should now get a 200 or 404
     assert response.status_code in (200, 404), f"Got {response.status_code} instead of 200 or 404"
-
-
-def test_get_courses_by_semester():
-    params = {"semester": "F20"}
-    response = client.get("/courses/by-semester", params=params)
-    assert response.status_code in (200, 404)
 
 def test_get_all_semesters():
     response = client.get("/courses/semesters")
@@ -132,8 +93,3 @@ def test_get_requirements():
         # Expect a dict with key "requirements"
         assert isinstance(data, dict)
         assert "requirements" in data
-
-def test_get_requirement_by_name():
-    # Using a sample requirement name; adjust if necessary.
-    response = client.get("/requirements/SomeRequirementName")
-    assert response.status_code in (200, 404)

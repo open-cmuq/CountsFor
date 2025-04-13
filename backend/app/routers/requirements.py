@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+"""
+This script defines API endpoints for requirement-related operations.
+"""
+
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from backend.database.db import get_db
 from backend.services.requirements import RequirementService
-from backend.app.schemas import RequirementResponse, RequirementsResponse
+from backend.app.schemas import RequirementsResponse
 
 router = APIRouter()
 
