@@ -478,7 +478,10 @@ const CourseTablePage = () => {
           width: '100%',
           marginTop: '20px'
         }}>
-          <div className="loading-spinner"></div>
+        <div
+          className="loading-spinner"
+          data-testid="loading-spinner"
+        />
         </div>
       ) : (
         <CourseTable
@@ -534,7 +537,7 @@ const CourseTablePage = () => {
         <div className="popup-overlay-2">
           <div className="popup-box">
             <p>
-              Are you sure you want to all filters? This will reset all your search and requirement filter selections.
+              Are you sure you want to clear all filters? This will reset all your search and requirement filter selections.
             </p>
             <div className="popup-buttons">
               <button
