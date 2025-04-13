@@ -1,7 +1,6 @@
 """Integration tests for file preparation utilities."""
 
 import os
-import shutil
 import zipfile
 from unittest.mock import MagicMock
 
