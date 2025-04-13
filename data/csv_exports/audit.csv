@@ -1,9 +1,9 @@
 audit_id,name,type,major
-bio_0,BS in Biological Sciences,False,bio
 bio_1,GenEd,True,bio
-is_0,BS in Information Systems,False,is
-is_1,GenEd,True,is
 cs_0,BS in Computer Science,False,cs
 cs_1,GenEd,True,cs
-ba_0,BS in Business Administration,False,ba
 ba_1,EY2022 Qatar Business Administration - University Core Requirements,True,ba
+bio_0,BS in Biological Sciences,False,bio
+is_0,BS in Information Systems,False,is
+is_1,GenEd,True,is
+ba_0,BS in Business Administration,False,ba

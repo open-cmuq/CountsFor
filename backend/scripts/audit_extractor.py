@@ -330,14 +330,12 @@ class AuditDataExtractor(DataExtractor):
         """
         Extracts audit data by processing JSON files directly.
         Requires a set of existing database course codes to be passed in for validation.
+        Handles course exclusions correctly.
         Returns a dictionary with audit, requirement, and countsfor tables.
         """
         logging.info("Starting audit data extraction and transformation...")
-        # course_codes are now passed in
         if not db_course_codes:
              logging.warning("Received empty set of database course codes. Countsfor table might be inaccurate.")
-
-        combined_data = []
 
         # Get processed audit data (dict mapping id -> list of tuples)
         processed_audit_data = self.get_processed_audit_data() # Reads files
@@ -346,17 +344,17 @@ class AuditDataExtractor(DataExtractor):
             logging.warning("No raw audit data found or processed.")
             return {"audit": [], "requirement": [], "countsfor": []}
 
-        # Define specific requirements to exclude for IS major
+        # Define specific requirements to exclude entirely for IS major (e.g., degree checks)
         is_excluded_requirements = {
             "BS in Information Systems",
             "Qatar Information Systems - General Education - 2024+",
             "Qatar Information Systems - General Education - 2024+---General Education"
         }
 
+        all_rows = []
         # Process each identifier (e.g., 'cs_core') and its list of tuples
         for identifier, audit_tuples in processed_audit_data.items():
             logging.info("Processing identifier: %s (%d tuples)", identifier, len(audit_tuples))
-
             try:
                 major, audit_type_str = identifier.split('_')
                 audit_type = 0 if audit_type_str == 'core' else 1  # 0 for core, 1 for gened
@@ -374,87 +372,128 @@ class AuditDataExtractor(DataExtractor):
 
                 processed_req = self.post_process_requirement(req_chain)
 
-                # Skip excluded requirements for IS major
+                # Skip processing entirely for certain IS requirements
                 if major.lower() == 'is' and processed_req in is_excluded_requirements:
-                    logging.debug("Skipping excluded IS requirement: %s", processed_req)
+                    logging.debug("Skipping completely excluded IS requirement entry: %s", processed_req)
                     continue
 
-                if inc_exc == "Inclusion":
-                    audit_name = processed_req.split('---')[0].strip() # Extract top-level audit name
-                    if type_str == "Code":
-                        # If it's a department code, find all courses with that code FROM THE PASSED IN SET
-                        matching_courses = self.get_courses_from_code(course_or_code, db_course_codes)
-                        if matching_courses:
-                            for course in matching_courses:
-                                combined_data.append({
-                                    "requirement": processed_req,
-                                    "course": course,
-                                    "audit_type": audit_type,
-                                    "major": major,
-                                    "audit": audit_name
-                                })
-                        # else: No need to log here if dept code simply has no matching courses in DB
-                    elif type_str == "Course":
-                        # Regular course - check if it exists in the passed in set
-                        if course_or_code in db_course_codes:
-                            combined_data.append({
-                                "requirement": processed_req,
-                                "course": course_or_code,
-                                "audit_type": audit_type,
-                                "major": major,
-                                "audit": audit_name
-                            })
-                        # else: logging.debug("Course %s from audit '%s' not in db_course_codes. Not adding to countsfor.", course_or_code, processed_req)
-                # else: Handle "Exclusion" if needed
+                audit_name = processed_req.split('---')[0].strip() # Extract top-level audit name
 
-        # --- Create final tables ---
-        if combined_data:
-            # Additional filtering for IS major requirements (redundant check, but safe)
-            combined_data = [d for d in combined_data if not (d["major"].lower() == "is" and
-                                                              d["requirement"] in
-                                                              is_excluded_requirements)]
-            if not combined_data:
-                 logging.warning("No combined data remaining after filtering.")
-                 return {"audit": [], "requirement": [], "countsfor": []}
+                all_rows.append({
+                    "major": major,
+                    "audit_type": audit_type,
+                    "audit_name": audit_name,
+                    "requirement": processed_req,
+                    "course_or_code": course_or_code,
+                    "type_str": type_str,
+                    "inc_exc": inc_exc
+                })
 
-            # Create audit table
-            audit_df = pd.DataFrame(combined_data)[["audit", "audit_type", "major"]].drop_duplicates()
-            audit_df.dropna(subset=["major", "audit_type"], inplace=True)
-            audit_df["audit_id"] = audit_df["major"].astype(str) + "_" + audit_df["audit_type"].astype(str)
-            audit_df = audit_df.rename(columns={"audit": "name", "audit_type": "type"})
-            audit_df = audit_df.drop_duplicates(subset=["audit_id"])
-
-            # Create countsfor table
-            counts_df = pd.DataFrame(combined_data)[["requirement", "course"]].drop_duplicates()
-            counts_df = counts_df.rename(columns={"course": "course_code"})
-
-            # Create requirement table
-            req_df = pd.DataFrame(combined_data)[["requirement", "major", "audit_type"]].drop_duplicates()
-            req_df.dropna(subset=["requirement", "major", "audit_type"], inplace=True)
-            req_df = req_df.rename(columns={"audit_type": "type"})
-            req_df = req_df.merge(
-                audit_df[["audit_id", "major", "type"]],
-                on=["major", "type"],
-                how="inner"
-            )
-            req_df = req_df[["requirement", "audit_id"]].drop_duplicates()
-
-            dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
-            if not dupes.empty:
-                logging.warning("Duplicate requirements found mapping to potentially different audits: %s", dupes['requirement'].unique())
-
-            results = {
-                "audit": audit_df.to_dict(orient="records"),
-                "requirement": req_df.to_dict(orient="records"),
-                "countsfor": counts_df.to_dict(orient="records")
-            }
-
-            logging.info("=== Audit Data Extraction Summary ===")
-            for table_name, records in results.items():
-                logging.info("Table '%s': %d records", table_name, len(records))
-            logging.info("===================================")
-
-            return results
-        else:
-            logging.warning("No combined data generated from audit processing.")
+        if not all_rows:
+            logging.warning("No raw rows generated from audit data.")
             return {"audit": [], "requirement": [], "countsfor": []}
+
+        # Create a DataFrame from all rows
+        combined_df = pd.DataFrame(all_rows)
+
+        # --- Expand 'Code' entries into individual courses ---
+        logging.info("Expanding department code entries...")
+        expanded_entries = []
+        codes_df = combined_df[combined_df['type_str'] == 'Code']
+        courses_df = combined_df[combined_df['type_str'] == 'Course']
+
+        for _, row in codes_df.iterrows():
+            # Pass the full set of DB codes for lookup
+            matching_courses = self.get_courses_from_code(row['course_or_code'], db_course_codes)
+            if matching_courses:
+                for course in matching_courses:
+                    new_entry = row.to_dict()
+                    new_entry['course'] = course # Add the specific course code
+                    # Clean up temporary fields
+                    del new_entry['course_or_code']
+                    del new_entry['type_str']
+                    expanded_entries.append(new_entry)
+            # else: logging.debug("No courses found in DB for dept code %s", row['course_or_code'])
+
+        # Add existing course rows, renaming columns for consistency
+        courses_df['course'] = courses_df['course_or_code']
+        courses_df = courses_df.drop(columns=['course_or_code', 'type_str'])
+        expanded_entries.extend(courses_df.to_dict(orient='records'))
+
+        if not expanded_entries:
+            logging.warning("No valid course entries after expanding codes.")
+            return {"audit": [], "requirement": [], "countsfor": []}
+
+        # Create DataFrame from fully expanded entries and remove duplicates
+        final_expanded_df = pd.DataFrame(expanded_entries).drop_duplicates()
+        logging.info("Total expanded entries (before exclusion): %d", len(final_expanded_df))
+
+        # --- Identify exclusions ---
+        # An exclusion applies to a course within a specific major/audit_type context
+        exclusions_df = final_expanded_df[final_expanded_df['inc_exc'] == 'Exclusion']
+        # Create a set of tuples (major, audit_type, course) for quick lookup
+        exclusion_set = set(exclusions_df[['major', 'audit_type', 'course']].itertuples(index=False, name=None))
+        logging.info("Identified %d unique exclusion rules (major, type, course).", len(exclusion_set))
+
+        # --- Filter inclusions ---
+        inclusions_df = final_expanded_df[final_expanded_df['inc_exc'] == 'Inclusion'].copy()
+        logging.info("Initial inclusion entries: %d", len(inclusions_df))
+
+        # Define a function to check if an inclusion row should be removed due to an exclusion
+        def is_excluded(row):
+            return (row['major'], row['audit_type'], row['course']) in exclusion_set
+
+        # Apply the filter using boolean indexing (more efficient than apply)
+        excluded_mask = inclusions_df.apply(is_excluded, axis=1)
+        filtered_inclusions_df = inclusions_df[~excluded_mask]
+        logging.info("Inclusion entries after filtering exclusions: %d", len(filtered_inclusions_df))
+
+        # --- Create final tables from filtered_inclusions_df ---
+        if filtered_inclusions_df.empty:
+             logging.warning("No inclusion data remaining after filtering exclusions.")
+             return {"audit": [], "requirement": [], "countsfor": []}
+
+        # Create countsfor table (Requirement <-> Course mapping)
+        counts_df = filtered_inclusions_df[["requirement", "course"]].drop_duplicates()
+        counts_df = counts_df.rename(columns={"course": "course_code"})
+
+        # Create audit table (Unique Audits based on remaining data)
+        # Ensures only audits with actual counting courses are included
+        audit_df = filtered_inclusions_df[["audit_name", "audit_type", "major"]].drop_duplicates()
+        audit_df.dropna(subset=["major", "audit_type"], inplace=True) # Should not be necessary but safe
+        audit_df["audit_id"] = audit_df["major"].astype(str) + "_" + audit_df["audit_type"].astype(str)
+        audit_df = audit_df.rename(columns={"audit_name": "name", "audit_type": "type"})
+        audit_df = audit_df.drop_duplicates(subset=["audit_id"]) # Ensure unique audit_id
+
+        # Create requirement table (Unique Requirements linked to Audits)
+        # Ensures only requirements with actual counting courses are included
+        req_df_raw = filtered_inclusions_df[["requirement", "major", "audit_type"]].drop_duplicates()
+        req_df_raw.dropna(subset=["requirement", "major", "audit_type"], inplace=True) # Safe check
+        req_df_raw = req_df_raw.rename(columns={"audit_type": "type"})
+
+        # Merge with audit_df to get audit_id, ensuring requirements belong to a valid final audit
+        req_df = req_df_raw.merge(
+            audit_df[["audit_id", "major", "type"]],
+            on=["major", "type"],
+            how="inner" # Only keep requirements belonging to an audit in audit_df
+        )
+        # Select final columns and ensure uniqueness
+        req_df = req_df[["requirement", "audit_id"]].drop_duplicates()
+
+        # Check for requirements mapping to multiple audits (still possible if a req spans core/gened conceptually)
+        dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
+        if not dupes.empty:
+            logging.warning("Duplicate requirements found mapping to potentially different audits (after exclusion filtering): %s", dupes['requirement'].unique())
+
+        results = {
+            "audit": audit_df.to_dict(orient="records"),
+            "requirement": req_df.to_dict(orient="records"),
+            "countsfor": counts_df.to_dict(orient="records")
+        }
+
+        logging.info("=== Audit Data Extraction Summary ===")
+        for table_name, records in results.items():
+            logging.info("Table '%s': %d records", table_name, len(records))
+        logging.info("===================================")
+
+        return results
