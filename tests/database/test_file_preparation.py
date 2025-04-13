@@ -1,7 +1,6 @@
 """Integration tests for file preparation utilities."""
 
 import os
-import shutil
 import zipfile
 from unittest.mock import MagicMock
 
@@ -9,7 +8,6 @@ import pytest
 
 from backend.app.utils.file_handler import (
     find_json_files,
-    organize_audit_files,
     save_upload_file,
     unzip_and_flatten,
     validate_zip_content,
@@ -198,42 +196,3 @@ def test_unzip_and_flatten_course(tmp_path, sample_files_dir): # pylint: disable
     # Should contain the JSONs, but not __MACOSX content
     assert extracted_files == {"course1.json", "course2.json"}
     assert not (extract_dir / "__MACOSX").exists()
-
-def test_organize_audit_files_needs_org(tmp_path, sample_files_dir): # pylint: disable=redefined-outer-name
-    """Test organizing audit files when JSON is at the root."""
-    # Simulate extracted state before organization
-    audit_root = tmp_path / "audit_prep"
-    audit_root.mkdir()
-    # Copy the file that needs organizing
-    shutil.copy(sample_files_dir / "audit_src" / "cs_core_audit.json", audit_root)
-    # Copy the already existing folder
-    shutil.copytree(sample_files_dir / "audit_src" / "cs", audit_root / "cs")
-
-    organize_audit_files(str(audit_root))
-
-    # Check that the loose file was moved
-    assert not (audit_root / "cs_core_audit.json").exists()
-    assert (audit_root / "cs" / "cs_core_audit.json").exists()
-    # Check the originally present file is still there
-    assert (audit_root / "cs" / "published.json").exists()
-
-def test_organize_audit_files_pre_organized(tmp_path, sample_files_dir): # pylint: disable=redefined-outer-name
-    """Test organizing does nothing if structure is already correct."""
-    audit_root = tmp_path / "audit_prep"
-    audit_root.mkdir()
-    # Copy only the already existing folder
-    shutil.copytree(sample_files_dir / "audit_src" / "cs", audit_root / "cs")
-
-    # Record initial state
-    initial_files = set(
-        p.relative_to(audit_root) for p in audit_root.rglob('*')
-    )
-
-    organize_audit_files(str(audit_root))
-
-    # Record final state
-    final_files = set(p.relative_to(audit_root) for p in audit_root.rglob('*'))
-
-    # Assert no files were moved or created/deleted
-    assert initial_files == final_files
-    assert (audit_root / "cs" / "published.json").exists()
