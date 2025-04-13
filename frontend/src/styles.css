@@ -32,11 +32,12 @@
 
   .header-cs {
     background-color: #CF1314; /* Red */
+    color: white;
     width: 17%;
   }
 
   .header-is {
-    background-color: #FFC033; /* Yellow */
+    background-color: #F4B400; /* Darker Yellow */
     color: white;
     width: 17%;
   }
@@ -232,8 +233,6 @@
     background: transparent;
     color: white;
     border: none;
-    border: none;
-    color: white;
     margin-left: 0px;
     cursor: pointer;
     padding-left: 3px;
@@ -289,7 +288,7 @@
   }
 
   .header-is {
-    background-color: #FFC033; /* Yellow */
+    background-color: #F4B400; /* Darker Yellow */
     color: white;
   }
 

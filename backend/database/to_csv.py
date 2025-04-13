@@ -5,71 +5,109 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+import logging
+from sqlalchemy.orm import Session
+from .models import Base
 
 # Load database URL (Default: SQLite)
 DATABASE_URL = "sqlite:///backend/database/gened_db.sqlite"
 
 # Define the tables you want to export
-tables = [
-    "department",
-    "course",
-    "offering",
-    "requirement",
-    "audit",
-    "countsfor",
-    "prereqs",
-    "course_instructor",
-    "enrollment"
-]
+# tables = [ ... ] # Removed hardcoded list
 
-def export_tables_to_csv(output_dir="data/csv_exports", database_url=None):
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Define the models explicitly if Base.metadata.tables isn't reliable or desired
+# Alternatively, rely on Base.metadata.tables which should be populated after model definition
+# Example: table_models = { 'department': Department, 'course': Course, ... }
+
+# Renamed db parameter to session for clarity
+def export_tables_to_csv(session: Session = None,
+                         output_dir: str = None,
+                         table_names: list[str] = None) -> dict:
     """
-    Export all database tables to CSV files
+    Exports specified tables to CSV files.
 
     Args:
-        output_dir (str): Directory where CSV files will be saved
-        database_url (str): Database URL to connect to (defaults to module-level DATABASE_URL)
+        session (Session, optional): Existing database session. If None, a new one is created.
+        output_dir (str, optional): Directory to save CSV files. Defaults to '../../data/csv_exports'.
+        table_names (list[str], optional): List of table names to export. If None, attempts to use Base.metadata.
 
     Returns:
-        dict: A dictionary with table names as keys and export status as values
+        dict: Status of export for each table ('success' or error message).
     """
-    # Use the provided database_url or default to the module-level constant
-    db_url = database_url or DATABASE_URL
-
-    # Create the engine
-    engine = create_engine(db_url)
-
-    # Create a directory to save the CSV files
-    os.makedirs(output_dir, exist_ok=True)
-
     results = {}
+    close_session_after = False
+    if session is None:
+        session = SessionLocal()
+        close_session_after = True
+        logging.info("Created new DB session for CSV export.")
 
-    # Export each table to a CSV file
-    for table in tables:
-        try:
-            # Read the table into a DataFrame
-            df = pd.read_sql_table(table, con=engine)
+    if output_dir is None:
+        # Default output directory relative to this file's location
+        output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/csv_exports"))
 
-            # Define the output file path
-            output_file = os.path.join(output_dir, f"{table}.csv")
+    logging.info(f"Exporting tables to CSV in directory: {output_dir}")
 
-            # Write the DataFrame to a CSV file
-            df.to_csv(output_file, index=False)
-            print(f"Exported {table} to {output_file}")
-            results[table] = "success"
+    try:
+        # Ensure output directory exists
+        os.makedirs(output_dir, exist_ok=True)
 
-        except SQLAlchemyError as e:
-            print(f"Database error while exporting {table}: {e}")
-            results[table] = f"database_error: {str(e)}"
-        except FileNotFoundError as e:
-            print(f"File not found error while exporting {table}: {e}")
-            results[table] = f"file_not_found: {str(e)}"
-        except pd.errors.EmptyDataError as e:
-            print(f"Empty data error while exporting {table}: {e}")
-            results[table] = f"empty_data: {str(e)}"
-        except Exception as e: # pylint: disable=broad-exception-caught
-            print(f"Unexpected error while exporting {table}: {e}")
-            results[table] = f"unexpected_error: {str(e)}"
+        tables_to_process = []
+        if table_names:
+            tables_to_process = table_names
+            logging.info(f"Exporting specified tables: {tables_to_process}")
+        elif hasattr(Base, 'metadata') and Base.metadata.tables:
+            tables_to_process = list(Base.metadata.tables.keys())
+            logging.info(f"Exporting tables found in metadata: {tables_to_process}")
+        else:
+             logging.error("No table names provided and Base.metadata.tables is not populated. Cannot determine tables to export.")
+             return {"error": "Metadata not found and no table names specified"}
+
+        # Iterate through the determined list of table names
+        for table_name in tables_to_process:
+            # Check if table actually exists in metadata if using fallback (optional safety check)
+            # if table_names is None and table_name not in Base.metadata.tables:
+            #    logging.warning(f"Skipping '{table_name}' as it wasn't found in Base.metadata after initial listing.")
+            #    continue
+
+            csv_file_path = os.path.join(output_dir, f"{table_name}.csv")
+            logging.debug(f"Attempting to export table '{table_name}' to '{csv_file_path}'")
+            try:
+                # Use pandas to read SQL table and write to CSV
+                # Using the session's connection for transaction context
+                df = pd.read_sql_table(table_name, con=session.connection())
+                df.to_csv(csv_file_path, index=False, encoding='utf-8')
+                results[table_name] = "success"
+                logging.info(f"Successfully exported table '{table_name}' to {csv_file_path}")
+            except SQLAlchemyError as e:
+                error_msg = f"SQLAlchemyError exporting table {table_name}: {e}"
+                logging.error(error_msg)
+                results[table_name] = error_msg
+            except IOError as e:
+                error_msg = f"IOError writing CSV for table {table_name} to {csv_file_path}: {e}"
+                logging.error(error_msg)
+                results[table_name] = error_msg
+            except Exception as e: # Catch other potential errors like pandas issues
+                error_msg = f"Unexpected error exporting table {table_name}: {e}"
+                logging.exception(error_msg) # Use exception for full traceback
+                results[table_name] = error_msg
+
+    except OSError as e:
+         # Error during makedirs
+         error_msg = f"OSError creating output directory {output_dir}: {e}"
+         logging.error(error_msg)
+         return {"error": error_msg}
+    except Exception as e:
+        # Catch-all for other unexpected errors during setup
+        error_msg = f"Unexpected error during CSV export setup: {e}"
+        logging.exception(error_msg)
+        return {"error": error_msg}
+
+    finally:
+        if close_session_after and session:
+            session.close()
+            logging.info("Closed DB session created for CSV export.")
 
     return results
 

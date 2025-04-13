@@ -196,7 +196,19 @@ const MultiSelectDropdown = ({
             return (
               <div key={path + group} className="dropdown-group">
                 <div className="dropdown-group-label" onClick={toggle}>
-                <span>{group}</span>
+                <span>
+                  {group === "Core Requirements" ? (
+                    <>
+                      <strong>Core</strong> Requirements
+                    </>
+                  ) : group === "GenEd Requirements" ? (
+                    <>
+                      <em>Gen-Ed</em> Requirements
+                    </>
+                  ) : (
+                    group
+                  )}
+                </span>
                 <span>{isExpanded ? "▼" : "▶"}</span>
                 </div>
 
@@ -255,8 +267,12 @@ const MultiSelectDropdown = ({
       <button className="dropdown-btn" onClick={toggleDropdown}>
         {showSelectedInButton && selectedForMajor.length > 0
           ? selectedForMajor
-              .map((val) => displayMap[val] || val)
-              .join(", ")
+              .map((val) => {
+                if (val === "core") return <strong key={val}>Core</strong>;
+                if (val === "gened") return <em key={val}>Gen-Ed</em>;
+                return displayMap[val] || val;
+              })
+              .reduce((prev, curr, i) => [prev, ", ", curr])
           : "Select ▼"}
       </button>
 
@@ -325,7 +341,13 @@ const MultiSelectDropdown = ({
                         handleFilterChange(major, newSelection);
                       }}
                     />
-                    {displayMap[raw] || label}
+                    {raw === "core" ? (
+                      <strong>Core</strong>
+                    ) : raw === "gened" ? (
+                      <em>Gen-Ed</em>
+                    ) : (
+                      displayMap[raw] || label
+                    )}
                   </label>
                 );
               })

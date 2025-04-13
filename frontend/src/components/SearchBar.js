@@ -25,16 +25,16 @@ const SearchBar = ({
   // Set default values on component mount if not already set
   useEffect(() => {
     // Default location to Qatar if not already set
-    if (offeredQatar === null) {
-      setOfferedQatar(true);
-    }
+    // if (offeredQatar === null) {
+    //   setOfferedQatar(true); // Removed: This prevents unchecking Qatar
+    // }
 
     // Default course type to both Core and GenEd if not already set
     if (coreOnly === null && genedOnly === null) {
       setCoreOnly(true);
       setGenedOnly(true);
     }
-  }, [offeredQatar, coreOnly, genedOnly, setOfferedQatar, setCoreOnly, setGenedOnly]);
+  }, [coreOnly, genedOnly, setCoreOnly, setGenedOnly]);
 
   // Fetch departments from API
   useEffect(() => {

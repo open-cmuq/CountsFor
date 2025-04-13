@@ -111,10 +111,11 @@ const PlanCourseTab = () => {
 
 
   return (
-    <div className="plan-tab">
+    <div className="plan-tab-container table-container">
       <h1 className="title">Plan Courses</h1>
+      <p className="subtitle">Add courses from the main table or search to build and manage your course plan.</p>
 
-      <div className="search-container">
+      <div className="search-bar-container">
         <div className="search-bar-enhanced">
         <input
             className="search-input"
