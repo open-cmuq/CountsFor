@@ -31,6 +31,7 @@ Welcome to the **GenEd-CMUQ** repository! This project is designed to create a w
 ### **4️⃣ `frontend/`** - Contains frontend code for user interaction.
    - **`public/`** → Static assets for the frontend (in progress).
    - **`src/`** → Source code for frontend components (in peogress).
+   - **`tests/`** → Contains unit tests for frontend components functionality.
 
 ### **5️⃣ `analytics/`** - Scripts for data analysis and predictive modeling.
    - **`predict_next_sem.py`** → A script for predicting course demand for the next semester.
