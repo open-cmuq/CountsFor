@@ -18,7 +18,7 @@
     "react-draggable": "^4.4.6",
     "react-plotly.js": "^2.6.0",
     "react-resizable": "^3.0.5",
-    "react-router-dom": "^7.4.0",
+    "react-router-dom": "^7.5.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
@@ -47,6 +47,16 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "^22.13.13"
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
+    "@types/node": "^22.13.13",
+    "babel-jest": "^29.7.0",
+    "identity-obj-proxy": "^3.0.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(css|less|scss)$": "identity-obj-proxy"
+    }
   }
 }
