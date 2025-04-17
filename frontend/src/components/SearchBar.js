@@ -69,14 +69,7 @@ const SearchBar = ({
     <div className="search-container">
       <label className="search-label">SEARCH</label>
       <div className="search-bar-row">
-        {/* Course Search Input */}
-        <input
-          type="text"
-          placeholder="Search for a specific course number"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="text-input"
-        />
+
 
       {/* Department Dropdown */}
       <div className="filter-group">
@@ -140,7 +133,15 @@ const SearchBar = ({
           }}
         />
     </div>
-
+    
+        {/* Course Search Input */}
+        <input
+          type="text"
+          placeholder="Search for a specific course number"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className="text-input"
+        />
 
       {/* Search & Clear Buttons */}
       <button className="search-btn">🔍</button>
