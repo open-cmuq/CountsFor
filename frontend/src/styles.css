@@ -2,22 +2,6 @@
     padding: 20px;
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th {
-    background-color: #f4f4f4;
-    font-weight: bold;
-  }
-
-  td:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-  }
-
-
   .header-ba {
     background-color: #4A68FB; /* Blue */
     color: white;
@@ -265,6 +249,8 @@
   th {
     background-color: #f4f4f4;
     font-weight: bold;
+    max-width: 120px;
+    overflow-wrap: break-word;
   }
 
   td:hover {
@@ -397,12 +383,6 @@ table {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: normal;
-  }
-
-  th, td {
-    padding: 10px;
-    text-align: center;
-    border-radius: 6px;
   }
 
 /* Gray out N/A cells */
