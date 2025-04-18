@@ -1028,6 +1028,29 @@ table {
   animation: spin 1s linear infinite;
 }
 
+/* NEW: Style for the sort button */
+.sort-by-reqs-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease, color 0.3s ease;
+  background-color: black;
+  color: white;
+}
+
+.sort-by-reqs-btn:hover {
+  background-color: #333; /* Slightly different hover from others? */
+  transform: scale(1.03);
+}
+
+/* No specific disabled style needed unless we add a condition to disable it */
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 
 
 

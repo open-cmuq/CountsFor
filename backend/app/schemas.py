@@ -83,6 +83,8 @@ class CombinedCourseFilter(BaseModel):
     offered_qatar: Optional[bool] = Field(None, description="Filter by courses offered in Qatar")
     offered_pitts: Optional[bool] = Field(None, description="Filter by courses offered in "
     "Pittsburgh")
+    sort_by_reqs: Optional[bool] = Field(False, description="Sort results by number of met\
+                                          requirements (descending)")
 
 class EnrollmentDataItem(BaseModel):
     """Schema for individual enrollment data."""
