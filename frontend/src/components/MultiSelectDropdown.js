@@ -31,7 +31,7 @@ const MultiSelectDropdown = ({
       const current = major ? (selectedFilters[major] || []) : selectedFilters;
       setTempSelection(current);
     }
-  }, [isOpen, major, selectedFilters]);  
+  }, [isOpen, major, selectedFilters]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -163,6 +163,20 @@ const MultiSelectDropdown = ({
     return tree;
   };
 
+  // Helper function to recursively get all raw values from a node and its children
+  const getAllRawValues = (node) => {
+    let values = [];
+    if (node._items) {
+      values = values.concat(node._items.map(item => item.rawValue));
+    }
+    Object.keys(node)
+      .filter(key => key !== '_items')
+      .forEach(key => {
+        values = values.concat(getAllRawValues(node[key]));
+      });
+    return values;
+  };
+
   const renderGroupTree = (node, path = "") => {
     return (
       <>
@@ -223,24 +237,30 @@ const MultiSelectDropdown = ({
                 {isExpanded && (
                   <div className="dropdown-subgroup">
                     {/* Select all in group */}
-                    {child._items?.length > 1 && (
-                      <label className="dropdown-item nested">
-                      <input
-                        type="checkbox"
-                        checked={child._items.every(item =>
-                          tempSelection.includes(item.rawValue)
-                        )}
-                        onChange={(e) => {
-                          const groupValues = child._items.map(item => item.rawValue);
-                          const newSelection = e.target.checked
-                            ? [...new Set([...tempSelection, ...groupValues])]
-                            : tempSelection.filter(val => !groupValues.includes(val));
-                          setTempSelection(newSelection); 
-                        }}
-                      />
-                      <strong>Select All in {group}</strong>
-                      </label>
-                    )}
+                    {(() => {
+                      const allGroupValues = getAllRawValues(child);
+                      // Use tempSelection for checked state calculation inside dropdown
+                      const isGroupSelected = allGroupValues.length > 0 && allGroupValues.every(val => tempSelection.includes(val));
+                      // Render only if there are items to select/deselect
+                      if (allGroupValues.length === 0) return null;
+
+                      return (
+                        <label className="dropdown-item nested">
+                          <input
+                            type="checkbox"
+                            checked={isGroupSelected} // Use tempSelection-based state
+                            onChange={(e) => {
+                              // Use pre-calculated allGroupValues
+                              const newSelection = e.target.checked
+                                ? [...new Set([...tempSelection, ...allGroupValues])] // Add all group values to temp
+                                : tempSelection.filter(val => !allGroupValues.includes(val)); // Remove all group values from temp
+                              setTempSelection(newSelection);
+                            }}
+                          />
+                          <strong>Select All in {group}</strong>
+                        </label>
+                      );
+                    })()}
 
                     {/* Recursively render children */}
                     {renderGroupTree(child, path + group + " > ")}
@@ -271,7 +291,7 @@ const MultiSelectDropdown = ({
     const temp = tempSelection.slice().sort();
     return current.length !== temp.length || !current.every((v, i) => v === temp[i]);
   };
-  
+
 
 
   return (
@@ -325,11 +345,11 @@ const MultiSelectDropdown = ({
         <button
           className={`drop-apply-btn ${isDirty() ? 'active' : 'disabled'}`}
           onClick={() => {
-            if (!isDirty()) return; 
+            if (!isDirty()) return;
             handleFilterChange(major, tempSelection);
             setIsOpen(false);
           }}
-          disabled={!isDirty()} 
+          disabled={!isDirty()}
         >
           Apply Filters
         </button>
@@ -367,7 +387,7 @@ const MultiSelectDropdown = ({
                       const newSelection = e.target.checked
                         ? [...tempSelection, raw]
                         : tempSelection.filter(item => item !== raw);
-                      setTempSelection(newSelection); 
+                      setTempSelection(newSelection);
                     }}
                   />
                     {raw === "core" ? (

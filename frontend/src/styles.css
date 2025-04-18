@@ -441,7 +441,12 @@ table {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    width: 350px;
+    width: 400px;
+    font-size: 0.95rem;
+    height: 49px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
   }
 
   .search-btn {
@@ -719,7 +724,7 @@ table {
     gap: 5px;
     margin-bottom: 5px;
   }
-  
+
   .select-all-btn {
     background-color: #bbbbbb;
     color: white;
@@ -732,13 +737,13 @@ table {
     font-size: 15px;
     width: 100%;
   }
-  
+
   /* Hover effect */
   .select-all-btn:hover {
     background-color: darkred;
     transform: scale(1.01);
   }
-  
+
   /* Disabled state for Clear All */
   .clear-btn:disabled {
     background-color: #888888;
@@ -1035,6 +1040,7 @@ table {
   animation: spin 1s linear infinite;
 }
 
+/* Styles for Apply button in dropdown */
 .drop-apply-btn {
   background-color: #bbbbbb;
   color: white;
@@ -1043,6 +1049,7 @@ table {
   padding: 7px 10px;
   cursor: pointer;
   transition: all 0.4s ease;
+  margin-top: 5px; /* Added margin top */
   margin-bottom: 3px;
   font-weight: bold;
   font-size: 15px;
@@ -1051,7 +1058,7 @@ table {
 }
 
 .drop-apply-btn:hover {
-  background-color: #1c0000; /* Blue hover */
+  background-color: #1c0000; /* Dark red hover */
   transform: scale(1.01);
 }
 
@@ -1069,8 +1076,89 @@ table {
   opacity: 0.7;
 }
 
+/* Style for the sort button */
+.sort-by-reqs-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease, color 0.3s ease;
+  background-color: black;
+  color: white;
+}
 
+.sort-by-reqs-btn:hover {
+  background-color: #333;
+  transform: scale(1.03);
+}
 
+/* No specific disabled style needed unless we add a condition to disable it */
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Style specifically for the search input in the Plan tab */
+.plan-tab-search-input {
+  width: 200px !important; /* Set specific width */
+  flex: none !important;   /* Prevent flex grow/shrink */
+}
+
+/* NEW Styles for Search Bar Restructure */
+.search-header-row {
+  display: flex;
+  gap: 20px; /* Match content row gap */
+  align-items: baseline; /* Align text baselines */
+  padding: 0 5px; /* Optional padding */
+  margin-bottom: 5px;
+}
+
+/* Wrapper for SEARCH label */
+.search-label-wrapper {
+  flex: 2; /* Match input wrapper flex */
+}
+
+/* Wrapper for FILTER label */
+.filter-label-wrapper {
+  flex: 3; /* Match filters wrapper flex */
+}
+
+.filter-section-label {
+  font-weight: bold;
+  font-size: 25px; /* Match .search-label size */
+  display: block; /* Ensure it behaves as a block */
+}
+
+.search-content-row {
+  display: flex;
+  gap: 20px; /* Adjust gap between input and filters */
+  align-items: center; /* Changed from flex-start to center */
+}
+
+.search-input-wrapper {
+  flex: 2; /* Input column takes roughly 2 parts */
+}
+
+.search-input-wrapper .text-input {
+  width: 100%; /* Make input fill its wrapper */
+}
+
+.search-filters-wrapper {
+  flex: 3; /* Filters column takes roughly 3 parts */
+  display: flex;
+  gap: 15px; /* Gap between filter groups */
+  flex-wrap: wrap;
+}
+
+/* Ensure filter labels align correctly within their groups */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* END NEW Styles */
 
 
 

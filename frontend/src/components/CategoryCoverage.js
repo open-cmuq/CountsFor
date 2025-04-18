@@ -72,14 +72,33 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
   // Prepare trace data if we have chartData
   let plotTrace = null;
   if (chartData && chartData.coverage) {
-    // Sort the coverage data by course count (ascending)
-    const sortedCoverage = [...chartData.coverage].sort((a, b) => a.num_courses - b.num_courses);
-    const xData = sortedCoverage.map(item => item.num_courses);
-    const yData = sortedCoverage.map(item => {
-      // Extract a shorter requirement label (the text after the last '---')
+    // --- Aggregate data by the short label ---
+    const aggregatedData = {};
+    chartData.coverage.forEach(item => {
       const parts = item.requirement.split('---');
-      return parts[parts.length - 1].trim();
+      const shortLabel = parts[parts.length - 1].trim();
+      if (!aggregatedData[shortLabel]) {
+        aggregatedData[shortLabel] = 0;
+      }
+      // Only add if num_courses is greater than 0 to avoid empty bars cluttering
+      if (item.num_courses > 0) {
+          aggregatedData[shortLabel] += item.num_courses;
+      }
     });
+
+    // --- Convert aggregated data to points, filter out zero counts, and sort ---
+    const plotPoints = Object.entries(aggregatedData)
+                             .filter(([label, count]) => count > 0) // Ensure no zero counts slip through
+                             .map(([label, count]) => ({ label, count }))
+                             .sort((a, b) => a.count - b.count); // Sort ascending by count
+
+    // --- Generate plot data from aggregated points ---
+    const xData = plotPoints.map(p => p.count);
+    const yData = plotPoints.map(p => p.label);
+    const colors = plotPoints.map((_, index) =>
+      index % 2 === 0 ? '#4A68FB' : '#D3D3D3' // Blue and Light Grey
+    );
+
     plotTrace = {
       x: xData,
       y: yData,
@@ -87,7 +106,7 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
       orientation: 'h',
       hovertemplate: 'Count: %{x}<extra></extra>',
       marker: {
-        color: '#4A68FB'  // Using the same blue as other components
+        color: colors // Assign the array of colors based on aggregated data
       }
     };
   }
@@ -101,6 +120,9 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         maxWidth: "none"
       }}>
         <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Category Coverage</h2>
+        <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
+          See how many courses satisfy each requirement category for a specific major and semester.
+        </p>
         <div className="search-inputs" style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
           <label className="search-label">
             Major:&nbsp;

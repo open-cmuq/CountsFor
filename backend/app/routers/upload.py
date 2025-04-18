@@ -169,7 +169,8 @@ async def initialize_database(
 
         if valid_audit_zips:
             prepared_paths["audit_root"] = os.path.join(UPLOAD_DIR, "audit")
-            folders_to_clear.append("audit")
+            # Don't add "audit" to folders_to_clear here initially
+            # folders_to_clear.append("audit")
             upload_content["audits"] = True
         else: valid_audit_zips = []
 
@@ -246,7 +247,16 @@ async def initialize_database(
                          logging.info("Found major folders directly within temp extraction dir.")
 
                 if not source_audit_dir:
+                     # Clean up temp dir before raising the error
+                     if temp_extract_dir.exists():
+                         shutil.rmtree(temp_extract_dir)
+                         logging.debug(f"Cleaned up temporary audit extraction dir after failed structure check: {temp_extract_dir}")
                      raise HTTPException(status_code=400, detail="Could not find expected major subfolders (ba, bio, cs, is) within the extracted audit ZIP content.")
+
+                # --- Clear existing audit data ONLY after successful validation and structure check ---
+                logging.info("Audit ZIP structure validated. Clearing existing audit data.")
+                clear_existing_data(["audit"])
+                # ------------------------------------------------------------------------------------
 
                 # Move only the allowed major folders to the final destination
                 for major_folder in source_audit_dir.iterdir():

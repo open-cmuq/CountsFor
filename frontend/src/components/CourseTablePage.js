@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles.css";
 import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
@@ -18,6 +18,9 @@ const CourseTablePage = () => {
   const [searchQuery, setSearchQuery] = useState(() => {
     return localStorage.getItem("searchQuery") || "";
   });
+
+  // New state for debounced search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
 
   // States for offered-location checkboxes
   const [offeredQatar, setOfferedQatar] = useState(() => {
@@ -80,6 +83,12 @@ const CourseTablePage = () => {
   // Loading state for the CourseTable
   const [loading, setLoading] = useState(true);
 
+  // State for sort mode ('code' or 'reqs')
+  const [sortMode, setSortMode] = useState('code');
+
+  // Ref for AbortController
+  const abortControllerRef = useRef(null);
+
   // Save states to localStorage
   useEffect(() => {
     localStorage.setItem("selectedDepartments", JSON.stringify(selectedDepartments));
@@ -105,7 +114,18 @@ const CourseTablePage = () => {
     compactViewMode
   ]);
 
-  // Pagination logic
+  // Effect to debounce search query
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350); // ~350ms debounce delay
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchQuery]);
+
+  // Pagination logic (now uses 'courses' directly as it comes sorted from backend)
   const totalPages = Math.ceil(courses.length / coursesPerPage);
   const indexOfLastCourse = currentPage * coursesPerPage;
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
@@ -113,10 +133,11 @@ const CourseTablePage = () => {
 
   // Update current page to the last valid page if the number of courses changes
   useEffect(() => {
-    const totalPages = Math.ceil(courses.length / coursesPerPage);
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
+    const newTotalPages = Math.ceil(courses.length / coursesPerPage); // Use courses.length
+    if (currentPage > newTotalPages && newTotalPages > 0) {
+      setCurrentPage(newTotalPages);
     }
+    // No longer depends on sortedCourses
   }, [courses, coursesPerPage, currentPage]);
 
   // Scroll to top when switching pages
@@ -179,45 +200,18 @@ const CourseTablePage = () => {
     fetchRequirements();
   }, []);
 
-  // Memoize the helper function so it only changes when coreOnly or genedOnly change.
-  const courseMatchesRequirementFilter = useCallback((course) => {
-    // If BOTH Core and GenEd are selected (or potentially neither, though UI might prevent),
-    // do not filter based on requirement type. Show all courses that pass other filters.
-    if ((coreOnly && genedOnly) || (!coreOnly && !genedOnly) ) {
-      return true; // Don't filter by type
-    }
-
-    // --- Apply filter only if exactly ONE type is selected ---
-
-    if (!course.requirements) {
-        return false; // No requirements means it cannot match a specific type filter
-    }
-
-    const majors = Object.keys(course.requirements);
-    for (const major of majors) {
-      if (course.requirements[major]) { // Check if major requirements exist
-          for (const reqObj of course.requirements[major]) {
-            // reqObj.type is true for GenEd, false for Core
-            // If coreOnly is true (and genedOnly must be false here), check for Core type
-            if (coreOnly && !reqObj.type) return true;
-            // If genedOnly is true (and coreOnly must be false here), check for GenEd type
-            if (genedOnly && reqObj.type) return true;
-          }
-      }
-    }
-
-    return false; // No matching requirement type found for the single selected type
-  }, [coreOnly, genedOnly]);
-
   // Fetch courses using combined filters from backend
   useEffect(() => {
+    // Abort previous fetch request before starting a new one
+    abortControllerRef.current?.abort();
+    // Create a new AbortController for the current request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const fetchCourses = async () => {
       setLoading(true);
       try {
-        // for multi-select
         const departmentsToFetch = selectedDepartments;
-
-        // If no departments are selected, send one request without the department param
         const queries = departmentsToFetch.length > 0 ? departmentsToFetch : [null];
 
         const results = await Promise.all(
@@ -225,7 +219,8 @@ const CourseTablePage = () => {
             const params = new URLSearchParams();
 
             if (dep) params.append("department", dep);
-            if (searchQuery) params.append("searchQuery", formatCourseCode(searchQuery));
+            // Use debounced query for API call
+            if (debouncedSearchQuery) params.append("searchQuery", formatCourseCode(debouncedSearchQuery));
             if (selectedOfferedSemesters.length > 0)
               params.append("semester", selectedOfferedSemesters.join(","));
             if (noPrereqs === false) params.append("has_prereqs", false);
@@ -241,58 +236,59 @@ const CourseTablePage = () => {
             if (selectedFilters.BS.length > 0)
               params.append("bs_requirement", selectedFilters.BS.join(","));
 
+            // Append sort parameter based on state
+            if (sortMode === 'reqs') {
+              params.append("sort_by_reqs", "true");
+            }
+
             const url = `${API_BASE_URL}/courses/search?${params.toString()}`;
             console.log("Fetching:", url);
-            const response = await fetch(url);
-            if (!response.ok) return [];
+            const response = await fetch(url, { signal: controller.signal }); // Pass signal
+
+            if (response.status === 404) return [];
+            if (!response.ok) {
+               console.error("API Error:", response.status, await response.text());
+               return [];
+            }
 
             const data = await response.json();
             return data.courses || [];
           })
         );
 
-        // Flatten and deduplicate
         const allCourses = results.flat();
         const uniqueCourses = Array.from(
           new Map(allCourses.map((c) => [c.course_code, c])).values()
         );
-
-        // Apply additional filtering to enforce AND logic between different major categories
-        let filteredCourses = uniqueCourses;
-
-        // Get list of majors with active filters
-        const majorsWithFilters = Object.keys(selectedFilters).filter(
-          major => selectedFilters[major] && selectedFilters[major].length > 0
-        );
-
-        // If multiple major categories have active filters, apply AND logic
-        if (majorsWithFilters.length > 1) {
-          filteredCourses = uniqueCourses.filter(course => {
-            // Check if course fulfills requirements for ALL majors with active filters
-            return majorsWithFilters.every(major => {
-              const majorRequirements = course.requirements[major] || [];
-              // Check if any requirements in this major match the selected filters
-              return majorRequirements.some(reqObj =>
-                selectedFilters[major].includes(reqObj.requirement)
-              );
-            });
-          });
-        }
-
-        // Apply Core/GenEd filter
-        filteredCourses = filteredCourses.filter(courseMatchesRequirementFilter);
-        setCourses(filteredCourses);
+        setCourses(uniqueCourses);
       } catch (error) {
-        console.error("Error fetching courses:", error);
+         // Ignore AbortError, log others
+         if (error.name !== 'AbortError') {
+            console.error("Error fetching courses:", error);
+            setCourses([]);
+         } else {
+            console.log("Fetch aborted");
+         }
       } finally {
-        setLoading(false);
+         // Check if the controller associated with this fetch is still the current one
+         // before setting loading to false. Avoids race conditions.
+         if (controller.signal.aborted) {
+             console.log("Fetch was aborted, loading state not changed.")
+         } else {
+             setLoading(false);
+         }
       }
     };
 
     fetchCourses();
+
+    // Cleanup function to abort fetch if component unmounts or deps change
+    return () => {
+        controller.abort();
+    };
   }, [
     selectedDepartments,
-    searchQuery,
+    debouncedSearchQuery,
     selectedOfferedSemesters,
     noPrereqs,
     offeredQatar,
@@ -300,7 +296,7 @@ const CourseTablePage = () => {
     selectedFilters,
     coreOnly,
     genedOnly,
-    courseMatchesRequirementFilter,
+    sortMode
   ]);
 
   // Fetch all semesters from the dedicated endpoint
@@ -336,6 +332,11 @@ const CourseTablePage = () => {
 
   const removeOfferedSemester = (semester) => {
     setSelectedOfferedSemesters((prev) => prev.filter((s) => s !== semester));
+  };
+
+  // New handler to remove/reset the prerequisite filter
+  const removePrereqFilter = () => {
+    setNoPrereqs(null); // Set state back to default (null)
   };
 
   const handleRemoveCourse = (courseCode) => {
@@ -393,6 +394,11 @@ const CourseTablePage = () => {
   selectedFilters.IS.length > 0 ||
   selectedOfferedSemesters.length > 0;
 
+  // Handler to toggle sorting state
+  const toggleSortByReqs = () => {
+    setSortMode(prev => prev === 'code' ? 'reqs' : 'code');
+    // No need to manually sort here, useEffect will refetch
+  };
 
   return (
     <div className="table-container">
@@ -421,39 +427,40 @@ const CourseTablePage = () => {
         handleFilterChange={handleFilterChange}
         selectedOfferedSemesters={selectedOfferedSemesters}
         removeOfferedSemester={removeOfferedSemester}
-        noPrereqs={noPrereqs}  
-        setNoPrereqs={setNoPrereqs}
+        noPrereqs={noPrereqs}
+        removePrereqFilter={removePrereqFilter}
+        allRequirements={requirements}
       />
 
-      {/* Top-left pagination, compact view, clear filter, add courses to plan button*/}
+      {/* Top-left pagination, compact view, clear filter, add courses to plan button, sort button */}
       <div className="view-toolbar">
         <span className="view-count">
           Showing {indexOfFirstCourse + 1} - {Math.min(indexOfLastCourse, courses.length)} of {courses.length}
         </span>
 
-      <select
-        className="view-toggle"
-        value={compactViewMode}
-        onChange={(e) => setCompactViewMode(e.target.value)}
-        style={{ margin: "6px", padding: "5px" }}
-      >
-        <option value="full">Full Requirements View</option>
-        <option value="last2">Summarized Requirements View</option>
-        <option value="last1">Compact Requirements View</option>
-      </select>
+        <select
+          className="view-toggle"
+          value={compactViewMode}
+          onChange={(e) => setCompactViewMode(e.target.value)}
+          style={{ margin: "6px", padding: "5px" }}
+        >
+          <option value="full">Full View</option>
+          <option value="last2">Compact (Last 2)</option>
+          <option value="last1">Most Compact (Last 1)</option>
+        </select>
 
-      <button
-        className={`clear-all-filters-btn ${!hasActiveFilters ? "disabled" : ""}`}
-        onClick={() => hasActiveFilters && setShowClearPopup(true)}
-        disabled={!hasActiveFilters}
-        title={hasActiveFilters ? "Click to reset all filters" : "No filters to clear!"}
-      >
-        Clear All Filters
-      </button>
-
-
-      {courses.length > 0 && (
         <button
+          className={`clear-all-filters-btn ${!hasActiveFilters ? "disabled" : ""}`}
+          onClick={() => hasActiveFilters && setShowClearPopup(true)}
+          disabled={!hasActiveFilters}
+          title={hasActiveFilters ? "Click to reset all filters" : "No filters to clear!"}
+        >
+          Clear All Filters
+        </button>
+
+        {/* Add All to Plan Button */}
+        {courses.length > 0 && (
+          <button
             className={`add-all-btn ${allAlreadyAdded ? "disabled" : ""}`}
             disabled={allAlreadyAdded}
             title={allAlreadyAdded ? "All courses listed already in plan" : "Click to add all courses to plan"}
@@ -464,10 +471,23 @@ const CourseTablePage = () => {
                 addCoursesToPlan(courses);
               }
             }}
+            style={{ marginLeft: '8px' }} // Add margin if needed
           >
             {allAlreadyAdded ? "All Courses in Plan" : "Add All to Plan"}
-        </button>
-      )}
+          </button>
+        )}
+
+        {/* Sort Button - Updated */}
+        {courses.length > 0 && (
+          <button
+            className="sort-by-reqs-btn"
+            onClick={toggleSortByReqs}
+            title={sortMode === 'reqs' ? "Click to sort by course code" : "Click to sort by requirements met"}
+            style={{ marginLeft: '8px' }}
+          >
+            {sortMode === 'reqs' ? "Sort by Course Code" : "Sort by Requirements Met"}
+          </button>
+        )}
 
       </div>
 
@@ -485,9 +505,9 @@ const CourseTablePage = () => {
           data-testid="loading-spinner"
         />
         </div>
-      ) : (
+      ) : courses.length > 0 ? ( // Check if courses array has items before rendering table
         <CourseTable
-          courses={currentCourses}
+          courses={currentCourses} // Pass paginated courses (already sorted)
           allRequirements={requirements}
           selectedFilters={selectedFilters}
           handleFilterChange={handleFilterChange}
@@ -495,14 +515,22 @@ const CourseTablePage = () => {
           offeredOptions={offeredOptions}
           selectedOfferedSemesters={selectedOfferedSemesters}
           setSelectedOfferedSemesters={setSelectedOfferedSemesters}
-          coreOnly={coreOnly}
-          genedOnly={genedOnly}
+          coreOnly={coreOnly} // Pass these down if CourseTable needs them
+          genedOnly={genedOnly}// Pass these down if CourseTable needs them
           handleRemoveCourse={handleRemoveCourse}
           noPrereqs={noPrereqs}
           setNoPrereqs={setNoPrereqs}
           compactViewMode={compactViewMode}
           allowRemove={false}
         />
+      ) : (
+          // Optional: Display a message when filters result in no courses
+          // Check if not loading AND no courses AND there are active filters
+          !loading && courses.length === 0 && hasActiveFilters && (
+              <div className="no-results-msg">
+                  No courses match your current filter selection.
+              </div>
+          )
       )}
 
       {toast.show && (
@@ -579,7 +607,6 @@ const CourseTablePage = () => {
           {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
         </select>
       </div>
-
 
     </div>
   );

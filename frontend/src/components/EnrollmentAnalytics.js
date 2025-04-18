@@ -82,6 +82,16 @@ const AggregatedEnrollmentAnalytics = () => {
       });
   };
 
+  // Handle Enter key press for adding a course
+  const handleKeyDownAggregated = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addCourse();
+      // We might not want to blur here if the user intends to add multiple courses quickly
+      // event.target.blur();
+    }
+  };
+
   // Gather all semesters across all courses & sort them chronologically
   const getAllSemestersSorted = () => {
     const semesterSet = new Set();
@@ -127,11 +137,15 @@ const AggregatedEnrollmentAnalytics = () => {
   return (
     <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
       <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Enrollment Analytics Across Courses</h2>
+      <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
+        View past enrollment across different classes and compare trends between courses.
+      </p>
       <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
           value={courseInput}
           onChange={(e) => setCourseInput(e.target.value)}
+          onKeyDown={handleKeyDownAggregated}
           placeholder="Enter course code"
           className="text-input"
           style={{ width: "200px" }}
@@ -252,6 +266,15 @@ const ClassEnrollmentAnalytics = () => {
       });
   };
 
+  // Handle Enter key press for loading a course
+  const handleKeyDownClass = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      loadCourse();
+      event.target.blur(); // Blur after loading seems appropriate
+    }
+  };
+
   const getAllSemestersSorted = () => {
     const semesterSet = new Set();
     if (courseData) {
@@ -313,11 +336,15 @@ const ClassEnrollmentAnalytics = () => {
   return (
     <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
       <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Enrollment Analytics Across Classes</h2>
+      <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
+        Analyze past enrollment for a single course, find out which batch of students usually take it.
+      </p>
       <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
           value={courseInput}
           onChange={(e) => setCourseInput(e.target.value)}
+          onKeyDown={handleKeyDownClass}
           placeholder="Enter course code"
           className="text-input"
           style={{ width: "200px" }}

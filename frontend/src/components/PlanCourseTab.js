@@ -118,7 +118,7 @@ const PlanCourseTab = () => {
       <div className="search-bar-container">
         <div className="search-bar-enhanced">
         <input
-            className="search-input"
+            className="search-input plan-tab-search-input"
             type="text"
             placeholder="Search by course code (e.g. 15122 or 15-122)"
             value={searchQuery}
