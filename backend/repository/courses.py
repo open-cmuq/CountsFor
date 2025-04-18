@@ -216,15 +216,16 @@ class CourseRepository:
                 actual_bs = set(r['requirement']
                                 for r in requirements_dict.get('BS', []))
 
-                # Check if ALL specified requirements for EACH major are met
+                # Check if AT LEAST ONE specified requirement for EACH major is met
+                # (OR within major, AND across majors)
                 cs_match = not required_cs_set or \
-                           required_cs_set.issubset(actual_cs)
+                           bool(required_cs_set.intersection(actual_cs))
                 is_match = not required_is_set or \
-                           required_is_set.issubset(actual_is)
+                           bool(required_is_set.intersection(actual_is))
                 ba_match = not required_ba_set or \
-                           required_ba_set.issubset(actual_ba)
+                           bool(required_ba_set.intersection(actual_ba))
                 bs_match = not required_bs_set or \
-                           required_bs_set.issubset(actual_bs)
+                           bool(required_bs_set.intersection(actual_bs))
 
                 # The course must satisfy the requirements for all majors
                 # for which requirements were specified
