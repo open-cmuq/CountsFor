@@ -334,6 +334,11 @@ const CourseTablePage = () => {
     setSelectedOfferedSemesters((prev) => prev.filter((s) => s !== semester));
   };
 
+  // New handler to remove/reset the prerequisite filter
+  const removePrereqFilter = () => {
+    setNoPrereqs(null); // Set state back to default (null)
+  };
+
   const handleRemoveCourse = (courseCode) => {
     setCourses((prev) => prev.filter((c) => c.course_code !== courseCode));
   };
@@ -422,6 +427,8 @@ const CourseTablePage = () => {
         handleFilterChange={handleFilterChange}
         selectedOfferedSemesters={selectedOfferedSemesters}
         removeOfferedSemester={removeOfferedSemester}
+        noPrereqs={noPrereqs}
+        removePrereqFilter={removePrereqFilter}
       />
 
       {/* Top-left pagination, compact view, clear filter, add courses to plan button, sort button */}
