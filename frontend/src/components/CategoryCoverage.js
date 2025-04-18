@@ -120,6 +120,9 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         maxWidth: "none"
       }}>
         <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Category Coverage</h2>
+        <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
+          See how many courses satisfy each requirement category for a specific major and semester.
+        </p>
         <div className="search-inputs" style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
           <label className="search-label">
             Major:&nbsp;

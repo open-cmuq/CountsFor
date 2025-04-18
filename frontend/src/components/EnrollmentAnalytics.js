@@ -137,6 +137,9 @@ const AggregatedEnrollmentAnalytics = () => {
   return (
     <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
       <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Enrollment Analytics Across Courses</h2>
+      <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
+        View past enrollment across different classes and compare trends between courses.
+      </p>
       <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
@@ -333,6 +336,9 @@ const ClassEnrollmentAnalytics = () => {
   return (
     <div className="search-container" style={{ height: "100%", padding: "10px", width: "95%" }}>
       <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "15px" }}>Enrollment Analytics Across Classes</h2>
+      <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
+        Analyze past enrollment for a single course, find out which batch of students usually take it.
+      </p>
       <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
         <input
           type="text"
