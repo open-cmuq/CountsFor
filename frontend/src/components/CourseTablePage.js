@@ -421,6 +421,8 @@ const CourseTablePage = () => {
         handleFilterChange={handleFilterChange}
         selectedOfferedSemesters={selectedOfferedSemesters}
         removeOfferedSemester={removeOfferedSemester}
+        noPrereqs={noPrereqs}  
+        setNoPrereqs={setNoPrereqs}
       />
 
       {/* Top-left pagination, compact view, clear filter, add courses to plan button*/}

@@ -4,7 +4,9 @@ const SelectedFilters = ({
   selectedFilters,
   handleFilterChange,
   selectedOfferedSemesters,
-  removeOfferedSemester
+  removeOfferedSemester,
+  noPrereqs,
+  setNoPrereqs
 }) => {
   const majorColors = {
     BA: "#4A68FB",
@@ -30,8 +32,10 @@ const SelectedFilters = ({
 
   // Check if there are any filters (offered semesters or requirement filters)
   const hasAnyFilters =
-    (selectedOfferedSemesters && selectedOfferedSemesters.length > 0) ||
-    Object.keys(selectedFilters).some((major) => selectedFilters[major].length > 0);
+  noPrereqs !== null ||
+  (selectedOfferedSemesters && selectedOfferedSemesters.length > 0) ||
+  Object.keys(selectedFilters).some((major) => selectedFilters[major].length > 0);
+
 
   if (!hasAnyFilters) return null;
 
@@ -39,11 +43,19 @@ const SelectedFilters = ({
     <div className="selected-filters">
       {/* Render offered semesters first */}
       {selectedOfferedSemesters && selectedOfferedSemesters.map((semester) => (
-         <div key={`offered-${semester}`} className="filter-tag" style={{ backgroundColor: "#999" }}>
+         <div key={`offered-${semester}`} className="filter-tag" style={{ backgroundColor: "#555" }}>
              <button onClick={() => removeOfferedSemester(semester)}><b>×</b></button>
              {semester}
          </div>
       ))}
+
+      {/* Pre-req filter tag */}
+      {noPrereqs !== null && (
+        <div className="filter-tag" style={{ backgroundColor: "#555" }}>
+          <button onClick={() => setNoPrereqs(null)}><b>×</b></button>
+          {noPrereqs ? "Only Courses With Pre-reqs" : "Only Courses with No Pre-reqs"}
+        </div>
+      )}
 
       {/* Then render the other selected filters */}
       {Object.entries(selectedFilters).map(([major, filters]) =>
