@@ -140,16 +140,21 @@ const AggregatedEnrollmentAnalytics = () => {
       <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
         View past enrollment across different classes and compare trends between courses.
       </p>
-      <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
-        <input
-          type="text"
-          value={courseInput}
-          onChange={(e) => setCourseInput(e.target.value)}
-          onKeyDown={handleKeyDownAggregated}
-          placeholder="Enter course code"
-          className="text-input"
-          style={{ width: "200px" }}
-        />
+      <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px", alignItems: 'flex-start' /* Align to top for labels */ }}>
+        {/* Course Input Group */}
+        <div className="filter-control-group" style={{ flexGrow: 1 }}>
+          <label className="filter-label">Course Code</label>
+          <input
+            type="text"
+            value={courseInput}
+            onChange={(e) => setCourseInput(e.target.value)}
+            onKeyDown={handleKeyDownAggregated}
+            placeholder="Enter course code"
+            className="text-input"
+            /* Removed inline style */
+          />
+        </div>
+        {/* Add Button - align with input */}
         <button
           onClick={addCourse}
           className="add-all-btn"
@@ -160,7 +165,9 @@ const AggregatedEnrollmentAnalytics = () => {
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
-            transition: "all 0.3s ease, color 0.3s ease"
+            transition: "all 0.3s ease, color 0.3s ease",
+            height: '38px', /* Match input height */
+            alignSelf: 'flex-end' /* Align to bottom of flex container */
           }}
         >
           Add Course
@@ -339,16 +346,21 @@ const ClassEnrollmentAnalytics = () => {
       <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
         Analyze past enrollment for a single course, find out which batch of students usually take it.
       </p>
-      <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px" }}>
-        <input
-          type="text"
-          value={courseInput}
-          onChange={(e) => setCourseInput(e.target.value)}
-          onKeyDown={handleKeyDownClass}
-          placeholder="Enter course code"
-          className="text-input"
-          style={{ width: "200px" }}
-        />
+      <div className="search-inputs" style={{ marginBottom: "15px", display: "flex", gap: "10px", alignItems: 'flex-start' /* Align to top for labels */ }}>
+        {/* Course Input Group */}
+        <div className="filter-control-group" style={{ flexGrow: 1 }}>
+          <label className="filter-label">Course Code</label>
+          <input
+            type="text"
+            value={courseInput}
+            onChange={(e) => setCourseInput(e.target.value)}
+            onKeyDown={handleKeyDownClass}
+            placeholder="Enter course code"
+            className="text-input"
+            /* Removed inline style */
+          />
+        </div>
+        {/* Load Button - align with input */}
         <button
           onClick={loadCourse}
           className="add-all-btn"
@@ -359,7 +371,9 @@ const ClassEnrollmentAnalytics = () => {
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
-            transition: "all 0.3s ease, color 0.3s ease"
+            transition: "all 0.3s ease, color 0.3s ease",
+            height: '38px', /* Match input height */
+            alignSelf: 'flex-end' /* Align to bottom of flex container */
           }}
         >
           Load Course

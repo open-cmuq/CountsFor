@@ -115,19 +115,24 @@ const PlanCourseTab = () => {
       <h1 className="title">Plan Courses</h1>
       <p className="subtitle">Add courses from the main table or search to build and manage your course plan.</p>
 
-      <div className="search-bar-container">
-        <div className="search-bar-enhanced">
-        <input
-            className="search-input plan-tab-search-input"
-            type="text"
-            placeholder="Search by course code (e.g. 15122 or 15-122)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSearch();
-            }}
-          />
-          <button className="search-btn" onClick={handleSearch}>🔍</button>
+      <div className="search-bar-container" style={{ marginBottom: '20px' }}>
+        <div className="search-bar-enhanced" style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+          {/* Search Input Group */}
+          <div className="filter-control-group">
+            <label className="filter-label">Search Courses</label>
+            <input
+              className="text-input"
+              type="text"
+              placeholder="Search by course code (e.g. 15122 or 15-122)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+            />
+          </div>
+          {/* Search Button - aligned with input */}
+          <button className="search-btn" onClick={handleSearch} style={{ height: '38px' }}>🔍</button>
         </div>
 
         {showSearchResults && (

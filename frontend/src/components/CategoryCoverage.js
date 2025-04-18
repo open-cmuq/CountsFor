@@ -123,48 +123,42 @@ const CategoryCoverage = ({ selectedMajor, setSelectedMajor, majors }) => {
         <p className="subtitle" style={{ fontSize: "14px", marginTop: "-10px", marginBottom: "20px", color: "#555" }}>
           See how many courses satisfy each requirement category for a specific major and semester.
         </p>
-        <div className="search-inputs" style={{ marginBottom: "20px", display: "flex", gap: "20px" }}>
-          <label className="search-label">
-            Major:&nbsp;
-            <select
-              value={selectedMajor}
-              onChange={e => {
-                setSelectedMajor(e.target.value);
-                setSemester(''); // Reset semester when major changes
-              }}
-              className="search-dropdown"
-              style={{
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                minWidth: "200px"
-              }}
-            >
-              {Object.entries(majors).map(([code, name]) => (
-                <option key={code} value={code}>{name}</option>
-              ))}
-            </select>
-          </label>
+        <div className="search-inputs" style={{ marginBottom: "20px", display: "flex", gap: "20px", alignItems: 'flex-start' /* Align items to top */ }}>
+          {/* Major Dropdown Group */}
+          <div className="filter-control-group">
+            <label className="filter-label">Major</label>
+            <div className="select-wrapper">
+              <select
+                value={selectedMajor}
+                onChange={e => {
+                  setSelectedMajor(e.target.value);
+                  setSemester(''); // Reset semester when major changes
+                }}
+                className="search-dropdown"
+              >
+                {Object.entries(majors).map(([code, name]) => (
+                  <option key={code} value={code}>{name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-          <label className="search-label">
-            Semester:&nbsp;
-            <select
-              value={semester}
-              onChange={e => setSemester(e.target.value)}
-              className="search-dropdown"
-              style={{
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                minWidth: "120px"
-              }}
-            >
-              <option value="">All Semesters</option>
-              {validSemesters.map(sem => (
-                <option key={sem} value={sem}>{sem}</option>
-              ))}
-            </select>
-          </label>
+          {/* Semester Dropdown Group */}
+          <div className="filter-control-group">
+            <label className="filter-label">Semester</label>
+            <div className="select-wrapper">
+              <select
+                value={semester}
+                onChange={e => setSemester(e.target.value)}
+                className="search-dropdown"
+              >
+                <option value="">All Semesters</option>
+                {validSemesters.map(sem => (
+                  <option key={sem} value={sem}>{sem}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         {loading ? (

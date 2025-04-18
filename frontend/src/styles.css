@@ -96,7 +96,6 @@
 
   .dropdown-btn {
     max-width: 100%;
-    height: 90%;
     padding: 3px 20px 3px 3px;
     border: none;
     background-color: white;
@@ -450,16 +449,58 @@ table {
     flex-grow: 1;
   }
 
-  .search-dropdown, .text-input {
-    padding: 8px;
-    border: 1px solid #ccc;
+  .search-dropdown {
+    padding: 3px 20px 3px 3px;
+    border: none;
     border-radius: 4px;
-    width: 400px;
-    font-size: 0.95rem;
-    height: 49px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
     box-sizing: border-box;
     display: flex;
     align-items: center;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    height: 100%;
+    min-width: 120px;
+  }
+
+  /* Define separate style for text inputs */
+  .text-input {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    color: #333;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    width: 100%;
+    height: 38px;
+    cursor: text;
+  }
+
+  /* Wrapper for the select element */
+  .select-wrapper {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    min-width: 120px;
+  }
+
+  /* Apply triangle to the wrapper */
+  .select-wrapper::after {
+    content: '▼';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: #555;
+    pointer-events: none;
   }
 
   .search-btn {
@@ -869,7 +910,8 @@ table {
   .filter-label {
     font-weight: bold;
     font-size: 18px;
-    margin-bottom: 0px;
+    margin-bottom: 5px;
+    display: block;
   }
 
   .search-bar-row {
@@ -1112,12 +1154,6 @@ table {
   100% { transform: rotate(360deg); }
 }
 
-/* Style specifically for the search input in the Plan tab */
-.plan-tab-search-input {
-  width: 200px !important; /* Set specific width */
-  flex: none !important;   /* Prevent flex grow/shrink */
-}
-
 /* NEW Styles for Search Bar Restructure */
 .search-header-row {
   display: flex;
@@ -1145,8 +1181,8 @@ table {
 
 .search-content-row {
   display: flex;
-  gap: 20px; /* Adjust gap between input and filters */
-  align-items: center; /* Changed from flex-start to center */
+  gap: 20px;
+  align-items: flex-end;
 }
 
 .search-input-wrapper {
@@ -1172,6 +1208,25 @@ table {
 }
 
 /* END NEW Styles */
+
+/* Wrapper for individual filter control (label + input/select) */
+.filter-control-group {
+  display: flex;
+  flex-direction: column; /* Stack label and control vertically */
+}
+
+/* --- Styles specific to Plan Course Tab --- */
+.plan-tab-container .search-bar-container {
+  max-width: 500px; /* Limit width */
+  margin-left: 0;   /* Keep left-aligned */
+  margin-right: auto;
+}
+
+.plan-tab-container .filter-control-group {
+  width: 100%; /* Ensure label/input group takes full width of limited container */
+}
+
+/* END Plan Course Tab specific styles */
 
 
 
