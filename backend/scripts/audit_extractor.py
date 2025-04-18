@@ -8,16 +8,11 @@ It inherits common functionality from DataExtractor.
 
 import re
 import logging
-import os
 import json
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
 import pandas as pd
-from backend.database.db import SessionLocal
-from backend.database.models import Course
-
-# Import the common base class.
 from backend.scripts.data_extractor import DataExtractor
 
 # Ensure pandas displays full column width
@@ -40,7 +35,12 @@ class AuditDataExtractor(DataExtractor):
     # --- Integrated Helper Functions from extract_audit_dataframes.py ---
 
     @staticmethod
-    def _getCoursesFromRange(begin, end, inc_exc, req_chain) -> List[Tuple[str, str, str, str]]:
+    # pylint: disable=invalid-name
+    def _getCoursesFromRange(begin, end, inc_exc, req_chain
+                             ) -> List[Tuple[str, str, str, str]]:
+        """
+        Extracts courses from a range of course numbers.
+        """
         courses = []
         if begin[:2] != end[:2] or begin[:2] == 'XX':
             logging.warning("[Warning] Not including course range: %s %s", begin, end)
@@ -58,12 +58,13 @@ class AuditDataExtractor(DataExtractor):
                         course_num = f"{code}-{str(n).zfill(3)}"
                         courses.append((course_num, req_chain, inc_exc, 'Course'))
             except (ValueError, IndexError):
-                 logging.warning("Invalid course range format: %s-%s", begin, end)
-                 return []
+                logging.warning("Invalid course range format: %s-%s", begin, end)
+                return []
 
         return courses
 
     @staticmethod
+    # pylint: disable=invalid-name
     def _getCoursesFromConstraint(constraint, req_chain) -> List[Tuple[str, str, str, str]]:
         t = constraint.get('type')
         data = constraint.get('data', {})
@@ -88,14 +89,17 @@ class AuditDataExtractor(DataExtractor):
             courses_from_range = []
             for r in ranges:
                 if len(r) == 2:
-                     courses_from_range.extend(AuditDataExtractor._getCoursesFromRange(r[0], r[1], 'Inclusion', req_chain))
+                    courses_from_range.extend(AuditDataExtractor._getCoursesFromRange(r[0], r[1],
+                                                                                      'Inclusion',
+                                                                                      req_chain))
 
             return [(c, req_chain, 'Inclusion', 'Course') for c in courses] + courses_from_range
 
         elif t == 'xfromdepts':
             depts = data.get('depts', [])
             additional_courses = data.get('additional_courses', [])
-            return [(d.get('code'), req_chain, 'Inclusion', 'Code') for d in depts if d.get('code')] + \
+            return [(d.get('code'), req_chain, 'Inclusion', 'Code') \
+                    for d in depts if d.get('code')] + \
                    [(c, req_chain, 'Inclusion', 'Course') for c in additional_courses]
 
         elif t == 'notcountcourseset':
@@ -106,7 +110,6 @@ class AuditDataExtractor(DataExtractor):
                 for course_set in data['conditional_course_sets']:
                     if 'courses' in course_set:
                         courses.extend(course_set['courses'])
-            # TODO: take into account code_ranges and code_patterns for exclusions
             return [(c, req_chain, 'Exclusion', 'Course') for c in courses]
 
         else:
@@ -114,6 +117,7 @@ class AuditDataExtractor(DataExtractor):
             return []
 
     @staticmethod
+    # pylint: disable=invalid-name
     def _getCourses(data, req_chain) -> List[Tuple[str, str, str, str]]:
         courses_list = []
         if isinstance(data, dict):
@@ -129,28 +133,32 @@ class AuditDataExtractor(DataExtractor):
                 elif 'constraints' in data: # Constraints case
                     constraints = data['constraints']
                     for c in constraints:
-                        courses_list.extend(AuditDataExtractor._getCoursesFromConstraint(c, new_req_chain))
+                        courses_list.extend(AuditDataExtractor._getCoursesFromConstraint(c,
+                        new_req_chain))
                 # else: Base case? Maybe a requirement with no choices/constraints?
             elif 'type' in data: # If it's a constraint itself at this level
-                 courses_list.extend(AuditDataExtractor._getCoursesFromConstraint(data, new_req_chain))
+                courses_list.extend(AuditDataExtractor._getCoursesFromConstraint(data,
+                                    new_req_chain))
             elif 'screen_name' in data: # Base case: a single course identified by screen_name
-                 course_num = data['screen_name']
-                 # Basic validation for course code format XX-XXX
-                 if re.match(r"^\d{2}-\d{3}$", course_num):
-                     courses_list.append((course_num, new_req_chain, 'Inclusion', 'Course'))
-                 else:
-                      logging.warning("Skipping non-course screen_name as course: %s", course_num)
+                course_num = data['screen_name']
+                # Basic validation for course code format XX-XXX
+                if re.match(r"^\d{2}-\d{3}$", course_num):
+                    courses_list.append((course_num, new_req_chain, 'Inclusion', 'Course'))
+                else:
+                    logging.warning("Skipping non-course screen_name as course: %s", course_num)
 
 
         elif isinstance(data, list): # Handle lists of items (e.g., in uni_req_tree)
-             for item in data:
-                 courses_list.extend(AuditDataExtractor._getCourses(item, req_chain)) # Pass original req_chain
+            for item in data:
+                courses_list.extend(AuditDataExtractor._getCourses(item, req_chain))
 
         return courses_list
 
 
     @staticmethod
-    def _getAuditData(data: Dict[str, Any], source_name: str = "Unknown") -> List[Tuple[str, str, str, str]]:
+    # pylint: disable=invalid-name
+    def _getAuditData(data: Dict[str, Any],
+                    source_name: str = "Unknown") -> List[Tuple[str, str, str, str]]:
         """
         Extracts the relevant fields from the loaded audit data dictionary.
         Returns a list of (course_or_code, requirement_chain, inclusion/exclusion, type).
@@ -161,7 +169,8 @@ class AuditDataExtractor(DataExtractor):
             major_req_data = data['requirement']
             req_major_list = AuditDataExtractor._getCourses(major_req_data, '')
         else:
-            logging.warning("No top-level 'requirement' key found in audit data from %s", source_name)
+            logging.warning("No top-level 'requirement' key found in audit data from %s",
+                            source_name)
 
         req_programs_list = []
         uni_req_tree = data.get('uni_req_tree')
@@ -177,13 +186,7 @@ class AuditDataExtractor(DataExtractor):
                         if screen_name and "Degree Check" not in screen_name and \
                            "Total Units" not in screen_name:
                             req_programs_list.extend(AuditDataExtractor._getCourses(p, ''))
-                        # else: logging.debug("Skipping program node (excluded type or missing name): %s", screen_name)
-                    # else: logging.warning("Skipping invalid program item in audit data from %s: %s", source_name, p)
-            # else: logging.warning("'programs' key does not contain a list in audit data from %s", source_name)
-        # else: logging.debug("No 'uni_req_tree.programs' found in audit data from %s", source_name)
 
-        # logging.info("Extracted %d major reqs and %d program reqs from %s",
-        #             len(req_major_list), len(req_programs_list), source_name)
         return req_major_list + req_programs_list
 
     # --- End of Integrated Helper Functions ---
@@ -203,27 +206,36 @@ class AuditDataExtractor(DataExtractor):
         folders_to_scan = []
 
         # Check if the base path itself contains the major folders
-        if target_folders.issubset(subdirs_names) or any(m in subdirs_names for m in target_folders):
-            logging.info(f"Found major folders directly under {self.audit_base_path}. Processing these.")
+        if target_folders.issubset(subdirs_names) or any(m in subdirs_names
+                                                         for m in target_folders):
+            logging.info("Found major folders directly under %s. Processing these.",
+                         self.audit_base_path)
             folders_to_scan = [d for d in subdirs if d.name in target_folders]
             # scan_path remains self.audit_base_path
-        # If not, check if there's exactly ONE subdirectory, and assume THAT contains the major folders
+        # If not, check if there's exactly ONE subdirectory,
+        # and assume THAT contains the major folders
         elif len(subdirs) == 1:
             potential_intermediate_dir = subdirs[0]
-            logging.info(f"Found single subdirectory '{potential_intermediate_dir.name}'. Checking inside for major folders.")
+            logging.info("Found single subdirectory '%s'. Checking inside for major folders.",
+                         potential_intermediate_dir.name)
             scan_path = potential_intermediate_dir # Update scan path
-            major_subdirs_inside = [d for d in scan_path.iterdir() if d.is_dir() and d.name in target_folders]
+            major_subdirs_inside = [d for d in scan_path.iterdir()
+                                    if d.is_dir() and d.name in target_folders]
             if major_subdirs_inside:
-                logging.info(f"Found major folders inside '{potential_intermediate_dir.name}'. Processing these.")
+                logging.info("Found major folders inside '%s'. Processing these.",
+                             potential_intermediate_dir.name)
                 folders_to_scan = major_subdirs_inside
             else:
-                logging.warning(f"Single subdirectory '{potential_intermediate_dir.name}' did not contain expected major folders.")
+                logging.warning("Single subdirectory '%s' did not contain expected major folders.",
+                                potential_intermediate_dir.name)
         # If multiple subdirs but none match the expected structure, log warning
         elif len(subdirs) > 1:
-            logging.warning(f"Multiple subdirectories found in {self.audit_base_path}, but none directly contain the expected major folders ({', '.join(target_folders)}).")
+            logging.warning("Multiple subdirectories found in %s,\
+                             but none directly contain the expected major\
+                             folders (%s).", self.audit_base_path, ', '.join(target_folders))
             # Decide how to handle this - currently will lead to empty folders_to_scan
         else:
-            logging.warning(f"No subdirectories found in {self.audit_base_path}.")
+            logging.warning("No subdirectories found in %s.", self.audit_base_path)
             # This also leads to empty folders_to_scan
 
         files_processed_count = 0
@@ -232,11 +244,11 @@ class AuditDataExtractor(DataExtractor):
         # --- Process based on findings --- #
 
         if folders_to_scan: # Found major folders (either directly or in intermediate)
-            logging.info(f"Processing major folders found: {[f.name for f in folders_to_scan]}")
+            logging.info("Processing major folders found: %s", [f.name for f in folders_to_scan])
             for folder_path in folders_to_scan:
                 major = folder_path.name
                 # Log the actual folder being processed
-                logging.info(f"Processing audit files in folder: {folder_path}")
+                logging.info("Processing audit files in folder: %s", folder_path)
                 json_files = list(folder_path.glob('*.json'))
                 if not json_files:
                     logging.warning("No JSON files found in %s, skipping...", folder_path)
@@ -244,12 +256,13 @@ class AuditDataExtractor(DataExtractor):
 
                 for json_file in json_files:
                     file_type = "gened" if json_file.name == "published.json" else "core"
-                    df_name = f"{major}_{file_type}"
+                    df_name = f"{major}_{file_type}" # Keep f-string for variable assignment
                     logging.info("Processing audit file: %s as %s", json_file.name, df_name)
                     try:
                         with open(json_file, 'r', encoding='utf-8') as f:
                             audit_json_data = json.load(f)
-                        audit_tuples = self._getAuditData(audit_json_data, source_name=json_file.name)
+                        audit_tuples = self._getAuditData(audit_json_data,
+                                                          source_name=json_file.name)
                         if audit_tuples:
                             processed_data[df_name] = audit_tuples
                             files_processed_count += 1
@@ -257,15 +270,18 @@ class AuditDataExtractor(DataExtractor):
                         logging.error("Audit file disappeared?: %s", json_file)
                     except json.JSONDecodeError:
                         logging.error("Error decoding JSON in audit file: %s", json_file)
-                    except Exception as e:
-                        logging.exception("Unexpected error processing audit file %s: %s", json_file.name, e)
+                    except Exception as e: # pylint: disable=broad-exception-caught
+                        logging.exception("Unexpected error processing audit file %s: %s",
+                                           json_file.name, e)
         else:
             # No major folders found, check for JSON files directly in the scan_path
             # (This handles the case where majors aren't in folders OR the original fallback)
-            logging.warning("No major folders found in %s. Looking for JSON files directly.", scan_path)
+            logging.warning("No major folders found in %s. Looking for JSON files directly.",
+                            scan_path)
             json_files_direct = list(scan_path.glob('*.json'))
             if not json_files_direct:
-                logging.error("No target major folders or JSON files found in scan path: %s.", scan_path)
+                logging.error("No target major folders or JSON files found in scan path: %s.",
+                              scan_path)
                 return {}
 
             for json_file in json_files_direct:
@@ -275,8 +291,12 @@ class AuditDataExtractor(DataExtractor):
                     if tf in file_name_lower:
                         major = tf
                         break
-                file_type = "gened" if "gen" in file_name_lower or "published" in file_name_lower else "core"
-                df_name = f"{major}_{file_type}"
+                if "gen" in file_name_lower or "published" in file_name_lower:
+                    file_type = "gened"
+                else:
+                    file_type = "core"
+
+                df_name = f"{major}_{file_type}" # Keep f-string for variable assignment
                 logging.info("Processing direct JSON file: %s as %s", json_file.name, df_name)
                 try:
                     with open(json_file, 'r', encoding='utf-8') as f:
@@ -289,8 +309,9 @@ class AuditDataExtractor(DataExtractor):
                     logging.error("Audit file disappeared?: %s", json_file)
                 except json.JSONDecodeError:
                     logging.error("Error decoding JSON in audit file: %s", json_file)
-                except Exception as e:
-                    logging.exception("Unexpected error processing direct audit file %s: %s", json_file.name, e)
+                except Exception as e: # pylint: disable=broad-exception-caught
+                    logging.exception("Unexpected error processing direct audit file %s: %s",
+                                      json_file.name, e)
 
         logging.info("Retrieved raw audit data for %d identifiers from %d files",
                      len(processed_data), files_processed_count)
@@ -335,7 +356,8 @@ class AuditDataExtractor(DataExtractor):
         """
         logging.info("Starting audit data extraction and transformation...")
         if not db_course_codes:
-             logging.warning("Received empty set of database course codes. Countsfor table might be inaccurate.")
+            logging.warning("Received empty set of database course codes. \
+                            Countsfor table might be inaccurate.")
 
         # Get processed audit data (dict mapping id -> list of tuples)
         processed_audit_data = self.get_processed_audit_data() # Reads files
@@ -366,7 +388,8 @@ class AuditDataExtractor(DataExtractor):
             # Tuple format: (course_or_code, req_chain, inclusion/exclusion, type_str)
             for course_or_code, req_chain, inc_exc, type_str in audit_tuples:
                 if not course_or_code or not req_chain: # Basic validation
-                    logging.warning("Skipping tuple with missing course/code or requirement chain: %s",
+                    logging.warning("Skipping tuple with missing course/code \
+                                    or requirement chain: %s",
                                     (course_or_code, req_chain, inc_exc, type_str))
                     continue
 
@@ -374,7 +397,8 @@ class AuditDataExtractor(DataExtractor):
 
                 # Skip processing entirely for certain IS requirements
                 if major.lower() == 'is' and processed_req in is_excluded_requirements:
-                    logging.debug("Skipping completely excluded IS requirement entry: %s", processed_req)
+                    logging.debug("Skipping completely excluded IS requirement entry: %s",
+                                  processed_req)
                     continue
 
                 audit_name = processed_req.split('---')[0].strip() # Extract top-level audit name
@@ -432,8 +456,10 @@ class AuditDataExtractor(DataExtractor):
         # An exclusion applies to a course within a specific major/audit_type context
         exclusions_df = final_expanded_df[final_expanded_df['inc_exc'] == 'Exclusion']
         # Create a set of tuples (major, audit_type, course) for quick lookup
-        exclusion_set = set(exclusions_df[['major', 'audit_type', 'course']].itertuples(index=False, name=None))
-        logging.info("Identified %d unique exclusion rules (major, type, course).", len(exclusion_set))
+        exclusion_set = set(exclusions_df[['major', 'audit_type',
+                                           'course']].itertuples(index=False, name=None))
+        logging.info("Identified %d unique exclusion rules (major, type, course).",
+                     len(exclusion_set))
 
         # --- Filter inclusions ---
         inclusions_df = final_expanded_df[final_expanded_df['inc_exc'] == 'Inclusion'].copy()
@@ -446,12 +472,13 @@ class AuditDataExtractor(DataExtractor):
         # Apply the filter using boolean indexing (more efficient than apply)
         excluded_mask = inclusions_df.apply(is_excluded, axis=1)
         filtered_inclusions_df = inclusions_df[~excluded_mask]
-        logging.info("Inclusion entries after filtering exclusions: %d", len(filtered_inclusions_df))
+        logging.info("Inclusion entries after filtering exclusions: %d",
+                     len(filtered_inclusions_df))
 
         # --- Create final tables from filtered_inclusions_df ---
         if filtered_inclusions_df.empty:
-             logging.warning("No inclusion data remaining after filtering exclusions.")
-             return {"audit": [], "requirement": [], "countsfor": []}
+            logging.warning("No inclusion data remaining after filtering exclusions.")
+            return {"audit": [], "requirement": [], "countsfor": []}
 
         # Create countsfor table (Requirement <-> Course mapping)
         counts_df = filtered_inclusions_df[["requirement", "course"]].drop_duplicates()
@@ -459,15 +486,18 @@ class AuditDataExtractor(DataExtractor):
 
         # Create audit table (Unique Audits based on remaining data)
         # Ensures only audits with actual counting courses are included
-        audit_df = filtered_inclusions_df[["audit_name", "audit_type", "major"]].drop_duplicates()
-        audit_df.dropna(subset=["major", "audit_type"], inplace=True) # Should not be necessary but safe
-        audit_df["audit_id"] = audit_df["major"].astype(str) + "_" + audit_df["audit_type"].astype(str)
+        audit_df = filtered_inclusions_df[["audit_name", "audit_type",
+                                           "major"]].drop_duplicates()
+        audit_df.dropna(subset=["major", "audit_type"], inplace=True)
+        audit_df["audit_id"] = audit_df["major"].astype(str) + "_" + audit_df["audit_type"
+                                                                              ].astype(str)
         audit_df = audit_df.rename(columns={"audit_name": "name", "audit_type": "type"})
         audit_df = audit_df.drop_duplicates(subset=["audit_id"]) # Ensure unique audit_id
 
         # Create requirement table (Unique Requirements linked to Audits)
         # Ensures only requirements with actual counting courses are included
-        req_df_raw = filtered_inclusions_df[["requirement", "major", "audit_type"]].drop_duplicates()
+        req_df_raw = filtered_inclusions_df[["requirement", "major",
+                                              "audit_type"]].drop_duplicates()
         req_df_raw.dropna(subset=["requirement", "major", "audit_type"], inplace=True) # Safe check
         req_df_raw = req_df_raw.rename(columns={"audit_type": "type"})
 
@@ -480,10 +510,11 @@ class AuditDataExtractor(DataExtractor):
         # Select final columns and ensure uniqueness
         req_df = req_df[["requirement", "audit_id"]].drop_duplicates()
 
-        # Check for requirements mapping to multiple audits (still possible if a req spans core/gened conceptually)
         dupes = req_df[req_df.duplicated(subset=["requirement"], keep=False)]
         if not dupes.empty:
-            logging.warning("Duplicate requirements found mapping to potentially different audits (after exclusion filtering): %s", dupes['requirement'].unique())
+            logging.warning("Duplicate requirements found mapping to potentially\
+                             different audits (after exclusion filtering\
+                            ): %s", dupes['requirement'].unique())
 
         results = {
             "audit": audit_df.to_dict(orient="records"),

@@ -65,6 +65,19 @@ const SearchBar = ({
     setSearchQuery(formattedCode);
   };
 
+  // Handle Enter key press in the search input
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      // Prevent default form submission if this were part of a form
+      event.preventDefault();
+      // Optionally blur the input to signify search completion
+      event.target.blur();
+      // The actual search is triggered by the state change via onChange
+      // and the useEffect hook in the parent component.
+      // No explicit search function call needed here.
+    }
+  };
+
   return (
     <div className="search-container">
       <label className="search-label">SEARCH</label>
@@ -75,6 +88,7 @@ const SearchBar = ({
           placeholder="Search for a specific course number"
           value={searchQuery}
           onChange={handleSearchChange}
+          onKeyDown={handleKeyDown}
           className="text-input"
         />
 

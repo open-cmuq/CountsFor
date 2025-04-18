@@ -49,7 +49,8 @@ class CourseService:
     bs_requirement: Optional[str] = None,
     offered_qatar: Optional[bool] = None,
     offered_pitts: Optional[bool] = None,
-    search_query: Optional[str] = None
+    search_query: Optional[str] = None,
+    sort_by_reqs: Optional[bool] = False
 ) -> CourseListResponse:
         """
         Fetch courses based on a combination of filters, sorted by the numeric part
@@ -68,10 +69,37 @@ class CourseService:
             offered_pitts=offered_pitts
         )
 
-        sorted_courses = sorted(
-            courses,
-            key=lambda c: int(c["course_code"].replace("-", ""))
-        )
+        if sort_by_reqs:
+            # Helper to calculate sort keys: (majors_covered, total_reqs_count)
+            def calculate_sort_keys(course_dict):
+                majors_covered = 0
+                total_reqs_count = 0
+                reqs_dict = course_dict.get('requirements', {})
+                for _, req_list in reqs_dict.items():
+                    if req_list: # If the list of requirements for this major is not empty
+                        majors_covered += 1
+                        total_reqs_count += len(req_list)
+                return majors_covered, total_reqs_count
+
+            # Sort using multiple keys:
+            # 1. Majors covered (descending)
+            # 2. Total requirements count (descending)
+            # 3. Course code (ascending - use negative numeric value)
+            sorted_courses = sorted(
+                courses,
+                key=lambda c: (
+                    calculate_sort_keys(c)[0], # Majors covered
+                    calculate_sort_keys(c)[1], # Total reqs count
+                    -int(c["course_code"].replace("-", "")) # Course code (ascending)
+                ),
+                reverse=True # Apply descending order to primary and secondary keys
+            )
+        else:
+            # Default sort by course code
+            sorted_courses = sorted(
+                courses,
+                key=lambda c: int(c["course_code"].replace("-", ""))
+            )
 
         return CourseListResponse(
             courses=[

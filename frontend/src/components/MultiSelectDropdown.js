@@ -155,6 +155,20 @@ const MultiSelectDropdown = ({
     return tree;
   };
 
+  // Helper function to recursively get all raw values from a node and its children
+  const getAllRawValues = (node) => {
+    let values = [];
+    if (node._items) {
+      values = values.concat(node._items.map(item => item.rawValue));
+    }
+    Object.keys(node)
+      .filter(key => key !== '_items')
+      .forEach(key => {
+        values = values.concat(getAllRawValues(node[key]));
+      });
+    return values;
+  };
+
   const renderGroupTree = (node, path = "") => {
     return (
       <>
@@ -215,24 +229,29 @@ const MultiSelectDropdown = ({
                 {isExpanded && (
                   <div className="dropdown-subgroup">
                     {/* Select all in group */}
-                    {child._items?.length > 1 && (
-                      <label className="dropdown-item nested">
-                        <input
-                          type="checkbox"
-                          checked={child._items.every(item =>
-                            selectedForMajor.includes(item.rawValue)
-                          )}
-                          onChange={(e) => {
-                            const groupValues = child._items.map(item => item.rawValue);
-                            const newSelection = e.target.checked
-                              ? [...new Set([...selectedForMajor, ...groupValues])]
-                              : selectedForMajor.filter(val => !groupValues.includes(val));
-                            handleFilterChange(major, newSelection);
-                          }}
-                        />
-                      <strong>Select All in {group}</strong>
-                      </label>
-                    )}
+                    {(() => {
+                      const allGroupValues = getAllRawValues(child);
+                      const isGroupSelected = allGroupValues.length > 0 && allGroupValues.every(val => selectedForMajor.includes(val));
+                      // Render only if there are items to select/deselect
+                      if (allGroupValues.length === 0) return null;
+
+                      return (
+                        <label className="dropdown-item nested">
+                          <input
+                            type="checkbox"
+                            checked={isGroupSelected} // Use pre-calculated state
+                            onChange={(e) => {
+                              // Use pre-calculated allGroupValues
+                              const newSelection = e.target.checked
+                                ? [...new Set([...selectedForMajor, ...allGroupValues])] // Add all group values
+                                : selectedForMajor.filter(val => !allGroupValues.includes(val)); // Remove all group values
+                              handleFilterChange(major, newSelection);
+                            }}
+                          />
+                          <strong>Select All in {group}</strong>
+                        </label>
+                      );
+                    })()}
 
                     {/* Recursively render children */}
                     {renderGroupTree(child, path + group + " > ")}

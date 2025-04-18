@@ -38,7 +38,8 @@ def search_courses(
         bs_requirement=filters.bs_requirement,
         offered_qatar=filters.offered_qatar,
         offered_pitts=filters.offered_pitts,
-        search_query=filters.searchQuery  # new parameter passed along
+        search_query=filters.searchQuery,  # new parameter passed along
+        sort_by_reqs=filters.sort_by_reqs # Pass the new sorting flag
     )
     if not courses.courses:
         raise HTTPException(status_code=404, detail="No courses found matching "
