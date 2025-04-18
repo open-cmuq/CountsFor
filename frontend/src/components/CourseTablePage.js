@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "../styles.css";
 import SearchBar from "./SearchBar";
 import CourseTable from "./CourseTable";
@@ -18,6 +18,9 @@ const CourseTablePage = () => {
   const [searchQuery, setSearchQuery] = useState(() => {
     return localStorage.getItem("searchQuery") || "";
   });
+
+  // New state for debounced search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
 
   // States for offered-location checkboxes
   const [offeredQatar, setOfferedQatar] = useState(() => {
@@ -83,6 +86,9 @@ const CourseTablePage = () => {
   // State for sort mode ('code' or 'reqs')
   const [sortMode, setSortMode] = useState('code');
 
+  // Ref for AbortController
+  const abortControllerRef = useRef(null);
+
   // Save states to localStorage
   useEffect(() => {
     localStorage.setItem("selectedDepartments", JSON.stringify(selectedDepartments));
@@ -107,6 +113,17 @@ const CourseTablePage = () => {
     genedOnly,
     compactViewMode
   ]);
+
+  // Effect to debounce search query
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350); // ~350ms debounce delay
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchQuery]);
 
   // Pagination logic (now uses 'courses' directly as it comes sorted from backend)
   const totalPages = Math.ceil(courses.length / coursesPerPage);
@@ -185,13 +202,16 @@ const CourseTablePage = () => {
 
   // Fetch courses using combined filters from backend
   useEffect(() => {
+    // Abort previous fetch request before starting a new one
+    abortControllerRef.current?.abort();
+    // Create a new AbortController for the current request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const fetchCourses = async () => {
       setLoading(true);
       try {
-        // for multi-select
         const departmentsToFetch = selectedDepartments;
-
-        // If no departments are selected, send one request without the department param
         const queries = departmentsToFetch.length > 0 ? departmentsToFetch : [null];
 
         const results = await Promise.all(
@@ -199,7 +219,8 @@ const CourseTablePage = () => {
             const params = new URLSearchParams();
 
             if (dep) params.append("department", dep);
-            if (searchQuery) params.append("searchQuery", formatCourseCode(searchQuery));
+            // Use debounced query for API call
+            if (debouncedSearchQuery) params.append("searchQuery", formatCourseCode(debouncedSearchQuery));
             if (selectedOfferedSemesters.length > 0)
               params.append("semester", selectedOfferedSemesters.join(","));
             if (noPrereqs === false) params.append("has_prereqs", false);
@@ -222,12 +243,12 @@ const CourseTablePage = () => {
 
             const url = `${API_BASE_URL}/courses/search?${params.toString()}`;
             console.log("Fetching:", url);
-            const response = await fetch(url);
-            // Handle potential 404 from backend when no courses match
+            const response = await fetch(url, { signal: controller.signal }); // Pass signal
+
             if (response.status === 404) return [];
             if (!response.ok) {
                console.error("API Error:", response.status, await response.text());
-               return []; // Return empty on other errors too
+               return [];
             }
 
             const data = await response.json();
@@ -235,35 +256,47 @@ const CourseTablePage = () => {
           })
         );
 
-        // Flatten and deduplicate (still useful if fetching multiple departments)
         const allCourses = results.flat();
         const uniqueCourses = Array.from(
           new Map(allCourses.map((c) => [c.course_code, c])).values()
         );
-
-        // REMOVE client-side filtering logic (majorsWithFilters, core/gened)
-        // The backend now handles all filtering and sorting
-        setCourses(uniqueCourses); // Set courses directly from backend response
+        setCourses(uniqueCourses);
       } catch (error) {
-        console.error("Error fetching courses:", error);
-        setCourses([]); // Ensure courses is an empty array on error
+         // Ignore AbortError, log others
+         if (error.name !== 'AbortError') {
+            console.error("Error fetching courses:", error);
+            setCourses([]);
+         } else {
+            console.log("Fetch aborted");
+         }
       } finally {
-        setLoading(false);
+         // Check if the controller associated with this fetch is still the current one
+         // before setting loading to false. Avoids race conditions.
+         if (controller.signal.aborted) {
+             console.log("Fetch was aborted, loading state not changed.")
+         } else {
+             setLoading(false);
+         }
       }
     };
 
     fetchCourses();
+
+    // Cleanup function to abort fetch if component unmounts or deps change
+    return () => {
+        controller.abort();
+    };
   }, [
     selectedDepartments,
-    searchQuery,
+    debouncedSearchQuery,
     selectedOfferedSemesters,
     noPrereqs,
     offeredQatar,
     offeredPitts,
     selectedFilters,
-    coreOnly, // Keep these as they might be used by SearchBar?
-    genedOnly, // Keep these as they might be used by SearchBar?
-    sortMode // Add sortMode to dependencies to trigger refetch on change
+    coreOnly,
+    genedOnly,
+    sortMode
   ]);
 
   // Fetch all semesters from the dedicated endpoint

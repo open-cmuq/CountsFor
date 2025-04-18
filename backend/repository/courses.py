@@ -94,9 +94,9 @@ class CourseRepository:
         if department:
             query = query.filter(Course.dep_code == department)
 
-        # Filter by search query on course code.
+        # Filter by search query on course code (match from start, case-insensitive).
         if search_query:
-            query = query.filter(Course.course_code.ilike(f"%{search_query}%"))
+            query = query.filter(Course.course_code.ilike(f"{search_query}%"))
 
         # Filter by prerequisites.
         if has_prereqs is not None:
