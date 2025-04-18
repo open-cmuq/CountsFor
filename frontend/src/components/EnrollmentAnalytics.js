@@ -82,6 +82,16 @@ const AggregatedEnrollmentAnalytics = () => {
       });
   };
 
+  // Handle Enter key press for adding a course
+  const handleKeyDownAggregated = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addCourse();
+      // We might not want to blur here if the user intends to add multiple courses quickly
+      // event.target.blur();
+    }
+  };
+
   // Gather all semesters across all courses & sort them chronologically
   const getAllSemestersSorted = () => {
     const semesterSet = new Set();
@@ -132,6 +142,7 @@ const AggregatedEnrollmentAnalytics = () => {
           type="text"
           value={courseInput}
           onChange={(e) => setCourseInput(e.target.value)}
+          onKeyDown={handleKeyDownAggregated}
           placeholder="Enter course code"
           className="text-input"
           style={{ width: "200px" }}
@@ -252,6 +263,15 @@ const ClassEnrollmentAnalytics = () => {
       });
   };
 
+  // Handle Enter key press for loading a course
+  const handleKeyDownClass = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      loadCourse();
+      event.target.blur(); // Blur after loading seems appropriate
+    }
+  };
+
   const getAllSemestersSorted = () => {
     const semesterSet = new Set();
     if (courseData) {
@@ -318,6 +338,7 @@ const ClassEnrollmentAnalytics = () => {
           type="text"
           value={courseInput}
           onChange={(e) => setCourseInput(e.target.value)}
+          onKeyDown={handleKeyDownClass}
           placeholder="Enter course code"
           className="text-input"
           style={{ width: "200px" }}
