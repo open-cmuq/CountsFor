@@ -11,6 +11,7 @@ const MultiSelectDropdown = ({
   wrapperClassName = ""
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [tempSelection, setTempSelection] = useState([]);
   const dropdownRef = useRef(null);
   const displayMap = {
     qatar: "Qatar",
@@ -24,6 +25,13 @@ const MultiSelectDropdown = ({
 
   // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen(!isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      const current = major ? (selectedFilters[major] || []) : selectedFilters;
+      setTempSelection(current);
+    }
+  }, [isOpen, major, selectedFilters]);  
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -165,12 +173,12 @@ const MultiSelectDropdown = ({
             <span className="item-text">{displayMap[rawValue] || label}</span>
             <input
               type="checkbox"
-              checked={selectedForMajor.includes(rawValue)}
+              checked={tempSelection.includes(rawValue)}
               onChange={(e) => {
                 const newSelection = e.target.checked
-                  ? [...selectedForMajor, rawValue]
-                  : selectedForMajor.filter((item) => item !== rawValue);
-                handleFilterChange(major, newSelection);
+                  ? [...tempSelection, rawValue]
+                  : tempSelection.filter((item) => item !== rawValue);
+                setTempSelection(newSelection);
               }}
             />
           </label>
@@ -217,19 +225,19 @@ const MultiSelectDropdown = ({
                     {/* Select all in group */}
                     {child._items?.length > 1 && (
                       <label className="dropdown-item nested">
-                        <input
-                          type="checkbox"
-                          checked={child._items.every(item =>
-                            selectedForMajor.includes(item.rawValue)
-                          )}
-                          onChange={(e) => {
-                            const groupValues = child._items.map(item => item.rawValue);
-                            const newSelection = e.target.checked
-                              ? [...new Set([...selectedForMajor, ...groupValues])]
-                              : selectedForMajor.filter(val => !groupValues.includes(val));
-                            handleFilterChange(major, newSelection);
-                          }}
-                        />
+                      <input
+                        type="checkbox"
+                        checked={child._items.every(item =>
+                          tempSelection.includes(item.rawValue)
+                        )}
+                        onChange={(e) => {
+                          const groupValues = child._items.map(item => item.rawValue);
+                          const newSelection = e.target.checked
+                            ? [...new Set([...tempSelection, ...groupValues])]
+                            : tempSelection.filter(val => !groupValues.includes(val));
+                          setTempSelection(newSelection); 
+                        }}
+                      />
                       <strong>Select All in {group}</strong>
                       </label>
                     )}
@@ -256,6 +264,13 @@ const MultiSelectDropdown = ({
 
   const [expandedGroups, setExpandedGroups] = useState({});
 
+  const isDirty = () => {
+    const current = selectedForMajor.slice().sort();
+    const temp = tempSelection.slice().sort();
+    return current.length !== temp.length || !current.every((v, i) => v === temp[i]);
+  };
+  
+
 
   return (
   <div
@@ -280,31 +295,42 @@ const MultiSelectDropdown = ({
 
       {isOpen && (
         <div className="dropdown-content">
-          {!hideSelectButtons && (
-            <>
-              <label className="select-all-label">
-                <button
-                  className="select-all-btn"
-                  onClick={() => handleSelectAll()}
-                >
-                  {isAllSelected ? "DeSelect All" : "Select All"}
-                </button>
-              </label>
 
-              {/* Clear Selection Button */}
-              <label className="select-all-label">
-                <button
-                  className="select-all-btn"
-                  onClick={() => {
-                    clearFilters(major);
-                    setIsOpen(false);
-                  }}
-                >
-                  Clear All
-                </button>
-              </label>
-            </>
-          )}
+        {!hideSelectButtons && (
+          <div className="select-buttons-row">
+            <button
+              className="select-all-btn"
+              onClick={() => handleSelectAll()}
+            >
+              {isAllSelected ? "Deselect All" : "Select All"}
+            </button>
+
+            <button
+              className="select-all-btn clear-btn"
+              onClick={() => {
+                if (!selectedForMajor.length) return; // safeguard
+                clearFilters(major);
+                setIsOpen(false);
+              }}
+              disabled={selectedForMajor.length === 0}
+            >
+              Clear All
+            </button>
+          </div>
+        )}
+
+               {/* Always show Apply/Cancel */}
+               <button
+          className={`drop-apply-btn ${isDirty() ? 'active' : 'disabled'}`}
+          onClick={() => {
+            if (!isDirty()) return; // prevent applying unchanged filters
+            handleFilterChange(major, tempSelection);
+            setIsOpen(false);
+          }}
+          disabled={!isDirty()} // HTML disabled state
+        >
+          Apply Filters
+        </button>
 
           {/* Individual Options */}
           {safeOptions.length === 0 ? (
@@ -332,16 +358,16 @@ const MultiSelectDropdown = ({
 
                 return (
                   <label key={index} className="dropdown-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedForMajor.includes(raw)}
-                      onChange={(e) => {
-                        const newSelection = e.target.checked
-                          ? [...selectedForMajor, raw]
-                          : selectedForMajor.filter(item => item !== raw);
-                        handleFilterChange(major, newSelection);
-                      }}
-                    />
+                  <input
+                    type="checkbox"
+                    checked={tempSelection.includes(raw)}
+                    onChange={(e) => {
+                      const newSelection = e.target.checked
+                        ? [...tempSelection, raw]
+                        : tempSelection.filter(item => item !== raw);
+                      setTempSelection(newSelection); 
+                    }}
+                  />
                     {raw === "core" ? (
                       <strong>Core</strong>
                     ) : raw === "gened" ? (

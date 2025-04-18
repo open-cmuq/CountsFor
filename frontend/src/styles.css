@@ -713,6 +713,13 @@ table {
     gap: 2px;
   }
 
+  .select-buttons-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    margin-bottom: 5px;
+  }
+  
   .select-all-btn {
     background-color: #bbbbbb;
     color: white;
@@ -721,17 +728,38 @@ table {
     padding: 7px 10px;
     cursor: pointer;
     transition: all 0.4s ease;
-    margin-bottom: 3px;
     font-weight: bold;
     font-size: 15px;
     width: 100%;
-    align-self: center;
   }
-
+  
+  /* Hover effect */
   .select-all-btn:hover {
     background-color: darkred;
     transform: scale(1.01);
-    }
+  }
+  
+  /* Disabled state for Clear All */
+  .clear-btn:disabled {
+    background-color: #888888;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.7;
+  }
+
+  .clear-btn {
+    background-color: darkred;
+    color: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    font-weight: bold;
+    font-size: 15px;
+    width: 100%;
+  }
+
 
   .tab-bar {
     display: flex;
@@ -1006,6 +1034,42 @@ table {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+.drop-apply-btn {
+  background-color: #bbbbbb;
+  color: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  margin-bottom: 3px;
+  font-weight: bold;
+  font-size: 15px;
+  width: 100%;
+  align-self: center;
+}
+
+.drop-apply-btn:hover {
+  background-color: #1c0000; /* Blue hover */
+  transform: scale(1.01);
+}
+
+/* Active state (when there are changes) */
+.drop-apply-btn.active {
+  background-color: darkred;
+}
+
+/* Disabled state (when nothing changed) */
+.drop-apply-btn:disabled,
+.drop-apply-btn.disabled {
+  background-color: #999999;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+}
+
+
 
 
 
