@@ -262,8 +262,10 @@ const MultiSelectDropdown = ({
     handleFilterChange(major, isAllSelected ? [] : allOptionStrings);
   };
 
+  // State to track expanded groups
   const [expandedGroups, setExpandedGroups] = useState({});
 
+  // Check if the current selection is different from the temp selection
   const isDirty = () => {
     const current = selectedForMajor.slice().sort();
     const temp = tempSelection.slice().sort();
@@ -319,15 +321,15 @@ const MultiSelectDropdown = ({
           </div>
         )}
 
-               {/* Always show Apply/Cancel */}
-               <button
+        {/* Always show Apply/Cancel */}
+        <button
           className={`drop-apply-btn ${isDirty() ? 'active' : 'disabled'}`}
           onClick={() => {
-            if (!isDirty()) return; // prevent applying unchanged filters
+            if (!isDirty()) return; 
             handleFilterChange(major, tempSelection);
             setIsOpen(false);
           }}
-          disabled={!isDirty()} // HTML disabled state
+          disabled={!isDirty()} 
         >
           Apply Filters
         </button>

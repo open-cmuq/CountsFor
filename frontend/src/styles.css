@@ -823,7 +823,7 @@ table {
 
   .dropdown-offered .dropdown-content {
     min-width: 100px;
-    max-width: 100px;
+    max-width: 150px;
   }
 
   .dropdown-offered .drop-clear-btn {
