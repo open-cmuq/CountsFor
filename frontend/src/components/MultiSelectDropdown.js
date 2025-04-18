@@ -264,18 +264,19 @@ const MultiSelectDropdown = ({
   >
 
 
-      <button className="dropdown-btn" onClick={toggleDropdown}>
-        {showSelectedInButton && selectedForMajor.length > 0
-          ? selectedForMajor
-              .map((val) => {
-                if (val === "core") return <strong key={val}>Core</strong>;
-                if (val === "gened") return <em key={val}>Gen-Ed</em>;
-                return displayMap[val] || val;
-              })
-              .reduce((prev, curr, i) => [prev, ", ", curr])
+    <button className="dropdown-btn" onClick={toggleDropdown}>
+      {showSelectedInButton && selectedForMajor.length > 0
+        ? selectedForMajor
+            .map((val) => {
+              if (val === "core") return <strong key={val}>Core</strong>;
+              if (val === "gened") return <em key={val}>Gen-Ed</em>;
+              return displayMap[val] || val;
+            })
+            .reduce((prev, curr, i) => [prev, ", ", curr])
+        : ["BA", "BS", "CS", "IS"].includes(major)
+          ? "Select Requirements ▼"
           : "Select ▼"}
-      </button>
-
+    </button>
 
       {isOpen && (
         <div className="dropdown-content">
