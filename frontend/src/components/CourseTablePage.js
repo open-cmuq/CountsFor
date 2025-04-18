@@ -429,6 +429,7 @@ const CourseTablePage = () => {
         removeOfferedSemester={removeOfferedSemester}
         noPrereqs={noPrereqs}
         removePrereqFilter={removePrereqFilter}
+        allRequirements={requirements}
       />
 
       {/* Top-left pagination, compact view, clear filter, add courses to plan button, sort button */}
