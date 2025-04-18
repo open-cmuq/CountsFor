@@ -28,7 +28,7 @@ const SingleSelectDropdown = ({ options = [], selected, onChange, major = "" }) 
   return (
     <div className={`dropdown cell-container ${major === "prereq" ? "dropdown-prereq" : ""}`} ref={dropdownRef}>
       <button className="dropdown-btn" onClick={() => setIsOpen(!isOpen)}>
-        Select ▼
+        Select
       </button>
       {isOpen && (
         <div className="dropdown-content">

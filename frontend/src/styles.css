@@ -97,18 +97,31 @@
   .dropdown-btn {
     max-width: 100%;
     height: 90%;
-    padding: 3px;
-    border: 1px solid #ccc;
+    padding: 3px 20px 3px 3px;
+    border: none;
     background-color: white;
+    color: #333;
     font-size: 1rem;
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
-    border-radius: 4px;
     text-overflow: ellipsis;
     margin-top: 7px;
     transition: all 0.3s ease;
+    position: relative;
+    text-align: left;
+  }
+
+  .dropdown-btn::after {
+    content: '▼';
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: #555;
+    pointer-events: none;
   }
 
   .cell-container {

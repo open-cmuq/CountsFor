@@ -311,8 +311,8 @@ const MultiSelectDropdown = ({
             })
             .reduce((prev, curr, i) => [prev, ", ", curr])
         : ["BA", "BS", "CS", "IS"].includes(major)
-          ? "Select Requirement ▼"
-          : "Select ▼"}
+          ? "Select Requirement "
+          : "Select "}
     </button>
 
       {isOpen && (
