@@ -444,9 +444,9 @@ const CourseTablePage = () => {
           onChange={(e) => setCompactViewMode(e.target.value)}
           style={{ margin: "6px", padding: "5px" }}
         >
-          <option value="full">Full View</option>
-          <option value="last2">Compact (Last 2)</option>
-          <option value="last1">Most Compact (Last 1)</option>
+          <option value="full">Full Requirements View</option>
+          <option value="last2">Summarized Requirements View</option>
+          <option value="last1">Compact Requirements View</option>
         </select>
 
         <button
