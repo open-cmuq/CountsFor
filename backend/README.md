@@ -62,22 +62,27 @@ These scripts parse the raw data and transform it into a structure suitable for 
 
 Once extracted, the data needs to be loaded into the database. There are two primary methods for this:
 
-### 1. Using the Frontend Upload Feature
+### 1. Using the Frontend Upload Feature (Maintainer Access)
 
-*   The application provides an interface (likely under an "Upload" section) where users can upload the source data files.
-*   The backend API (specifically the `/api/upload` endpoint) receives these files, triggers the appropriate extractor scripts, and saves the resulting data to the database.
+*   Maintainers can access a dedicated data upload interface via a specific URL path. This path is configured in the frontend environment using the `REACT_APP_UPLOAD_PATH` variable (e.g., `/manage-curriculum-data`).
+*   On this page, maintainers can upload the source data files (Course ZIPs, Audit ZIPs, Enrollment Excel, Department CSV).
+*   The frontend then sends these files to the backend API (specifically the `/upload/init-db/` endpoint), which triggers the appropriate extractor scripts (`backend/scripts/*_extractor.py`) and saves the resulting data to the database.
 
-### 2. Using a Data Loading Script (Manual)
+### 2. Using Python Modules (Manual)
 
-*   Alternatively, data can be loaded via a command-line script. *(Note: The exact script name and location, potentially `load_data.py`, needs to be confirmed within the codebase).*
-*   **General Steps:**
+*   Alternatively, data can be loaded directly by executing the database modules from the command line. This is typically done after resetting the database.
+*   **Steps:**
     1.  Ensure your virtual environment is activated (`source venv/bin/activate`).
-    2.  Navigate to the directory containing the script (e.g., `backend/scripts/`).
-    3.  Run the script, likely providing paths to the data directories (courses, audits, enrollment) as arguments. Example (replace `load_data.py` and arguments as needed):
+    2.  Navigate to the project's root directory (`GenEd-CMUQ`).
+    3.  Optionally, reset the database (clears all existing data):
         ```bash
-        python load_data.py --course_path ../data/course --audit_path ../data/audit --enrollment_path ../data/enrollment/enrollment.xlsx
+        python -m backend.database.reset_db
         ```
-    4.  The script will use the extractor classes to parse the files and populate the database tables.
+    4.  Load the data by running the `load_data` module. This script will likely look for data files in predefined locations (e.g., within the `data/` directory):
+        ```bash
+        python -m backend.database.load_data
+        ```
+    5.  This executes the main logic within `backend/database/load_data.py`, which uses the extractor classes to parse data and populate the database tables.
 
 ---
 
