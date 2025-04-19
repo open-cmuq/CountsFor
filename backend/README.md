@@ -45,16 +45,16 @@ Below is the Entity Relationship Diagram (ERD) for the database:
 
 Data for courses, enrollment, and degree audits is extracted from source files (JSON and Excel) using specialized extractor classes located in `backend/scripts/`:
 
-*   `course_extractor.py`: Processes course information JSON files.
-*   `enrollment_extractor.py`: Processes enrollment data from Excel files.
-*   `audit_extractor.py`: Processes degree audit requirement JSON files.
+* `course_extractor.py`: Processes course information JSON files.
+* `enrollment_extractor.py`: Processes enrollment data from Excel files.
+* `audit_extractor.py`: Processes degree audit requirement JSON files.
 
 These scripts parse the raw data and transform it into a structure suitable for database insertion.
 
 ### Audit Data Extraction Source
 
-*   The logic for extracting data from degree audit JSON files (`backend/scripts/audit_extractor.py`) is based on the work done in the [cs-cmuq/courses-data-analysis](https://github.com/cs-cmuq/courses-data-analysis) repository.
-*   Specifically, it adapts the logic found in the `audits.ipynb` notebook: [https://github.com/cs-cmuq/courses-data-analysis/blob/master/audits.ipynb](https://github.com/cs-cmuq/courses-data-analysis/blob/master/audits.ipynb)
+* The logic for extracting data from degree audit JSON files (`backend/scripts/audit_extractor.py`) is based on the work done in the [cs-cmuq/courses-data-analysis](https://github.com/cs-cmuq/courses-data-analysis) repository.
+* Specifically, it adapts the logic found in the `audits.ipynb` notebook: [https://github.com/cs-cmuq/courses-data-analysis/blob/master/audits.ipynb](https://github.com/cs-cmuq/courses-data-analysis/blob/master/audits.ipynb)
 
 ---
 
@@ -64,25 +64,25 @@ Once extracted, the data needs to be loaded into the database. There are two pri
 
 ### 1. Using the Frontend Upload Feature (Maintainer Access)
 
-*   Maintainers can access a dedicated data upload interface via a specific URL path. This path is configured in the frontend environment using the `REACT_APP_UPLOAD_PATH` variable (e.g., `/manage-curriculum-data`).
-*   On this page, maintainers can upload the source data files (Course ZIPs, Audit ZIPs, Enrollment Excel, Department CSV).
-*   The frontend then sends these files to the backend API (specifically the `/upload/init-db/` endpoint), which triggers the appropriate extractor scripts (`backend/scripts/*_extractor.py`) and saves the resulting data to the database.
+* Maintainers can access a dedicated data upload interface via a specific URL path. This path is configured in the frontend environment using the `REACT_APP_UPLOAD_PATH` variable.
+* On this page, maintainers can upload the source data files (Course ZIPs, Audit ZIPs, Enrollment Excel, Department CSV).
+* The frontend then sends these files to the backend API (specifically the `/upload/init-db/` endpoint), which triggers the appropriate extractor scripts (`backend/scripts/*_extractor.py`) and saves the resulting data to the database.
 
 ### 2. Using Python Modules (Manual)
 
-*   Alternatively, data can be loaded directly by executing the database modules from the command line. This is typically done after resetting the database.
-*   **Steps:**
-    1.  Ensure your virtual environment is activated (`source venv/bin/activate`).
-    2.  Navigate to the project's root directory (`GenEd-CMUQ`).
-    3.  Optionally, reset the database (clears all existing data):
-        ```bash
-        python -m backend.database.reset_db
-        ```
-    4.  Load the data by running the `load_data` module. This script will likely look for data files in predefined locations (e.g., within the `data/` directory):
-        ```bash
-        python -m backend.database.load_data
-        ```
-    5.  This executes the main logic within `backend/database/load_data.py`, which uses the extractor classes to parse data and populate the database tables.
+* Alternatively, data can be loaded directly by executing the database modules from the command line. This is typically done after resetting the database.
+* **Steps:**
+  1. Ensure your virtual environment is activated (`source venv/bin/activate`).
+  2. Navigate to the project's root directory (`GenEd-CMUQ`).
+  3. Optionally, reset the database (clears all existing data):
+     ```bash
+     python -m backend.database.reset_db
+     ```
+  4. Load the data by running the `load_data` module. This script will likely look for data files in predefined locations (e.g., within the `data/` directory):
+     ```bash
+     python -m backend.database.load_data
+     ```
+  5. This executes the main logic within `backend/database/load_data.py`, which uses the extractor classes to parse data and populate the database tables.
 
 ---
 
