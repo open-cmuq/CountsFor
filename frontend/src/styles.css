@@ -780,7 +780,7 @@ table {
   }
 
   .select-all-btn {
-    background-color: #bbbbbb;
+    background-color: darkred;
     color: white;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -794,7 +794,7 @@ table {
 
   /* Hover effect */
   .select-all-btn:hover {
-    background-color: darkred;
+    background-color: #650304;
     transform: scale(1.01);
   }
 
@@ -1104,7 +1104,7 @@ table {
   padding: 7px 10px;
   cursor: pointer;
   transition: all 0.4s ease;
-  margin-top: 5px; /* Added margin top */
+  margin-top: 3px; 
   margin-bottom: 3px;
   font-weight: bold;
   font-size: 15px;
@@ -1143,7 +1143,7 @@ table {
 }
 
 .sort-by-reqs-btn:hover {
-  background-color: #333;
+  background-color: darkred;
   transform: scale(1.03);
 }
 
