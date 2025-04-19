@@ -9,12 +9,15 @@ import AnalyticsPage from './components/Analytics';
 import "./styles.css";
 
 const App = () => {
+  // Read the upload path from environment variable, with a fallback
+  const uploadPath = process.env.REACT_APP_UPLOAD_PATH || '/configure-data'; // Fallback path
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<MainTabs />} />
-        <Route path="/upload" element={<DataUpload />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
+        {/* Use the environment variable for the path */}
+        <Route path={uploadPath} element={<DataUpload />} />
       </Routes>
     </Router>
   );
