@@ -215,7 +215,7 @@ const SelectedFilters = ({
 
       {/* Render Prerequisite filter */}
       {noPrereqs !== null && (
-        <div key="prereq-filter" className="filter-tag" style={{ backgroundColor: "#777" }}>
+        <div key="prereq-filter" className="filter-tag" style={{ backgroundColor: "#555" }}>
           <button onClick={removePrereqFilter}><b>×</b></button>
           {noPrereqs === true ? 'Has Prerequisites' : 'No Prerequisites'}
         </div>
