@@ -70,6 +70,12 @@ cd /path/to/CountsFor/frontend
 # Fetch latest changes from the Git repository
 git pull
 
+# IMPORTANT: Ensure the production .env file exists
+# Check if frontend/.env exists. If not, create it:
+# sudo nano .env
+# Add the following line, then save:
+# REACT_APP_API_BASE_URL=https://countsfor.qatar.cmu.edu/api
+
 # Install or update Node modules (if package.json changed)
 npm install
 
