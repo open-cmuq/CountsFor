@@ -101,12 +101,62 @@ const CourseTable = ({
       );
     };
 
-  const totalColumns =
-  1 + // Course column
-  Object.keys(allRequirements).length +
-  2 + // Offered + Prereq
-  (allowRemove ? 1 : 0);
+    // Calculate the total number of columns - needed to change the format of table for plan and view tab
+    const totalColumns =
+    1 + // Course column
+    Object.keys(allRequirements).length +
+    2 + // Offered + Prereq
+    (allowRemove ? 1 : 0);
 
+    // For expandable offered cells
+    const OfferedCell = ({ offeredList, compactViewMode }) => {
+      const [expanded, setExpanded] = useState(false);
+    
+      const sortSemestersChronologically = (semesters) => {
+        const termOrder = { S: 1, M: 2, F: 3 };
+        return semesters.slice().sort((a, b) => {
+          const termA = a[0];
+          const yearA = parseInt(a.slice(1));
+          const termB = b[0];
+          const yearB = parseInt(b.slice(1));
+          if (yearA !== yearB) return yearA - yearB;
+          return termOrder[termA] - termOrder[termB];
+        });
+      };
+    
+      // For offered column: sort the semesters and make cell expandable if in compact view
+      const sortedSemesters = sortSemestersChronologically(offeredList);
+      const text = sortedSemesters.join(", ");
+      const previewText = text.length > 50 ? text.slice(0, 50) + "..." : text;
+    
+      const isCompact = compactViewMode === "last1" || compactViewMode === "last2";
+    
+      return (
+        <td className="cell-offered">
+          {/* If in full requirements view, show full text */}
+          {isCompact ? (
+            <>
+              {expanded ? text : previewText}
+              {text.length > 50 && (
+                <span
+                className="expand-toggle"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded(!expanded);
+                }}
+              >
+                {expanded ? "Show less" : "Show more"}
+              </span>
+              )}
+            </>
+          ) : (
+            text
+          )}
+        </td>
+      );
+    };
+    
+    
   return (
     <div>
       <table>
@@ -302,7 +352,7 @@ const CourseTable = ({
               );
             })}
 
-              <td className="cell-offered">{[...new Set(course.offered)].join(", ")}</td>
+              <OfferedCell offeredList={course.offered} compactViewMode={compactViewMode} />
               <td className="cell-prereq">
               <PrereqCell text={course.prerequisites} />
               </td>

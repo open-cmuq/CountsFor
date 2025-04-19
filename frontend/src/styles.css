@@ -724,13 +724,21 @@ table {
   }
 
   .expand-toggle {
-    display: inline-block;
-    color: darkblue;
-    margin-left: 6px;
+    display: block;
+    margin-top: 5px;
+    color: #0047ab; 
+    font-size: 0.8em;
+    font-weight: 500;
     cursor: pointer;
-    font-weight: bold;
-    font-size: smaller;
+    transition: color 0.2s ease;
+    margin-left: 8px;
   }
+  
+  .expand-toggle:hover {
+    color: #001f5b;
+    text-decoration: underline;
+  }
+  
 
   .dropdown-group {
     padding-left: 1px;
