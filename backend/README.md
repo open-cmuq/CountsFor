@@ -113,17 +113,17 @@ Once the server is running, interactive API documentation is available:
 
 ## Running Tests
 
-Backend tests are located in the root `tests/` directory and are run using `pytest` from the project root directory.
+Backend tests are located within the `backend/tests/` directory and are run using `pytest` from the project root directory (`CountsFor/`).
 
 ```bash
-# Navigate to the root directory (GenEd-CMUQ)
-cd ..
+# Navigate to the project root directory (e.g., CountsFor/)
+# Ensure your backend virtual environment is activated if needed
 
-# Run all backend-related tests (assuming they are organized within tests/)
-python -m pytest tests
+# Run all backend tests
+python -m pytest backend/tests
 ```
 
-For more detailed information on the test structure and how to run specific tests, see the `README.md` located in the root `tests/` directory.
+For more detailed information on the test structure and how to run specific tests (e.g., targeting specific files or functions), see the [`tests/README.md`](tests/README.md) file within this backend directory.
 
 ---
 
@@ -151,6 +151,12 @@ For more detailed information on the test structure and how to run specific test
   │
   ├── scripts/            # Utility scripts for data extraction, population, etc.
   │   └── ...
+  │
+  ├── tests/              # Contains automated tests for the backend.
+  │   ├── database/
+  │   ├── routers/
+  │   ├── services/
+  │   └── README.md       # Detailed guide for running backend tests.
   │
   ├── docs/               # Documentation files, including images.
   │   └── images/         # Contains images like the ERD.
