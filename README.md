@@ -15,6 +15,17 @@ Maintainers can find detailed instructions on how to redeploy updates in the [`D
 
 ---
 
+## Documentation
+
+For more detailed information on specific parts of the project, please refer to:
+
+*   **Backend:** [`backend/README.md`](backend/README.md) (Setup, Architecture, API, Data Loading)
+*   **Frontend:** [`frontend/README.md`](frontend/README.md) (Setup, Running Dev Server)
+*   **Testing:** [`tests/README.md`](tests/README.md) (Running Backend Tests)
+*   **Deployment:** [`DEPLOYMENT.md`](DEPLOYMENT.md) (Maintainer Deployment Guide)
+
+---
+
 ## Getting Started
 
 ### Prerequisites
