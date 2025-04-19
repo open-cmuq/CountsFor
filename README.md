@@ -11,6 +11,8 @@ The live application can be accessed at:
 *   **URL:** [https://countsfor.qatar.cmu.edu/](https://countsfor.qatar.cmu.edu/)
 *   **Access:** Requires connection to the CMU VPN.
 
+Maintainers can find detailed instructions on how to redeploy updates in the [`DEPLOYMENT.md`](DEPLOYMENT.md) file.
+
 ---
 
 ## Getting Started
