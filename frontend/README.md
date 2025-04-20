@@ -15,7 +15,7 @@ This directory contains the React.js frontend application for the CMU-Q General 
 
 1. **Navigate to the frontend directory:**
    ```bash
-   cd path/to/GenEd-CMUQ/frontend
+   cd path/to/CountsFor/frontend
    ```
 
 2. **Install dependencies:**
@@ -55,9 +55,16 @@ The app will be accessible at `http://localhost:3000`.
 | `SearchBar.js` | Handles department selection, search input, and checkbox filters. |
 | `CourseTable.js` | Renders the course data in a table format with dynamic requirement columns. |
 | `MultiSelectDropdown.js` | Generic dropdown for selecting multiple filters (e.g. requirements, semesters). |
-| `MultiSelectDepartment.js` | Specialized dropdown for department filtering. |
+| `SingleSelectDropdown.js` | Generic dropdown for selecting single filters (e.g. prereqs). |
 | `SelectedFilters.js` | Shows active filters with remove buttons. |
 | `PopUp.js` | Modal that shows detailed course or requirement information. |
+| `PlanCourseTab.js` | Handles plan course tab. |
+| `MainTabs.js` | Controller for tab selector. |
+| `EnrollmentAnalytics.js` | Renders both enrollment charts: across courses and across student classes. |
+| `DataUpload.js` | Handles uploading and validating course, audit, and department data files. |
+| `Analytics.js` | Controller for the Analytics page tab; wraps the charts and upload section.|
+
+For a detailed documentation for each component: [`frontend/docs`](https://github.com/open-cmuq/CountsFor/tree/main/frontend/docs) 
 
 ---
 
@@ -80,8 +87,10 @@ frontend/
 │   │   ├── SearchBar.js
 │   │   ├── PopUp.js
 │   │   ├── MultiSelectDropdown.js
-│   │   ├── MultiSelectDepartment.js
-│   │   └── SelectedFilters.js
+│   │   ├── ...
+│   │
+│   ├── tests/        # Test files
+│   │
 │   ├── styles.css         # App styling
 │   ├── planTabStyles.css  # App styling for planning tab
 │   └── index.js           # Entry point
