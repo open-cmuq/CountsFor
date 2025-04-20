@@ -19,7 +19,7 @@ Connect to the server using SSH with your Andrew credentials:
 ssh <YourAndrewID>@countsfor.qatar.cmu.edu
 ```
 
-**Note:** The project's root directory path used in the commands below (e.g., `/path/to/CountsFor/`) needs to be adjusted to the actual location where the application code resides on the VM. The path `/home/bbendou/GenEd-CMUQ` was used previously, confirm the correct path on the server.
+**Note:** The project's root directory path used in the commands below (e.g., `/path/to/CountsFor/`) needs to be adjusted to the actual location where the application code resides on the VM. The path `/home/bbendou/CountsFor` was used previously, confirm the correct path on the server.
 
 ## Redeployment Steps
 

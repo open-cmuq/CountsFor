@@ -16,7 +16,7 @@ This directory contains the Python FastAPI backend application for the GenEd pro
 
 1. **Navigate to the backend directory:**
    ```bash
-   cd path/to/GenEd-CMUQ/backend
+   cd path/to/CountsFor/backend
    ```
 2. **Create and activate a virtual environment:**
    ```bash
@@ -73,7 +73,7 @@ Once extracted, the data needs to be loaded into the database. There are two pri
 * Alternatively, data can be loaded directly by executing the database modules from the command line. This is typically done after resetting the database.
 * **Steps:**
   1. Ensure your virtual environment is activated (`source venv/bin/activate`).
-  2. Navigate to the project's root directory (`GenEd-CMUQ`).
+  2. Navigate to the project's root directory (`CountsFor`).
   3. Optionally, reset the database (clears all existing data):
      ```bash
      python -m backend.database.reset_db

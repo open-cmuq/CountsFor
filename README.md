@@ -64,7 +64,7 @@ The project is organized into the following main directories:
 
 *   **Backend:** Navigate to the project root directory and run tests using `pytest`. See `tests/README.md` for detailed instructions.
     ```bash
-    # Ensure you are in the project root directory (GenEd-CMUQ)
+    # Ensure you are in the project root directory (CountsFor)
     python -m pytest tests
     ```
 *   **Frontend:** Navigate to the `frontend` directory and follow the testing instructions in `frontend/README.md`.
